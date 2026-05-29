@@ -12,9 +12,6 @@
 - **Tone**: `[e.g. Professional / Casual / Inspiring / Analytical]`
 - **Target Audience**: `[e.g. General public / Engineers / Executives / Students]`
 - **Language**: `[e.g. English / Traditional Chinese / Japanese / Korean]`
-  - Supported: English, Traditional Chinese (繁體中文), Simplified Chinese (简体中文), Japanese (日本語), Korean (한국어)
-  - All slide copy — titles, bullets, captions — must be written in this language consistently.
-  - When using CJK languages, replace Latin fonts with CJK-compatible alternatives (see Typography below).
 
 ---
 
@@ -37,27 +34,6 @@
 > - **Business / Finance**: Prefer navy (`#1A237E`) + gold (`#F9A825`); high contrast, minimal decoration.
 > - **Education**: Bright primaries, high contrast; ensure WCAG AA accessibility.
 > - **Data-Driven**: Neutral background (`#FAFAFA`), use the full Google palette for chart differentiation.
-
----
-
-## Typography
-
-| Role         | Font (Latin)     | Font (CJK)              | Size     | Weight  |
-|--------------|-----------------|-------------------------|----------|---------|
-| Slide Title  | Google Sans      | Noto Sans CJK / 思源黑體  | 40–48 px | Bold    |
-| Subtitle     | Google Sans      | Noto Sans CJK / 思源黑體  | 24–28 px | Medium  |
-| Body Text    | Roboto           | Noto Sans CJK / 思源黑體  | 18–22 px | Regular |
-| Caption/Note | Roboto           | Noto Sans CJK / 思源黑體  | 14–16 px | Light   |
-| Data / Stats | Google Sans Mono | Noto Sans CJK / 思源黑體  | 48–72 px | Bold    |
-
-> **CJK Font Notes:**
-> - **Traditional Chinese**: Noto Sans TC / 思源黑體 TC（繁體）
-> - **Simplified Chinese**: Noto Sans SC / 思源黑體 SC（简体）
-> - **Japanese**: Noto Sans JP / 思源角ゴシック
-> - **Korean**: Noto Sans KR / 본고딕
-> - All Noto Sans CJK fonts are available via Google Fonts. For mixed CJK + Latin slides, use Noto Sans for both to ensure consistent baseline alignment.
->
-> **Latin Fallback fonts** (if Google Fonts unavailable): `Inter`, `Helvetica Neue`, `Arial`
 
 ---
 

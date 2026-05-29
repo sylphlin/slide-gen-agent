@@ -23,10 +23,3 @@
 | 09 | [...]                     | [...]          | [...]                                         |
 | XX | [Closing / Call to Action]| Closing / CTA  | [Summary + next step or key takeaway]         |
 
----
-
-> **Notes for the Agent:**
-> - Adjust the total number of rows to match the agreed slide count from Stage 1.
-> - Keep each "Core Content Summary" to one sentence — it drives the `slide_xx.md` generation.
-> - Use the Slide Types defined in `design.md` → Slide Structure Defaults.
-> - Name per-slide files as `slide_xx.md` (all lowercase).

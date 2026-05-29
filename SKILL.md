@@ -73,16 +73,13 @@ generate real content from.
 
 ### Step 3 — `slide_01.md` through `slide_XX.md`
 
-Generate one file per slide, following `templates/slide_xx.md`. The most
-important field in each file is **Visual Description** — write it as a detailed,
-self-contained scene description that an image model can act on directly. Include:
-- The layout type (e.g. left image / right text, centered hero)
-- What visual element to show (illustration, chart, photo, icon, abstract shape)
-- Color references from `design.md`
-- Art style (default: flat design, Google Material style, clean white background)
+Generate one file per slide, following `templates/slide_xx.md`. Each file
+contains only the **title** and a **full spoken script** for that slide — written
+in natural language as if the presenter were saying it aloud.
 
-Every other field (title, bullets, hero text) feeds into the prompt as
-overlay text or compositional context.
+Do not include visual layout specs, color overrides, or design notes here.
+All visual decisions are governed by `design.md`. The image generation step
+in Stage 3 will receive both files together.
 
 ---
 
@@ -107,25 +104,22 @@ through each `slide_xx.md` one at a time.
 
 For each slide:
 
-1. **Read `design.md`** to load the global visual rules (palette, typography,
-   layout defaults).
-2. **Read the current `slide_xx.md`** to get the slide-specific content and
-   visual description.
-3. **Compose an image generation prompt** that combines both sources into a
+1. **Pass `design.md` + `slide_xx.md` together** into the image generation
+   model as the combined input. `design.md` supplies all visual rules; the
+   slide file supplies title and script content.
+2. **Compose an image generation prompt** that synthesizes both files into a
    single, detailed English description. A strong prompt includes:
    - Slide dimensions and aspect ratio: **1920×1080 px, 16:9**
-   - Layout type and composition (from Visual Layout in `slide_xx.md`)
-   - Background color (from `design.md`)
-   - **Text zones** — describe reserved areas by position and visual weight only,
-     e.g. "upper-left zone with a clean empty area for a bold title" or
-     "centered empty space for a large hero number". Do NOT include the actual
-     text content — it will be added as an overlay after generation.
-   - The visual element (illustration, chart, photo) described vividly
-   - Color palette (primary, secondary, accent hex codes from `design.md`)
-   - Art style: flat design, Google Material aesthetic, clean and professional
-   - Any slide-specific color overrides or design notes
+   - Layout type inferred from the slide type and script content
+   - Background color and palette (hex codes from `design.md`)
+   - **Text zones** — reserved areas described by position and visual weight
+     only (e.g. "upper-left area reserved for a bold title"); do NOT embed
+     actual text — it will be added as an overlay after generation
+   - Visual element (illustration, chart, photo) that best represents the
+     script's core idea
+   - Art style, typography style, and icon style from `design.md`
 
-4. **Generate the image** using your image generation capability. Save or
+3. **Generate the image** using your image generation capability. Save or
    label the output as `slide_XX.png` (e.g. `slide_01.png`, `slide_02.png`).
 
 Repeat until all slides are generated. Then present the complete set to the user.
@@ -138,7 +132,7 @@ Repeat until all slides are generated. Then present the complete set to the user
 |---|---|
 | `templates/design.md` | Visual system template — color, type, layout rules |
 | `templates/outlines.md` | Full deck outline — slide list with types and summaries |
-| `templates/slide_xx.md` | Per-slide detail — content, layout, visual description |
+| `templates/slide_xx.md` | Per-slide content — title and spoken script |
 
 Read the relevant template before generating each output type in Stage 2. The
 templates contain field-by-field guidance and notes for adapting to different
@@ -154,5 +148,5 @@ content categories.
 - **Consistency.** Every slide must feel like it belongs to the same deck.
   The `design.md` file exists precisely to enforce this — refer back to it
   whenever you are unsure about a color, font, or layout choice.
-- **Specificity in prompts.** Vague image prompts produce generic results.
-  Invest time in the Visual Description field — it directly determines image quality.
+- **Specificity in scripts.** A rich, concrete spoken script gives the image
+  model more signal to work with. Vague scripts produce generic visuals.
