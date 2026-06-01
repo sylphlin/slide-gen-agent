@@ -76,17 +76,22 @@ Before setting up the agent, ensure you have the following:
 The agent reads its configuration from `adk-agent/src/config.ts`. 
 
 > [!IMPORTANT]
-> **GCP Project Configuration Required**:
-> You **MUST** configure a valid Google Cloud Project ID before compiling or running the agent. By default, `GCP_PROJECT` is set to `'your-gcp-project-id'`. If this is not updated, the Vertex AI API requests will fail.
+> **GCP & Vertex AI Configuration Required**:
+> By default, the ADK framework targets the public Gemini Developer API, which requires a `GEMINI_API_KEY`. To force the agent to run in **Vertex AI mode** (using Google Cloud IAM / ADC credentials), you **MUST** configure your terminal session as follows:
 >
-> You can configure it in two ways:
-> 1. **Environment Variable (Recommended)**:
->    ```bash
->    export GCP_PROJECT="your-actual-gcp-project-id"
->    export GCP_LOCATION="us-central1"  # Choose a Vertex AI supported region
->    ```
-> 2. **Edit Config Directly**:
->    Open [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts) and update the `GCP_PROJECT` string literal.
+> ```bash
+> # 1. Enable Vertex AI mode in ADK
+> export GOOGLE_GENAI_USE_VERTEXAI=true
+> 
+> # 2. Configure your GCP Project ID (Both variables are checked by different parts of the SDK/client)
+> export GCP_PROJECT="your-actual-gcp-project-id"
+> export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+> 
+> # 3. Set your Vertex AI location/region
+> export GCP_LOCATION="us-central1"
+> ```
+>
+> *Note: Alternatively, you can edit the default fallback values directly in [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts), but environment variables are recommended.*
 
 ### Model Settings
 Both models and thinking settings are configured in `src/config.ts`:
@@ -201,3 +206,31 @@ Our **decoupled markdown approach** gives you full control:
 - **Modify Visuals in One Click**: Want to change the theme color, update a font, or switch from light to dark mode? Simply edit `design.md` in your session folder, and regenerate Stage 3. Every slide will immediately inherit the new styles.
 - **Fix Typos or Tweak Content Directly**: Found a spelling error on Slide 5 or want to change a bullet point? Just open `slides/slide_05.md`, edit the Markdown file directly, and run the `generateSlideImage` tool for Slide 5. You don't need to rerun the LLM pipeline or wait for other slides to regenerate.
 - **Predictable Outcomes**: By keeping the design guidelines (`design.md`) separate from the slide content (`slide_xx.md`), the image generation model receives highly consistent formatting parameters, resulting in exceptionally stable layout renders.
+
+---
+
+## Deploying to Gemini Enterprise
+
+To deploy this TS ADK Agent and connect it to **Gemini Enterprise** (or the Gemini Enterprise Agent Platform), the simplest and most native approach is to deploy it to **Vertex AI Agent Engine (Reasoning Engine)**.
+
+Vertex AI Agent Engine is a fully-managed, serverless runtime specifically built for executing reasoning agents like ADK. It is natively supported by the ADK framework, requires no containerization or Docker configurations, and inherits built-in Google Cloud IAM permissions seamlessly.
+
+### Deploy to Vertex AI Agent Engine (Reasoning Engine)
+
+1. **Prerequisites**:
+   Ensure you have active GCP credentials with permission to manage Vertex AI Reasoning Engines, and that a Google Cloud Storage (GCS) bucket is configured for staging.
+2. **Deploy via ADK CLI**:
+   From the `adk-agent/` directory, use the ADK devtools to deploy your agent with a single command:
+   ```bash
+   cd adk-agent
+   npx adk deploy --project="your-production-gcp-project-id" --location="us-central1" --gcs-bucket="gs://your-gcs-bucket-name"
+   ```
+   *This command automatically packages your TypeScript agent, registers it as a Reasoning Engine instance in Vertex AI, and returns a unique Resource ID.*
+3. **Resource ID**:
+   The output will provide a resource name like:
+   `projects/your-production-gcp-project-id/locations/us-central1/reasoningEngines/1234567890`
+4. **Connect to Gemini Enterprise**:
+   - Log in to the **Gemini Enterprise Console**.
+   - Go to **Agent / Extension Management** and choose **Add Custom Agent**.
+   - Select **Vertex AI Agent Engine / Reasoning Engine** and enter your unique Resource ID.
+   - The agent will automatically run inside the secure Google Cloud perimeter, inheriting the native user/service account IAM permissions without any manual API key configuration!
