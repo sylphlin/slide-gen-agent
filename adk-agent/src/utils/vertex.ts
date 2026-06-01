@@ -8,8 +8,8 @@ import { CONFIG } from '../config.js';
  * @returns Base64-encoded PNG string
  */
 export async function generateImageFromVertex(prompt: string): Promise<string> {
-  if (!CONFIG.GCP_PROJECT || CONFIG.GCP_PROJECT === 'your-gcp-project-id') {
-    throw new Error('GCP_PROJECT is not configured. Please set the GCP_PROJECT environment variable.');
+  if (!CONFIG.GOOGLE_CLOUD_PROJECT || CONFIG.GOOGLE_CLOUD_PROJECT === 'your-gcp-project-id') {
+    throw new Error('GOOGLE_CLOUD_PROJECT is not configured. Please set the GOOGLE_CLOUD_PROJECT environment variable.');
   }
 
   // Create the client using Location-specific Endpoint
@@ -18,7 +18,7 @@ export async function generateImageFromVertex(prompt: string): Promise<string> {
   });
 
   // Formulate endpoint string
-  const endpoint = `projects/${CONFIG.GCP_PROJECT}/locations/${CONFIG.GCP_LOCATION}/publishers/google/models/${CONFIG.IMAGEN_MODEL}`;
+  const endpoint = `projects/${CONFIG.GOOGLE_CLOUD_PROJECT}/locations/${CONFIG.GCP_LOCATION}/publishers/google/models/${CONFIG.IMAGEN_MODEL}`;
 
   // Format instances and parameters using helper tools from SDK
   const instance = {

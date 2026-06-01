@@ -3,6 +3,8 @@ import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateImageFromVertex } from '../utils/vertex.js';
+import { uploadToGCS } from '../utils/gcs.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Tool: generateSlideImage
@@ -10,7 +12,7 @@ import { generateImageFromVertex } from '../utils/vertex.js';
  */
 export const generateSlideImageTool = new FunctionTool({
   name: 'generateSlideImage',
-  description: 'Reads the generated design.md and an individual slide_xx.md, merges them into a highly contextual prompt, and uses Vertex AI Imagen to output slide_xx.png in the session slides directory.',
+  description: 'Reads the generated design.md and an individual slide_xx.md, merges them into a highly contextual prompt, uses Vertex AI Imagen to output slide_xx.png, and optionally uploads it to Google Cloud Storage.',
   parameters: z.object({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     slideNumber: z.number().int().describe('The 1-indexed slide number to generate the image for'),
@@ -49,9 +51,25 @@ ${slideContent}
     try {
       const base64Data = await generateImageFromVertex(mergedPrompt);
       fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
-      return `Successfully generated image for Slide ${padNum} and saved to ${outputPath}`;
+
+      let resultMessage = `Successfully generated image for Slide ${padNum} and saved locally to ${outputPath}`;
+
+      // Upload to GCS if bucket is configured
+      if (CONFIG.GCS_BUCKET) {
+        try {
+          const sessionId = path.basename(sessionPath);
+          const gcsPath = `sessions/${sessionId}/slides/slide_${padNum}.png`;
+          const gcsUrl = await uploadToGCS(outputPath, gcsPath);
+          resultMessage = `Successfully generated image for Slide ${padNum}. Saved locally to ${outputPath} and uploaded to GCS: ${gcsUrl}`;
+        } catch (gcsError: any) {
+          resultMessage += ` (GCS upload failed: ${gcsError.message})`;
+        }
+      }
+
+      return resultMessage;
     } catch (error: any) {
       return `Failed to generate image for Slide ${padNum}: ${error.message}`;
     }
   },
 });
+
