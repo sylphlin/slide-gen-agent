@@ -134,8 +134,7 @@ graph TD
     D -->|Output 1| E[design.md - Design Spec]
     D -->|Output 2| F[outlines.md - Slide Outlines]
     D -->|Output 3| G[slides/slide_xx.md - Slide Details & Script]
-    E & F & G -->|Optional: Manual Tweak / Tweak Markdown| H{Are files customized?}
-    H -->|Yes/No| I(Stage 3: Image Generation)
+    E & F & G -->|Optional: Manual Tweaks| I(Stage 3: Image Generation)
     I -->|Input: design.md + slide_xx.md| J[Run gemini-3.1-flash-image]
     J --> K[Output: slide_xx.png]
 ```
