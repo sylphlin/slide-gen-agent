@@ -1,0 +1,21 @@
+{
+  "name": "slide-gen-adk-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "ADK-based TypeScript slide generator agent",
+  "main": "dist/agent.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/agent.js",
+    "agent": "npx adk run src/agent.ts"
+  },
+  "dependencies": {
+    "@google/adk": "^1.0.0",
+    "@google-cloud/aiplatform": "^3.20.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
