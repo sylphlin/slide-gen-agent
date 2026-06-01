@@ -67,15 +67,22 @@ visual decisions in Stage 3.
 
 Write the full slide-by-slide outline using `templates/outlines.md` as your
 guide. Each row in the Slide List should have a clear title, a slide type (from
-the Slide Structure Defaults in `design.md`), and a one-sentence content summary.
-The summary is the seed for each `slide_xx.md` — make it specific enough to
-generate real content from.
+the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary detailing 
+core key points, data, or insights. This summary is the seed for each `slide_xx.md` 
+— make it specific and data-rich to enable generating detailed content later.
 
-### Step 3 — `slide_01.md` through `slide_XX.md`
+Generate one file per slide, following `templates/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
 
-Generate one file per slide, following `templates/slide_xx.md`. Each file
-contains only the **title** and a **full spoken script** for that slide — written
-in natural language as if the presenter were saying it aloud.
+**Content Sourcing Rule:**
+- **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
+- **Outline as a Map**: Use `outlines.md` as a router and structural guide to determine *which part* of the original material belongs to this slide and what the presentation flow is. Do NOT write the script solely based on the outline summary; go back to the original text to extract precise specs, figures, and nuances.
+
+**Script Requirements:**
+- **Length**: Strictly limit the script to **150 to 300 words** (for English) or **150 to 300 characters** (for Chinese). This target ensures a natural 1–2 minute spoken duration and optimal informational depth.
+- **Structure**: Organize every slide's script into two clear phases:
+  1. **Transition & Hook (承上啟下)**: A smooth connection showing how this slide builds upon the previous one, setting the immediate context.
+  2. **Deep Dive & Core Elaboration (深度解析與實例)**: An in-depth explanation of the slide's technical details, data points, real-world examples, or visual analogies.
+- **Evocative & Visual Language**: Use specific terminology, statistics, and vivid visual metaphors (e.g., "like a rapid highway branching out...", "a steep upward climb showing 45% growth...") rather than generic summaries. This rich narrative provides high-quality visual context for Stage 3 image generation.
 
 Do not include visual layout specs, color overrides, or design notes here.
 All visual decisions are governed by `design.md`. The image generation step
@@ -88,39 +95,31 @@ in Stage 3 will receive both files together.
 With all Markdown files in place, generate a PNG image for every slide. Work
 through each `slide_xx.md` one at a time.
 
-> **Important — Text Rendering Limitation:**
-> Image generation models (including Imagen) render background visuals and layout
-> well, but are unreliable at rendering accurate text — especially for CJK
-> characters (Chinese, Japanese, Korean). To get clean results:
-> - The image prompt should focus on **background, composition, color, and visual
->   elements** — not on rendering the actual slide text.
-> - Describe text elements (title, bullets) by their **position and style only**
->   (e.g. "space reserved for a bold left-aligned title in the upper-left zone"),
->   not their literal content.
-> - Slide text should be applied as an **overlay layer** after image generation —
->   either by the user in their presentation tool (Google Slides, Keynote, etc.),
->   or by a post-processing step.
-> - This approach produces sharper, more consistent results regardless of language.
+> **Note on Text Rendering:**
+> Image generation models (including Imagen) are continuously improving but may still occasionally render text with minor spelling or font inconsistencies, especially for complex layouts or non-English characters.
+> - To ensure the slides have meaningful content, the generated prompt will explicitly include the actual titles and key points to be rendered.
+> - If the rendered text is unsatisfactory, you can request a regeneration or planned to overlay the text digitally in a post-processing step.
 
 For each slide:
 
-1. **Pass `design.md` + `slide_xx.md` together** into the image generation
-   model as the combined input. `design.md` supplies all visual rules; the
-   slide file supplies title and script content.
-2. **Compose an image generation prompt** that synthesizes both files into a
-   single, detailed English description. A strong prompt includes:
-   - Slide dimensions and aspect ratio: **1920×1080 px, 16:9**
-   - Layout type inferred from the slide type and script content
-   - Background color and palette (hex codes from `design.md`)
-   - **Text zones** — reserved areas described by position and visual weight
-     only (e.g. "upper-left area reserved for a bold title"); do NOT embed
-     actual text — it will be added as an overlay after generation
-   - Visual element (illustration, chart, photo) that best represents the
-     script's core idea
-   - Art style, typography style, and icon style from `design.md`
+1. **Load Files**: Read the entire content of `design.md` and the current `slide_xx.md`.
+2. **Construct Prompt**: Combine the contents into a single prompt for the `generate_image` tool. Wrap each file's content in XML-like tags, and **prepend clear instructions** to guide the model on what to render (the Title) and what to use only as visual context (the Script). The prompt MUST follow this structure:
 
-3. **Generate the image** using your image generation capability. Save or
-   label the output as `slide_XX.png` (e.g. `slide_01.png`, `slide_02.png`).
+   ```markdown
+   Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the design system and slide content below.
+   - **DO** render the "Title" text from <slide_content> clearly on the slide, respecting the layout, typography, and colors defined in <design_system>.
+   - **DO NOT** render the "Script" text literally; use it only as contextual inspiration to generate the background illustration or visual elements.
+
+   <design_system>
+   [Insert the entire content of design.md here]
+   </design_system>
+
+   <slide_content>
+   [Insert the entire content of slide_xx.md here]
+   </slide_content>
+   ```
+
+3. **Generate the image**: Call the `generate_image` tool with this combined prompt. Save the output as `slide_XX.png` (e.g. `slide_01.png`).
 
 Repeat until all slides are generated. Then present the complete set to the user.
 
@@ -148,5 +147,4 @@ content categories.
 - **Consistency.** Every slide must feel like it belongs to the same deck.
   The `design.md` file exists precisely to enforce this — refer back to it
   whenever you are unsure about a color, font, or layout choice.
-- **Specificity in scripts.** A rich, concrete spoken script gives the image
-  model more signal to work with. Vague scripts produce generic visuals.
+- **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 150–300 words/characters and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.

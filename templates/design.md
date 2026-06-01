@@ -39,7 +39,7 @@
 
 ## Layout Rules
 
-- **Aspect Ratio**: 16:9 (standard widescreen)
+- **Aspect Ratio / Dimensions**: 16:9 widescreen (1920×1080 px)
 - **Safe Margin**: 80 px on all sides — no content outside this zone
 - **White Space**: Maintain at least 40% breathing room per slide; avoid clutter
 - **Text Alignment**: Left-align body text; center only for hero numbers or title slides

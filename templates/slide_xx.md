@@ -8,4 +8,12 @@
 
 ## Script
 
-[Full narration / speaker notes for this slide. Write in natural spoken language — this is what the presenter would say aloud. Be complete: a reader should be able to understand the entire slide's message from this script alone, without seeing the visual.]
+[Full narration / speaker notes for this slide. Must be written in natural spoken language.
+
+Requirements:
+1. Length: 150 to 300 words (English) or 150 to 300 characters (Chinese/multilingual).
+2. Structure:
+   - Part 1: Transition & Hook (smooth bridge from previous slide, establishing direct context).
+   - Part 2: Deep Dive & Core Elaboration (detailed explanation, technical architecture, data breakdown, real-world analogies, and rich visual storytelling to act as context for image generation).
+
+Ensure a high density of information so that the presentation feels professional and substantial (aim for a natural 1-2 minute speaking duration).]
