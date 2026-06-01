@@ -75,21 +75,31 @@ Before setting up the agent, ensure you have the following:
 
 The agent reads its configuration from `adk-agent/src/config.ts`. 
 
-To configure it for your environment:
-1. Set your **GCP Project ID** and **Location** using environment variables, or edit `adk-agent/src/config.ts` directly:
-   ```bash
-   export GCP_PROJECT="your-gcp-project-id"
-   export GCP_LOCATION="us-central1"  # e.g. us-central1, asia-east1
-   ```
-2. **Image Generation Model**: 
-   The agent uses `gemini-3.1-flash-image` as the default model for slide image generation.
-3. **Text Generation Model & Thinking Config**:
-   The agent uses `gemini-3.5-flash` as the default text generation model, with thinking reasoning configured to maximize precision. 
+> [!IMPORTANT]
+> **GCP Project Configuration Required**:
+> You **MUST** configure a valid Google Cloud Project ID before compiling or running the agent. By default, `GCP_PROJECT` is set to `'your-gcp-project-id'`. If this is not updated, the Vertex AI API requests will fail.
+>
+> You can configure it in two ways:
+> 1. **Environment Variable (Recommended)**:
+>    ```bash
+>    export GCP_PROJECT="your-actual-gcp-project-id"
+>    export GCP_LOCATION="us-central1"  # Choose a Vertex AI supported region
+>    ```
+> 2. **Edit Config Directly**:
+>    Open [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts) and update the `GCP_PROJECT` string literal.
 
+### Model Settings
 Both models and thinking settings are configured in `src/config.ts`:
 ```typescript
 export const CONFIG = {
-  ...
+  // Root paths
+  WORKSPACE_ROOT: path.resolve(__dirname, '../../'),
+  TEMPLATES_DIR: path.resolve(__dirname, '../../templates'),
+  OUTPUT_DIR: path.resolve(__dirname, '../output'),
+
+  // GCP / Vertex AI Settings
+  GCP_PROJECT: process.env.GCP_PROJECT || 'your-gcp-project-id',
+  GCP_LOCATION: process.env.GCP_LOCATION || 'us-central1',
   IMAGEN_MODEL: 'gemini-3.1-flash-image', // Default image model
   TEXT_MODEL: 'gemini-3.5-flash',         // Default text model
   THINKING_LEVEL: 'HIGH',                 // Thinking level (e.g. 'HIGH', 'MEDIUM')
@@ -101,21 +111,24 @@ export const CONFIG = {
 
 ## Usage
 
+All commands must be executed from the `adk-agent` subdirectory.
+
 ### 1. Build the Project
-Compile the TypeScript files into JavaScript (outputs to the `dist/` folder):
+Navigate to the `adk-agent` directory, ensure dependencies are installed, and compile the TypeScript files:
 ```bash
+cd adk-agent
+npm install   # Run if you haven't installed dependencies yet
 npm run build
 ```
 
 ### 2. Run the Agent
-You can launch the agent directly using the ADK runner:
+Launch the agent directly from the `adk-agent` directory using the ADK runner:
 ```bash
+cd adk-agent
 npm run agent
 ```
-This runs the command:
-```bash
-npx adk run src/agent.ts
-```
+*(Which executes `npx adk run src/agent.ts` behind the scenes).*
+
 The ADK framework will start the interactive agent session. You can then interact with it, provide source materials, and watch it generate the slide deck step by step.
 
 ---
