@@ -55,7 +55,8 @@ ${slideContent}
       let resultMessage = `Successfully generated image for Slide ${padNum} and saved locally to ${outputPath}`;
 
       // Upload to GCS if bucket is configured
-      if (CONFIG.GCS_BUCKET) {
+      if (CONFIG.RESOURCES_BUCKET) {
+
         try {
           const sessionId = path.basename(sessionPath);
           const gcsPath = `sessions/${sessionId}/slides/slide_${padNum}.png`;

@@ -14,11 +14,12 @@ export async function generateImageFromVertex(prompt: string): Promise<string> {
 
   // Create the client using Location-specific Endpoint
   const client = new PredictionServiceClient({
-    apiEndpoint: `${CONFIG.GCP_LOCATION}-aiplatform.googleapis.com`,
+    apiEndpoint: `${CONFIG.GOOGLE_CLOUD_LOCATION}-aiplatform.googleapis.com`,
   });
 
   // Formulate endpoint string
-  const endpoint = `projects/${CONFIG.GOOGLE_CLOUD_PROJECT}/locations/${CONFIG.GCP_LOCATION}/publishers/google/models/${CONFIG.IMAGEN_MODEL}`;
+  const endpoint = `projects/${CONFIG.GOOGLE_CLOUD_PROJECT}/locations/${CONFIG.GOOGLE_CLOUD_LOCATION}/publishers/google/models/${CONFIG.IMAGEN_MODEL}`;
+
 
   // Format instances and parameters using helper tools from SDK
   const instance = {

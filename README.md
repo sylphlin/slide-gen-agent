@@ -50,13 +50,16 @@ graph TD
 
 ```text
 slide-gen-agent/
-├── SKILL.md                 # Universal skill guidelines and visual prompts
 ├── README.md                # Project overview and setup (this file)
-├── templates/               # Markdown templates used for structured generation
-│   ├── design.md            # Design system template
-│   ├── outlines.md          # Deck outline template
-│   └── slide_xx.md          # Individual slide content template
+├── skills/
+│   └── slide-gen-agent/
+│       ├── SKILL.md         # Universal skill guidelines and visual prompts
+│       └── templates/       # Markdown templates used for structured generation
+│           ├── design.md    # Design system template
+│           ├── outlines.md  # Deck outline template
+│           └── slide_xx.md  # Individual slide content template
 └── adk-agent/               # Programmatic ADK Agent (TypeScript)
+
     ├── package.json         # Dependencies and build scripts
     ├── tsconfig.json        # TypeScript configuration
     ├── src/
@@ -80,8 +83,8 @@ Select the installation method that fits your target environment:
 This is a pure prompt/guideline-based installation, requiring no code hosting.
 * **Use Case**: General LLM systems (like Antigravity, Codex, or standard chat assistants with image-generation abilities).
 * **How to Install**:
-  1. Import or copy the contents of [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/SKILL.md) into your LLM assistant's custom system instructions or system prompts.
-  2. Reference the Markdown files in the `templates/` directory as examples for the assistant to follow.
+  1. Import or copy the contents of [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) into your LLM assistant's custom system instructions or system prompts.
+  2. Reference the Markdown files in the `skills/slide-gen-agent/templates/` directory as examples for the assistant to follow.
 
 ---
 
@@ -111,7 +114,10 @@ export GOOGLE_GENAI_USE_VERTEXAI=true
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 
 # 3. Set your Vertex AI deployment region
-export GCP_LOCATION="us-central1"
+export GOOGLE_CLOUD_LOCATION="us-central1"
+
+# 4. Set your persistent GCS bucket for slide image previews
+export RESOURCES_BUCKET="your-actual-gcp-project-id-bucket"
 ```
 *(Alternatively, you can modify the default values inside [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts)).*
 
@@ -139,7 +145,7 @@ Deploy the TypeScript agent as a fully managed, production-ready API on Google C
 From the `adk-agent/` directory, run the ADK deployer. It will automatically containerize the project, push the image to Artifact Registry, and provision the Cloud Run service:
 ```bash
 cd adk-agent
-npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GCP_LOCATION
+npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --gcs-bucket="gs://$RESOURCES_BUCKET"
 ```
 *Behind the scenes, the ADK CLI handles containerization and deployment seamlessly. When the command completes, it will output your **Cloud Run Service URL**.*
 

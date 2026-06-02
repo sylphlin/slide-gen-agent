@@ -11,13 +11,14 @@ const storage = new Storage({
  * Falls back to throwing an error if the bucket is not configured or upload fails.
  */
 export async function uploadToGCS(localFilePath: string, destinationPath: string): Promise<string> {
-  if (!CONFIG.GCS_BUCKET) {
-    throw new Error('GCS_BUCKET is not configured in config.ts or environment variables.');
+  if (!CONFIG.RESOURCES_BUCKET) {
+    throw new Error('RESOURCES_BUCKET is not configured in config.ts or environment variables.');
   }
 
   // Clean bucket name (remove gs:// prefix if present)
-  const bucketName = CONFIG.GCS_BUCKET.replace(/^gs:\/\//, '');
+  const bucketName = CONFIG.RESOURCES_BUCKET.replace(/^gs:\/\//, '');
   const bucket = storage.bucket(bucketName);
+
 
   await bucket.upload(localFilePath, {
     destination: destinationPath,
