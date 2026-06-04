@@ -39,7 +39,7 @@ their confirmation or edits before continuing**:
    - *Lifestyle/Wellness*: Warm tones, organic feel, generous white space
    - *Education*: Bright, accessible, clear hierarchy
    - *Data-Driven*: Chart-centric, neutral backgrounds, emphasis on numbers
-   The default style is **Google Material Light** (see `templates/design.md`).
+   The default style is **Google Material Light** (see `assets/design.md`).
 3. **Color palette** — suggest a primary color, secondary color, and background
    color. Provide hex codes. Explain briefly why these suit the content.
 
@@ -52,19 +52,19 @@ user may accept as-is, tweak individual items, or ask for alternatives.
 
 Once the user confirms the Stage 1 proposal, you must ALWAYS call the `initializeSession` tool first to create a clean, isolated workspace folder for this session.
 
-Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `templates/` folder as your structural guide and save them using the corresponding tools.
+Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide and save them using the corresponding tools.
 
 ### Step 1 — `design.md` (Global Style Spec)
-Define the complete visual system for this deck. Base it on `templates/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1.
+Define the complete visual system for this deck. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1.
 - **Action**: Call the `saveDesignSpec` tool with the `sessionPath` and the full markdown style content to save the design system.
 - This file is the Single Source of Truth (SSoT) for all visual decisions in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
-Write the full slide-by-slide outline using `templates/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
+Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
 - **Action**: Call the `saveOutlines` tool with the `sessionPath` and the full markdown outlines table to save it.
 
 ### Step 3 — `slides/slide_xx.md` (Per-slide Scripts)
-Generate one file per slide, following `templates/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
+Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
 - **Action**: Call the `saveSlideScript` tool for **every single slide** in the deck using the slide's details (number, type, title, and script).
 
 **Content Sourcing Rule:**
@@ -72,7 +72,7 @@ Generate one file per slide, following `templates/slide_xx.md`. Each file contai
 - **Outline as a Map**: Use `outlines.md` as a router and structural guide to determine *which part* of the original material belongs to this slide. Do NOT write the script solely based on the outline summary; go back to the original text to extract precise specs, figures, and nuances.
 
 **Script Requirements:**
-- **Length**: Strictly limit the script to **150 to 300 words** (for English) or **150 to 300 characters** (for Chinese).
+- **Length**: Strictly limit the script to **260 to 300 words** (for English) or **320 to 400 characters** (for Chinese) (corresponding to a 1–2 minute presentation).
 - **Structure**: Organize every slide's script into two clear phases:
   1. **Transition & Hook (承上啟下)**: A smooth connection showing how this slide builds upon the previous one.
   2. **Deep Dive & Core Elaboration (深度解析與實例)**: An in-depth explanation of the slide's technical details, data points, or visual analogies.
@@ -80,15 +80,19 @@ Generate one file per slide, following `templates/slide_xx.md`. Each file contai
 
 ---
 
-## Stage 3: Image Generation & Persistence
+## Stage 3: Image Generation & Artifact Presentation
 
 With all Markdown files saved in the session directory, trigger the image generation for every slide. Work through each slide one at a time:
 
 - **Action**: Call the `generateSlideImage` tool for **every slide index** in the deck.
-- **Behind the scenes**: The tool automatically merges `design.md` and `slide_xx.md` into a highly structured visual prompt, calls Vertex AI Imagen 3 to generate a 16:9 widescreen presentation slide PNG (`slide_xx.png`), and automatically uploads it to the persistent Google Cloud Storage bucket if configured.
-- **GCS Output**: If GCS is configured, the tool will return an authenticated GCS URL (e.g., `https://storage.cloud.google.com/...`). **ALWAYS display this URL as a markdown image link (`![Slide XX](gcs_url)`) in the chat** so the user can preview their generated slides directly in the conversation window!
+- **Behind the scenes**: The tool automatically merges `design.md` and `slide_xx.md` into a highly structured visual prompt, calls Vertex AI Imagen 3 to generate a 16:9 widescreen presentation slide PNG (`slide_xx.png`), and saves it directly in the session's workspace directory (e.g., `slides/slide_xx.png`) as a local file artifact.
+- **Artifact Presentation**: Since the images are saved locally in the active session workspace, they are treated as project artifacts. **Directly display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`)** so the user can inspect them instantly in the front-end file viewer/chat window.
+- **Action (PDF Compilation)**: Once all slide images are generated (and optionally when the user approves them), call the `exportSessionToPdf` tool with the `sessionPath` (and optionally a custom `pdfFileName`) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
+- **PDF Download Link**: Provide the markdown link to the generated PDF (e.g., `[Download presentation.pdf](presentation.pdf)`) so the user can download the compiled presentation deck directly from their browser.
 
-Once all slide images are generated, provide a final clean list of the slide preview links and a summary of the workspace session.
+Once completed, provide a final summary of all artifacts produced, highlighting the download link for the PDF.
+
+
 
 
 ---
@@ -97,9 +101,9 @@ Once all slide images are generated, provide a final clean list of the slide pre
 
 | File | Purpose |
 |---|---|
-| `templates/design.md` | Visual system template — color, type, layout rules |
-| `templates/outlines.md` | Full deck outline — slide list with types and summaries |
-| `templates/slide_xx.md` | Per-slide content — title and spoken script |
+| `assets/design.md` | Visual system template — color, type, layout rules |
+| `assets/outlines.md` | Full deck outline — slide list with types and summaries |
+| `assets/slide_xx.md` | Per-slide content — title and spoken script |
 
 Read the relevant template before generating each output type in Stage 2. The
 templates contain field-by-field guidance and notes for adapting to different
@@ -115,4 +119,4 @@ content categories.
 - **Consistency.** Every slide must feel like it belongs to the same deck.
   The `design.md` file exists precisely to enforce this — refer back to it
   whenever you are unsure about a color, font, or layout choice.
-- **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 150–300 words/characters and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.
+- **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 260–300 words (English) or 320–400 characters (Chinese) and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.

@@ -1,19 +1,20 @@
-import * as path from 'path';
-
+/**
+ * Host ADK Agent Configuration
+ */
 export const CONFIG = {
-  // Root paths
-  WORKSPACE_ROOT: path.resolve(__dirname, '../../'),
-  TEMPLATES_DIR: path.resolve(__dirname, '../../skills/slide-gen-agent/templates'),
-  OUTPUT_DIR: path.resolve(__dirname, '../output'),
-
-  // GCP / Vertex AI Settings
+  // GCP Credentials & Locations
   GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT || 'your-gcp-project-id',
   GOOGLE_CLOUD_LOCATION: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
-  RESOURCES_BUCKET: process.env.RESOURCES_BUCKET || '',
-  IMAGEN_MODEL: 'gemini-3.1-flash-image',
+  RESOURCES_BUCKET: process.env.RESOURCES_BUCKET || 'your-gcp-project-id-bucket',
 
-  TEXT_MODEL: 'gemini-3.5-flash',
-  THINKING_LEVEL: 'HIGH',
-  THINKING_BUDGET: 2048,
+  // Model selection
+  TEXT_MODEL: process.env.TEXT_MODEL || 'gemini-2.0-flash-thinking-exp-01-21',
+  IMAGEN_MODEL: process.env.IMAGEN_MODEL || 'imagen-3.0-generate-002',
+
+  // Thinking settings
+  THINKING_LEVEL: process.env.THINKING_LEVEL || 'dynamic',
+  THINKING_BUDGET: process.env.THINKING_BUDGET ? parseInt(process.env.THINKING_BUDGET) : 2048,
 };
 
+// Set output session directory in the environment for tools to use
+process.env.SESSION_OUTPUT_DIR = process.env.SESSION_OUTPUT_DIR || 'artifacts';

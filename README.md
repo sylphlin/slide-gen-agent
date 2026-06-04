@@ -52,25 +52,24 @@ graph TD
 slide-gen-agent/
 ├── README.md                # Project overview and setup (this file)
 ├── skills/
-│   └── slide-gen-agent/
-│       ├── SKILL.md         # Universal skill guidelines and visual prompts
-│       └── templates/       # Markdown templates used for structured generation
-│           ├── design.md    # Design system template
-│           ├── outlines.md  # Deck outline template
-│           └── slide_xx.md  # Individual slide content template
-└── adk-agent/               # Programmatic ADK Agent (TypeScript)
-
+│   └── slide-gen-agent/     # 🌟 Standard self-contained Agent Skill (for Antigravity/Codex)
+│       ├── SKILL.md         # Playbook/guidelines (YAML frontmatter + instructions)
+│       ├── assets/          # Static templates used by the skill
+│       │   ├── design.md    # Design system template
+│       │   ├── outlines.md  # Deck outline template
+│       │   └── slide_xx.md  # Individual slide content template
+│       └── scripts/         # Custom tools bundled with the skill
+│           └── pdfExporter.ts # Widescreen presentation PDF compiler (only custom tool needed)
+└── adk-agent/               # Programmatic Host Agent (TypeScript ADK Wrapper for Cloud deployment)
     ├── package.json         # Dependencies and build scripts
     ├── tsconfig.json        # TypeScript configuration
-    ├── src/
-    │   ├── agent.ts         # Main agent logic & system instructions
-    │   ├── config.ts        # GCP project, region, and model configurations
-    │   ├── tools/
-    │   │   ├── fileManager.ts  # Local session workspace and markdown tools
-    │   │   └── imagen.ts       # Imagen 3 Vertex AI calling tool
-    │   └── utils/
-    │       └── vertex.ts    # Vertex AI SDK integration layer
-    └── dist/                # Compiled JavaScript outputs
+    └── src/
+        ├── agent.ts         # Main agent coordinator bootstrap
+        ├── config.ts        # Physical file holding host GCP & model settings
+        └── tools/           # Host-specific tools
+            ├── fileManager.ts # Persistent file writer tools (Cloud Run specific)
+            ├── imagen.ts    # Slide image generator tool (calls Vertex AI Prediction)
+            └── pdfExporter.ts # (Symlink -> ../../../skills/slide-gen-agent/scripts/pdfExporter.ts)
 ```
 
 ---
@@ -115,9 +114,6 @@ export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 
 # 3. Set your Vertex AI deployment region
 export GOOGLE_CLOUD_LOCATION="us-central1"
-
-# 4. Set your persistent GCS bucket for slide image previews
-export RESOURCES_BUCKET="your-actual-gcp-project-id-bucket"
 ```
 *(Alternatively, you can modify the default values inside [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts)).*
 
@@ -142,12 +138,12 @@ This will spin up a local server. Open the provided URL (usually `http://localho
 Deploy the TypeScript agent as a fully managed, production-ready API on Google Cloud Run and hook it directly into **Gemini Enterprise**.
 
 #### 1. One-Command Deployment
-From the `adk-agent/` directory, run the ADK deployer. It will automatically containerize the project, push the image to Artifact Registry, and provision the Cloud Run service:
+From the `adk-agent/` directory, run the ADK deployer. Note that the `--gcs-bucket` parameter is used by the ADK CLI purely for staging deployment build container assets, not for runtime slide storage:
 ```bash
 cd adk-agent
-npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --gcs-bucket="gs://$RESOURCES_BUCKET"
+npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --gcs-bucket="gs://your-build-staging-bucket"
 ```
-*Behind the scenes, the ADK CLI handles containerization and deployment seamlessly. When the command completes, it will output your **Cloud Run Service URL**.*
+*Behind the scenes, the ADK CLI handles containerization and deployment staging seamlessly. When the command completes, it will output your **Cloud Run Service URL**.*
 
 #### 2. Configure IAM Permissions
 Because the agent uses Vertex AI (Imagen 3) to generate slide images, you must ensure the Cloud Run service has the correct permissions:

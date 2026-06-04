@@ -2,7 +2,6 @@ import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CONFIG } from '../config.js';
 
 /**
  * Helper to ensure directories exist
@@ -27,7 +26,8 @@ export const initializeSessionTool = new FunctionTool({
     const cleanName = projectName.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 12);
     const sessionId = `session_${cleanName}_${timestamp}`;
-    const sessionPath = path.join(CONFIG.OUTPUT_DIR, sessionId);
+    const baseOutputDir = process.env.SESSION_OUTPUT_DIR || path.join(process.cwd(), 'artifacts');
+    const sessionPath = path.join(baseOutputDir, sessionId);
 
     ensureDirExist(sessionPath);
     ensureDirExist(path.join(sessionPath, 'slides')); // Subfolder for individual slides
@@ -110,3 +110,5 @@ ${script}
     return `Slide ${padNum} script successfully written to ${filePath}`;
   },
 });
+
+

@@ -5,6 +5,7 @@ import {
   saveOutlinesTool,
   saveSlideScriptTool,
 } from './tools/fileManager.js';
+import { exportSessionToPdfTool } from './tools/pdfExporter.js';
 import { generateSlideImageTool } from './tools/imagen.js';
 import { CONFIG } from './config.js';
 
@@ -31,19 +32,21 @@ Generate and write the following documents sequentially using the session path r
 1. design.md: Define the complete visual system. Call 'saveDesignSpec'. Use clean modern styles.
 2. outlines.md: Design a slide-by-slide outline mapping each slide to a type (e.g. Cover, Section Header, Two-Column, Data & Stat) and a 2-3 sentence summary. Call 'saveOutlines'.
 3. slide_xx.md: For each slide in outlines.md, generate individual scripts. Spoken script MUST be:
-   - 150-300 words/characters.
+    - Speaking script length: 260-300 words (for English) or 320-400 characters (for Chinese) (representing a 1-2 minute presentation per slide).
    - Structured as: 1) Transition & Hook, 2) Deep Dive / Core Elaboration.
    - Evocative and visual (use numbers, analogies, concrete details).
    - Call 'saveSlideScript' for every slide.
 
 ---
 
-### Stage 3: Image Generation
+### Stage 3: Image Generation & Compilation
 Once all scripts are successfully saved, generate a PNG image for every slide:
 - Call 'generateSlideImage' for every slide index.
 - This tool merges 'design.md' and 'slide_xx.md' to call Vertex AI Imagen and outputs a high-quality 16:9 presentation slide PNG ('slide_xx.png').
+- **Once all slide images are generated, call 'exportSessionToPdf' to compile the slide deck into a single presentation PDF artifact for the user to download.**
 
-Provide a final, clean summary of the session files generated once completed.`;
+Provide the download link/path of the compiled PDF and a final summary of all artifacts produced.`;
+
 
 export const slideGenAgent = new LlmAgent({
   name: 'SlideGenAgent',
@@ -62,6 +65,7 @@ export const slideGenAgent = new LlmAgent({
     saveOutlinesTool,
     saveSlideScriptTool,
     generateSlideImageTool,
+    exportSessionToPdfTool,
   ],
 });
 

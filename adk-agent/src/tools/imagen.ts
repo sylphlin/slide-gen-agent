@@ -2,9 +2,7 @@ import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateImageFromVertex } from '../utils/vertex.js';
-import { uploadToGCS } from '../utils/gcs.js';
-import { CONFIG } from '../config.js';
+import { PredictionServiceClient, helpers } from '@google-cloud/aiplatform';
 
 /**
  * Tool: generateSlideImage
@@ -12,7 +10,7 @@ import { CONFIG } from '../config.js';
  */
 export const generateSlideImageTool = new FunctionTool({
   name: 'generateSlideImage',
-  description: 'Reads the generated design.md and an individual slide_xx.md, merges them into a highly contextual prompt, uses Vertex AI Imagen to output slide_xx.png, and optionally uploads it to Google Cloud Storage.',
+  description: 'Reads the generated design.md and an individual slide_xx.md, merges them into a highly contextual prompt, and uses Vertex AI Imagen to output slide_xx.png in the session slides directory.',
   parameters: z.object({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     slideNumber: z.number().int().describe('The 1-indexed slide number to generate the image for'),
@@ -49,28 +47,53 @@ ${slideContent}
 </slide_content>`;
 
     try {
-      const base64Data = await generateImageFromVertex(mergedPrompt);
-      fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
+      const project = process.env.GOOGLE_CLOUD_PROJECT;
+      const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+      const imagenModel = process.env.IMAGEN_MODEL || 'imagen-3.0-generate-002';
 
-      let resultMessage = `Successfully generated image for Slide ${padNum} and saved locally to ${outputPath}`;
-
-      // Upload to GCS if bucket is configured
-      if (CONFIG.RESOURCES_BUCKET) {
-
-        try {
-          const sessionId = path.basename(sessionPath);
-          const gcsPath = `sessions/${sessionId}/slides/slide_${padNum}.png`;
-          const gcsUrl = await uploadToGCS(outputPath, gcsPath);
-          resultMessage = `Successfully generated image for Slide ${padNum}. Saved locally to ${outputPath} and uploaded to GCS: ${gcsUrl}`;
-        } catch (gcsError: any) {
-          resultMessage += ` (GCS upload failed: ${gcsError.message})`;
-        }
+      if (!project) {
+        throw new Error('GOOGLE_CLOUD_PROJECT is not configured. Please set the GOOGLE_CLOUD_PROJECT environment variable.');
       }
 
-      return resultMessage;
+      // Create the client using Location-specific Endpoint
+      const client = new PredictionServiceClient({
+        apiEndpoint: `${location}-aiplatform.googleapis.com`,
+      });
+
+      // Formulate endpoint string
+      const endpoint = `projects/${project}/locations/${location}/publishers/google/models/${imagenModel}`;
+
+      const instance = { prompt: mergedPrompt };
+      const parameter = {
+        sampleCount: 1,
+        aspectRatio: '16:9',
+        outputMimeType: 'image/png',
+      };
+
+      const instanceValue = helpers.toValue(instance);
+      const parameterValue = helpers.toValue(parameter);
+
+      if (!instanceValue || !parameterValue) {
+        throw new Error('Failed to format predict parameters for Imagen.');
+      }
+
+      const [response] = await client.predict({
+        endpoint,
+        instances: [instanceValue],
+        parameters: parameterValue,
+      });
+
+      const base64Data = response.predictions?.[0]?.structValue?.fields?.bytesBase64Encoded?.stringValue;
+      if (!base64Data) {
+        throw new Error('Imagen API response did not contain any generated image bytes.');
+      }
+
+      fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
+      return `Successfully generated image for Slide ${padNum} and saved to ${outputPath}`;
     } catch (error: any) {
       return `Failed to generate image for Slide ${padNum}: ${error.message}`;
     }
   },
 });
+
 
