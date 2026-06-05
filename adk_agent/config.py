@@ -3,7 +3,7 @@ import os
 CONFIG = {
     # GCP Credentials & Locations
     'GOOGLE_CLOUD_PROJECT': os.environ.get('GOOGLE_CLOUD_PROJECT'),
-    'GOOGLE_CLOUD_LOCATION': os.environ.get('GOOGLE_CLOUD_LOCATION') or 'global',
+    'GOOGLE_CLOUD_LOCATION': 'global',
     'IMAGEN_LOCATION': os.environ.get('IMAGEN_LOCATION'),
 
     # Model selection
