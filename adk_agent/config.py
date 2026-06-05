@@ -8,7 +8,7 @@ CONFIG = {
 
     # Model selection
     'TEXT_MODEL': os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash',
-    'IMAGEN_MODEL': os.environ.get('IMAGEN_MODEL') or 'imagen-3.0-generate-002',
+    'IMAGEN_MODEL': os.environ.get('IMAGEN_MODEL') or 'gemini-3.1-flash-image',
 
     # Thinking settings
     'THINKING_LEVEL': os.environ.get('THINKING_LEVEL') or 'high',
