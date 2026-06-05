@@ -6,6 +6,12 @@ import json
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
+try:
+    from ..config import save_artifact_helper
+except ImportError:
+    from config import save_artifact_helper
+
+
 def get_base64_image(image_path: str) -> str:
     with open(image_path, "rb") as f:
         data = f.read()
@@ -137,7 +143,7 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
         
     html_bytes = html_template.encode('utf-8')
     artifact_part = Part.from_bytes(data=html_bytes, mime_type="text/html")
-    await tool_context.save_artifact('preview.html', artifact_part)
+    await save_artifact_helper('preview.html', artifact_part, tool_context)
     
     try:
         from ..config import get_gcs_artifact_url

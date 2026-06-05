@@ -6,6 +6,12 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
 try:
+    from ..config import save_artifact_helper
+except ImportError:
+    from config import save_artifact_helper
+
+
+try:
     from ..config import CONFIG
 except ImportError:
     from config import CONFIG
@@ -111,7 +117,7 @@ async def generate_slide_image(
             
         # Save as artifact
         artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
-        await tool_context.save_artifact(f"slide_{pad_num}.png", artifact_part)
+        await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
         
         return f"Image for slide {pad_num} successfully generated and written to {file_path}"
     except Exception as e:

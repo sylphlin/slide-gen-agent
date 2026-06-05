@@ -4,6 +4,12 @@ from PIL import Image
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
+try:
+    from ..config import save_artifact_helper
+except ImportError:
+    from config import save_artifact_helper
+
+
 async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
     """Compiles all generated slide PNG images in the active session into a single PDF document.
     
@@ -42,7 +48,7 @@ async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
             pdf_bytes = f.read()
             
         artifact_part = Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
-        await tool_context.save_artifact('presentation.pdf', artifact_part)
+        await save_artifact_helper('presentation.pdf', artifact_part, tool_context)
         
         try:
             from ..config import get_gcs_artifact_url

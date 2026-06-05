@@ -4,6 +4,12 @@ import json
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
+try:
+    from ..config import save_artifact_helper
+except ImportError:
+    from config import save_artifact_helper
+
+
 def initialize_session(project_name: str) -> str:
     """Initializes a new slide deck session. Creates a dedicated folder and returns its absolute path.
     ALWAYS call this first before writing any slide files.
@@ -44,7 +50,7 @@ async def save_design_spec(session_path: str, design_spec_content: str, tool_con
         
     # Save as artifact
     artifact_part = Part.from_text(text=design_spec_content)
-    await tool_context.save_artifact('design.md', artifact_part)
+    await save_artifact_helper('design.md', artifact_part, tool_context)
     
     return f"Design specification successfully written to {file_path}"
 
@@ -62,7 +68,7 @@ async def save_outlines(session_path: str, outlines_content: str, tool_context: 
         f.write(outlines_content)
         
     artifact_part = Part.from_text(text=outlines_content)
-    await tool_context.save_artifact('outlines.md', artifact_part)
+    await save_artifact_helper('outlines.md', artifact_part, tool_context)
     
     return f"Deck outlines successfully written to {file_path}"
 
@@ -107,6 +113,6 @@ slide_type: "{slide_type}"
         f.write(file_content)
         
     artifact_part = Part.from_text(text=file_content)
-    await tool_context.save_artifact(file_name, artifact_part)
+    await save_artifact_helper(file_name, artifact_part, tool_context)
     
     return f"Slide {pad_num} script successfully written to {file_path}"

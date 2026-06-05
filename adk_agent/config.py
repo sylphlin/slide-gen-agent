@@ -54,3 +54,18 @@ def get_gcs_artifact_url(filename: str, tool_context) -> str:
             return f"https://storage.cloud.google.com/{bucket}/{app_name}/{user_id}/{session_id}/{filename}/0"
     return ""
 
+async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
+    """Saves an artifact. If running inside Agent Engine container, saves silently without adding to event actions to avoid raw UI attachments."""
+    import os
+    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' in os.environ:
+        service = getattr(tool_context._invocation_context, 'artifact_service', None)
+        if service:
+            return await service.save_artifact(
+                app_name=tool_context._invocation_context.app_name,
+                user_id=tool_context._invocation_context.user_id,
+                session_id=tool_context.session.id,
+                filename=filename,
+                artifact=artifact,
+            )
+    return await tool_context.save_artifact(filename, artifact)
+
