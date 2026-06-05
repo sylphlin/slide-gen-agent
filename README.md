@@ -129,6 +129,8 @@ This will spin up a local server. Open the provided URL in your browser to inter
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
 #### 1. One-Command Deployment
+Ensure that `a2a-sdk` is listed in your `requirements.txt` (this is already configured in this repository). This is required because the ADK 2.0 deployer hardcodes the `--a2a` flag during Reasoning Engine startup, which requires `a2a-sdk` to be installed in the container to prevent a `ModuleNotFoundError` crash.
+
 From the `adk_agent/` directory, activate the virtual environment and run the ADK deployer:
 ```bash
 cd adk_agent

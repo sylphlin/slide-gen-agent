@@ -20,6 +20,48 @@ except ImportError:
 from google.adk import Agent
 from google.genai import types
 
+# Monkey-patch VertexAiSessionService to handle session IDs with slashes (e.g. from Gemini Enterprise/Agent Space)
+try:
+    from google.adk.sessions.vertex_ai_session_service import VertexAiSessionService
+    
+    def _extract_session_id(session_id: str) -> str:
+        if session_id and isinstance(session_id, str) and "/" in session_id:
+            # projects/326905670654/locations/global/collections/default_collection/engines/sylph-demo_1780625571839/sessions/15984912412835493594
+            # -> 15984912412835493594
+            return session_id.split("/")[-1]
+        return session_id
+
+    orig_get_session = VertexAiSessionService.get_session
+    orig_create_session = VertexAiSessionService.create_session
+    orig_delete_session = VertexAiSessionService.delete_session
+    orig_append_event = VertexAiSessionService.append_event
+
+    async def patched_get_session(self, *, app_name, user_id, session_id, config=None):
+        clean_id = _extract_session_id(session_id)
+        return await orig_get_session(self, app_name=app_name, user_id=user_id, session_id=clean_id, config=config)
+
+    async def patched_create_session(self, *, app_name, user_id, state=None, session_id=None, **kwargs):
+        clean_id = _extract_session_id(session_id) if session_id else None
+        return await orig_create_session(self, app_name=app_name, user_id=user_id, state=state, session_id=clean_id, **kwargs)
+
+    async def patched_delete_session(self, *, app_name, user_id, session_id):
+        clean_id = _extract_session_id(session_id)
+        return await orig_delete_session(self, app_name=app_name, user_id=user_id, session_id=clean_id)
+
+    async def patched_append_event(self, session, event):
+        if session and session.id and isinstance(session.id, str) and "/" in session.id:
+            session.id = _extract_session_id(session.id)
+        return await orig_append_event(self, session, event)
+
+    VertexAiSessionService.get_session = patched_get_session
+    VertexAiSessionService.create_session = patched_create_session
+    VertexAiSessionService.delete_session = patched_delete_session
+    VertexAiSessionService.append_event = patched_append_event
+    print("Successfully monkey-patched VertexAiSessionService for Agent Space compatibility.")
+except Exception as e:
+    print(f"Failed to monkey-patch VertexAiSessionService: {e}")
+
+
 # System Instruction translated from TypeScript
 system_instruction = """You are a professional slide design and visual generation agent. Your job is to transform source material into a complete, visually consistent slide deck — from understanding the content, to defining a design system, to generating a polished PNG image for every slide.
 
