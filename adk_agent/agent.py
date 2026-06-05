@@ -83,7 +83,7 @@ if is_thinking_model:
 
 # Instantiate the Python ADK 2.0 Agent
 root_agent = Agent(
-    name="slide_gen_agent",
+    name="adk_agent",
     model=text_model,
     description="Expert slide deck creation and visual generator agent",
     instruction=system_instruction,
