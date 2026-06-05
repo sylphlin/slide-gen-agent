@@ -48,16 +48,20 @@ Once all scripts are successfully saved, generate a PNG image for every slide:
 Provide the download link/path of the compiled PDF and a final summary of all artifacts produced.`;
 
 
+const isThinkingModel = CONFIG.TEXT_MODEL.includes('-thinking') || CONFIG.TEXT_MODEL.includes('3.5-flash') || CONFIG.TEXT_MODEL.includes('3.5-pro');
+
 export const slideGenAgent = new LlmAgent({
   name: 'SlideGenAgent',
   model: CONFIG.TEXT_MODEL, // Can be overridden by user/environment settings
   description: 'Expert slide deck creation and visual generator agent',
   instruction: systemInstruction,
   generateContentConfig: {
-    thinkingConfig: {
-      thinkingBudget: CONFIG.THINKING_BUDGET,
-      ...(CONFIG.THINKING_LEVEL ? { thinkingLevel: CONFIG.THINKING_LEVEL as any } : {}),
-    },
+    ...(isThinkingModel ? {
+      thinkingConfig: {
+        thinkingBudget: CONFIG.THINKING_BUDGET,
+        ...(CONFIG.THINKING_LEVEL ? { thinkingLevel: CONFIG.THINKING_LEVEL as any } : {}),
+      }
+    } : {}),
   },
   tools: [
     initializeSessionTool,

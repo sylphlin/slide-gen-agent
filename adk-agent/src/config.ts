@@ -8,7 +8,7 @@ export const CONFIG = {
   RESOURCES_BUCKET: process.env.RESOURCES_BUCKET || 'your-gcp-project-id-bucket',
 
   // Model selection
-  TEXT_MODEL: process.env.TEXT_MODEL || 'gemini-2.0-flash-thinking-exp-01-21',
+  TEXT_MODEL: process.env.TEXT_MODEL || 'gemini-3.5-flash',
   IMAGEN_MODEL: process.env.IMAGEN_MODEL || 'imagen-3.0-generate-002',
 
   // Thinking settings
