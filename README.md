@@ -96,12 +96,14 @@ Run the fully functional Python agent locally on your computer with a visual Web
 - Local IAM credentials configured (`gcloud auth application-default login`).
 
 #### 2. Project Installation
-Navigate to the `adk_agent` folder, create a virtual environment, and install dependencies:
+Create a virtual environment in the **root** `slide-gen-agent` directory (creating the virtual environment in the root directory rather than `adk_agent` prevents it from being staged during deployment), then activate it and install dependencies:
 ```bash
-cd adk_agent
+# Navigate to the root slide-gen-agent directory:
 python3 -m venv venv
 source venv/bin/activate
-# Standard installation of google-adk with GCP support and all required libraries
+
+# Navigate to the adk_agent directory and install dependencies:
+cd adk_agent
 pip install "google-adk[gcp]" google-genai Pillow python-dotenv
 ```
 
@@ -116,9 +118,9 @@ GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
 
 #### 4. Run in Web UI Mode
-Launch the local web interface (the `--allow_origins="*"` flag is included to ensure it works seamlessly both on local machines and inside Google Cloud Shell):
+Launch the local web interface from the `adk_agent` directory (the `--allow_origins="*"` flag is included to ensure it works seamlessly both on local machines and inside Google Cloud Shell):
 ```bash
-source venv/bin/activate
+# Ensure you are inside the adk_agent directory and your virtual environment is active:
 adk web --allow_origins="*" .
 ```
 This will spin up a local server. Open the provided URL in your browser to interact with the Agent visually!
@@ -128,13 +130,19 @@ This will spin up a local server. Open the provided URL in your browser to inter
 ### 🔹 Method 3: Production Deployment to Agent Engine (Gemini Enterprise)
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
-#### 1. One-Command Deployment
+#### 1. Setup & One-Command Deployment
 Ensure that `a2a-sdk` is listed in your `requirements.txt` (this is already configured in this repository). This is required because the ADK 2.0 deployer hardcodes the `--a2a` flag during Reasoning Engine startup, which requires `a2a-sdk` to be installed in the container to prevent a `ModuleNotFoundError` crash.
 
-From the `adk_agent/` directory, activate the virtual environment and run the ADK deployer:
+If you haven't set up the virtual environment yet, run the following setup commands from the root `slide-gen-agent` directory:
 ```bash
-cd adk_agent
+python3 -m venv venv
 source venv/bin/activate
+cd adk_agent
+pip install "google-adk[gcp]" google-genai Pillow python-dotenv
+```
+
+Once dependencies are installed and the virtual environment is active, run the ADK deployer from the `adk_agent` directory:
+```bash
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
