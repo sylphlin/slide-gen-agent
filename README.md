@@ -60,16 +60,15 @@ slide-gen-agent/
 │       │   └── slide_xx.md  # Individual slide content template
 │       └── scripts/         # Custom tools bundled with the skill
 │           └── pdfExporter.ts # Widescreen presentation PDF compiler (only custom tool needed)
-└── adk-agent/               # Programmatic Host Agent (TypeScript ADK Wrapper for Cloud deployment)
-    ├── package.json         # Dependencies and build scripts
-    ├── tsconfig.json        # TypeScript configuration
-    └── src/
-        ├── agent.ts         # Main agent coordinator bootstrap
-        ├── config.ts        # Physical file holding host GCP & model settings
-        └── tools/           # Host-specific tools
-            ├── fileManager.ts # Persistent file writer tools (Cloud Run specific)
-            ├── imagen.ts    # Slide image generator tool (calls Vertex AI Prediction)
-            └── pdfExporter.ts # (Symlink -> ../../../skills/slide-gen-agent/scripts/pdfExporter.ts)
+└── adk-agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
+    ├── requirements.txt     # Python dependency configuration
+    ├── agent.py             # Main agent entry point
+    └── tools/               # Agent tools
+        ├── __init__.py
+        ├── file_manager.py  # Session initialization and file writer tools
+        ├── imagen.py        # Imagen 3 slide image generator tool
+        ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
+        └── preview_generator.py # HTML slide preview and notes compiler
 ```
 
 ---
@@ -88,19 +87,24 @@ This is a pure prompt/guideline-based installation, requiring no code hosting.
 ---
 
 ### 🔹 Method 2: Local Verification via ADK Web (Recommended for Testing)
-Run the fully functional TypeScript agent locally on your computer with a visual Web UI. This is much easier to test and verify than standard command-line interfaces.
+Run the fully functional Python agent locally on your computer with a visual Web UI. This is much easier to test and verify than standard command-line interfaces.
 
 #### 1. Prerequisites
-- **Node.js** (v18.0.0 or higher recommended)
+- **Python 3.10** (v3.11 recommended)
 - **Google Cloud SDK (gcloud)** installed and authenticated on your machine.
 - A **Google Cloud Project (GCP)** with the **Vertex AI API** enabled.
 - Local IAM credentials configured (`gcloud auth application-default login`).
 
 #### 2. Project Installation
-Navigate to the `adk-agent` folder and install Node dependencies:
+Navigate to the `adk-agent` folder, create a virtual environment, and install dependencies:
 ```bash
 cd adk-agent
-npm install
+python3 -m venv venv
+source venv/bin/activate
+# Install requirements using public PyPI fallback
+pip install --extra-index-url https://pypi.org/simple -r requirements.txt
+# Install the local adk-python toolkit with GCP extras
+pip install --extra-index-url https://pypi.org/simple -e "/Users/sylph/Documents/Antigravity/scratch/adk-python[gcp]"
 ```
 
 #### 3. Configure Environment Variables
@@ -108,35 +112,57 @@ Before running locally, you must set your Google Cloud Project ID as an environm
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
-*(Alternatively, you can modify the default values inside [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts)).*
+Alternatively, you can create a `.env` file inside the `adk-agent` folder:
+```text
+GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+GOOGLE_CLOUD_LOCATION="us-central1"
+SESSION_OUTPUT_DIR="./artifacts"
+```
 
 #### 4. Run in Web UI Mode
-Launch the local web interface (this will automatically build the project and copy compiled skills assets beforehand):
+Launch the local web interface:
 ```bash
-npm run web
+source venv/bin/activate
+adk web .
 ```
-This will spin up a local server. Open the provided URL (usually `http://localhost:8080`) in your browser to interact with the Agent visually!
+This will spin up a local server. Open the provided URL in your browser to interact with the Agent visually!
 
 ---
 
-### 🔹 Method 3: Production Deployment to Gemini Enterprise
-Deploy the TypeScript agent as a fully managed, production-ready API on Google Cloud Run and hook it directly into **Gemini Enterprise**.
+### 🔹 Method 3: Production Deployment to Agent Engine (Gemini Enterprise)
+Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
 #### 1. One-Command Deployment
-From the `adk-agent/` directory, run the ADK deployer. Note that the `--gcs-bucket` parameter is used by the ADK CLI purely for staging deployment build container assets, not for runtime slide storage:
+From the `adk-agent/` directory, activate the virtual environment and run the ADK deployer:
 ```bash
 cd adk-agent
-npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=us-central1 --gcs-bucket="gs://your-build-staging-bucket"
+source venv/bin/activate
+adk deploy agent_engine \
+  --project=$GOOGLE_CLOUD_PROJECT \
+  --region=us-central1 \
+  --display_name="slide-gen-agent" \
+  --artifact_service_uri="gs://your-runtime-bucket" \
+  .
 ```
-*Behind the scenes, the ADK CLI handles containerization and deployment staging seamlessly. When the command completes, it will output your **Cloud Run Service URL**.*
+*Behind the scenes, the ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When the command completes, it will output your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
 
 #### 2. Configure IAM Permissions
-Because the agent uses Vertex AI (Imagen 3) to generate slide images, you must ensure the Cloud Run service has the correct permissions:
+
+##### A. Build & Deploy Permissions (One-Time Setup)
+If the deployment command fails with a "Build failed" error, your project's default compute service account (`{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`) might lack permission to write build logs or push built images.
+Grant these roles to the service account in **IAM & Admin > IAM**:
+- **Logs Writer** (`roles/logging.logWriter`)
+- **Artifact Registry Writer** (`roles/artifactregistry.writer`)
+
+##### B. Runtime Permissions (Required)
+The deployed Agent Engine (Reasoning Engine) instance uses your project's service account (typically the Compute Engine default service account) to call Vertex AI models and read/write to the GCS bucket:
 1. Open the **Google Cloud Console**.
-2. Go to **Cloud Run** and select your newly deployed service.
-3. Identify the **Service Account** assigned to the service (typically the default compute service account or a custom one).
-4. Go to **IAM & Admin > IAM** and grant that Service Account the **Vertex AI User** role.
-*No raw API keys or secret files need to be managed; Cloud Run uses secure ADC (Application Default Credentials) automatically.*
+2. Go to **IAM & Admin > IAM**.
+3. Locate the service account used by the agent (by default, the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`).
+4. Grant that Service Account the following roles:
+   - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Imagen 3)
+   - **Storage Object Admin** (`roles/storage.objectAdmin`) (required to save slides, previews, and PDF files to your GCS bucket).
+*No raw API keys or secret files need to be managed; the hosted reasoning engine utilizes secure IAM/ADC credentials automatically.*
 
 #### 3. Connect to Gemini Enterprise Console
 To make the agent available to your Enterprise users:

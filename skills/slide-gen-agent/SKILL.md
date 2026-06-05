@@ -101,7 +101,7 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 - **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slide_xx.png`).
-- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generatePreviewPage` tool, or by running `node scripts/previewGenerator.js <sessionPath>` in the terminal).
+- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generatePreviewPage` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
 - **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
 - **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
@@ -111,7 +111,7 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck:
 
-- **Action**: Run the `pdfExporter` script (either by calling the `exportSessionToPdf` tool, or by executing `node scripts/pdfExporter.js <sessionPath> [pdfFileName]` in the terminal) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
+- **Action**: Run the `pdfExporter` script (either by calling the `exportSessionToPdf` tool, or by executing `python3 scripts/pdf_exporter.py <sessionPath> [pdfFileName]` in the terminal) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
 - **PDF Download Link**: Provide the markdown link to the generated PDF (e.g., `[Download presentation.pdf](presentation.pdf)`) so the user can download the compiled presentation deck directly.
 
 Once completed, provide a final summary of all artifacts produced, highlighting the download link for the PDF.
