@@ -137,7 +137,7 @@ adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://your-runtime-bucket" \
+  --artifact_service_uri="gs://sylph_managed_agent" \
   .
 ```
 *Behind the scenes, the ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When the command completes, it will output your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
