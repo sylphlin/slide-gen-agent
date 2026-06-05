@@ -2,8 +2,13 @@ import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PredictionServiceClient, helpers } from '@google-cloud/aiplatform';
+import { GoogleGenAI } from '@google/genai';
 import { CONFIG } from '../config.js';
+
+// Initialize the GoogleGenAI SDK client.
+// Since config.ts sets process.env.GOOGLE_GENAI_USE_VERTEXAI = 'true' and exports the project/location variables,
+// this client will run in Vertex AI mode with proper authentication and endpoints.
+const ai = new GoogleGenAI({});
 
 /**
  * Tool: generateSlideImage
@@ -49,44 +54,24 @@ ${slideContent}
 
     try {
       const project = CONFIG.GOOGLE_CLOUD_PROJECT;
-      const location = CONFIG.IMAGEN_LOCATION;
-      const imagenModel = CONFIG.IMAGEN_MODEL;
-
       if (!project || project === 'your-gcp-project-id') {
         throw new Error('GOOGLE_CLOUD_PROJECT is not configured. Please set the GOOGLE_CLOUD_PROJECT environment variable.');
       }
 
-      // Create the client using Location-specific Endpoint
-      const client = new PredictionServiceClient({
-        apiEndpoint: `${location}-aiplatform.googleapis.com`,
+      // Trigger image generation using Google Gen AI SDK
+      const response = await ai.models.generateImages({
+        model: CONFIG.IMAGEN_MODEL,
+        prompt: mergedPrompt,
+        config: {
+          numberOfImages: 1,
+          aspectRatio: '16:9',
+          outputMimeType: 'image/png',
+        },
       });
 
-      // Formulate endpoint string
-      const endpoint = `projects/${project}/locations/${location}/publishers/google/models/${imagenModel}`;
-
-      const instance = { prompt: mergedPrompt };
-      const parameter = {
-        sampleCount: 1,
-        aspectRatio: '16:9',
-        outputMimeType: 'image/png',
-      };
-
-      const instanceValue = helpers.toValue(instance);
-      const parameterValue = helpers.toValue(parameter);
-
-      if (!instanceValue || !parameterValue) {
-        throw new Error('Failed to format predict parameters for Imagen.');
-      }
-
-      const [response] = await client.predict({
-        endpoint,
-        instances: [instanceValue],
-        parameters: parameterValue,
-      });
-
-      const base64Data = response.predictions?.[0]?.structValue?.fields?.bytesBase64Encoded?.stringValue;
+      const base64Data = response.generatedImages?.[0]?.image?.imageBytes;
       if (!base64Data) {
-        throw new Error('Imagen API response did not contain any generated image bytes.');
+        throw new Error('Image generation response did not contain any generated image bytes.');
       }
 
       fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
@@ -96,5 +81,3 @@ ${slideContent}
     }
   },
 });
-
-
