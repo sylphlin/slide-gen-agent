@@ -60,7 +60,7 @@ slide-gen-agent/
 │       │   └── slide_xx.md  # Individual slide content template
 │       └── scripts/         # Custom tools bundled with the skill
 │           └── pdfExporter.ts # Widescreen presentation PDF compiler (only custom tool needed)
-└── adk-agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
+└── adk_agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
     ├── requirements.txt     # Python dependency configuration
     ├── agent.py             # Main agent entry point
     └── tools/               # Agent tools
@@ -96,15 +96,13 @@ Run the fully functional Python agent locally on your computer with a visual Web
 - Local IAM credentials configured (`gcloud auth application-default login`).
 
 #### 2. Project Installation
-Navigate to the `adk-agent` folder, create a virtual environment, and install dependencies:
+Navigate to the `adk_agent` folder, create a virtual environment, and install dependencies:
 ```bash
-cd adk-agent
+cd adk_agent
 python3 -m venv venv
 source venv/bin/activate
-# Install requirements using public PyPI fallback
-pip install --extra-index-url https://pypi.org/simple -r requirements.txt
-# Install the local adk-python toolkit with GCP extras
-pip install --extra-index-url https://pypi.org/simple -e "/Users/sylph/Documents/Antigravity/scratch/adk-python[gcp]"
+# Standard installation of google-adk with GCP support and all required libraries
+pip install "google-adk[gcp]" google-genai Pillow python-dotenv
 ```
 
 #### 3. Configure Environment Variables
@@ -112,7 +110,7 @@ Before running locally, you must set your Google Cloud Project ID as an environm
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
-Alternatively, you can create a `.env` file inside the `adk-agent` folder:
+Alternatively, you can create a `.env` file inside the `adk_agent` folder:
 ```text
 GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 GOOGLE_CLOUD_LOCATION="us-central1"
@@ -133,9 +131,9 @@ This will spin up a local server. Open the provided URL in your browser to inter
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
 #### 1. One-Command Deployment
-From the `adk-agent/` directory, activate the virtual environment and run the ADK deployer:
+From the `adk_agent/` directory, activate the virtual environment and run the ADK deployer:
 ```bash
-cd adk-agent
+cd adk_agent
 source venv/bin/activate
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
