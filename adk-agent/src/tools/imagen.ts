@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PredictionServiceClient, helpers } from '@google-cloud/aiplatform';
+import { CONFIG } from '../config.js';
 
 /**
  * Tool: generateSlideImage
@@ -47,11 +48,11 @@ ${slideContent}
 </slide_content>`;
 
     try {
-      const project = process.env.GOOGLE_CLOUD_PROJECT;
-      const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-      const imagenModel = process.env.IMAGEN_MODEL || 'imagen-3.0-generate-002';
+      const project = CONFIG.GOOGLE_CLOUD_PROJECT;
+      const location = CONFIG.IMAGEN_LOCATION;
+      const imagenModel = CONFIG.IMAGEN_MODEL;
 
-      if (!project) {
+      if (!project || project === 'your-gcp-project-id') {
         throw new Error('GOOGLE_CLOUD_PROJECT is not configured. Please set the GOOGLE_CLOUD_PROJECT environment variable.');
       }
 
