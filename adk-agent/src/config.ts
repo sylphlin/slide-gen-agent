@@ -4,7 +4,7 @@
 export const CONFIG = {
   // GCP Credentials & Locations
   GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT || 'your-gcp-project-id',
-  GOOGLE_CLOUD_LOCATION: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
+  GOOGLE_CLOUD_LOCATION: process.env.GOOGLE_CLOUD_LOCATION || 'global',
   RESOURCES_BUCKET: process.env.RESOURCES_BUCKET || 'your-gcp-project-id-bucket',
 
   // Model selection
@@ -18,3 +18,6 @@ export const CONFIG = {
 
 // Set output session directory in the environment for tools to use
 process.env.SESSION_OUTPUT_DIR = process.env.SESSION_OUTPUT_DIR || 'artifacts';
+
+// Force Gen AI SDK to use Vertex AI mode (Gemini Enterprise)
+process.env.GOOGLE_GENAI_USE_VERTEXAI = 'true';

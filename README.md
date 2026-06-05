@@ -104,16 +104,9 @@ npm install
 ```
 
 #### 3. Configure Environment Variables
-Before running locally, you must set environment variables to direct ADK to utilize your GCP Vertex AI resources:
+Before running locally, you must set your Google Cloud Project ID as an environment variable:
 ```bash
-# 1. Force the ADK SDK to use Vertex AI mode
-export GOOGLE_GENAI_USE_VERTEXAI=true
-
-# 2. Set your GCP Project ID
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-
-# 3. Set your Vertex AI deployment region
-export GOOGLE_CLOUD_LOCATION="us-central1"
 ```
 *(Alternatively, you can modify the default values inside [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts)).*
 
@@ -137,7 +130,7 @@ Deploy the TypeScript agent as a fully managed, production-ready API on Google C
 From the `adk-agent/` directory, run the ADK deployer. Note that the `--gcs-bucket` parameter is used by the ADK CLI purely for staging deployment build container assets, not for runtime slide storage:
 ```bash
 cd adk-agent
-npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --gcs-bucket="gs://your-build-staging-bucket"
+npx adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=us-central1 --gcs-bucket="gs://your-build-staging-bucket"
 ```
 *Behind the scenes, the ADK CLI handles containerization and deployment staging seamlessly. When the command completes, it will output your **Cloud Run Service URL**.*
 

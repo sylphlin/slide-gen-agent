@@ -8,7 +8,7 @@
     "build": "mkdir -p src/tools/compiled_skills && cp ../skills/slide-gen-agent/scripts/pdfExporter.ts src/tools/compiled_skills/pdfExporter.ts && tsc",
     "start": "node dist/agent.js",
     "agent": "npx adk run src/agent.ts",
-    "web": "npx adk web src/agent.ts"
+    "web": "npm run build && npx adk web src/agent.ts"
   },
   "dependencies": {
     "@google/adk": "^1.0.0",
