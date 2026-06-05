@@ -1,4 +1,4 @@
-import { FunctionTool } from '@google/adk';
+import { FunctionTool, Context } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,7 +21,7 @@ export const generateSlideImageTool = new FunctionTool({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     slideNumber: z.number().int().describe('The 1-indexed slide number to generate the image for'),
   }),
-  execute: async ({ sessionPath, slideNumber }) => {
+  execute: async ({ sessionPath, slideNumber }, tool_context) => {
     const padNum = String(slideNumber).padStart(2, '0');
     
     const designPath = path.join(sessionPath, 'design.md');
@@ -94,6 +94,16 @@ ${slideContent}
       }
 
       fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
+
+      if (tool_context) {
+        await tool_context.saveArtifact(`slides/slide_${padNum}.png`, {
+          inlineData: {
+            data: base64Data,
+            mimeType: 'image/png',
+          }
+        });
+      }
+
       return `Successfully generated image for Slide ${padNum} and saved to ${outputPath}`;
     } catch (error: any) {
       return `Failed to generate image for Slide ${padNum}: ${error.message}`;

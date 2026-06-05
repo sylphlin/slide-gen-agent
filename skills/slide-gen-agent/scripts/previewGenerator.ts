@@ -4,8 +4,9 @@ import * as path from 'path';
 /**
  * Generates an HTML preview page listing all generated slide PNGs.
  * @param sessionPath The absolute session path
+ * @param tool_context Optional ADK context to register the artifact
  */
-export async function generatePreviewPage(sessionPath: string): Promise<string> {
+export async function generatePreviewPage(sessionPath: string, tool_context?: any): Promise<string> {
   const slidesDir = path.join(sessionPath, 'slides');
   if (!fs.existsSync(slidesDir)) {
     throw new Error(`Slides directory does not exist: ${slidesDir}`);
@@ -97,6 +98,15 @@ export async function generatePreviewPage(sessionPath: string): Promise<string> 
 
   const outputPath = path.join(sessionPath, 'preview.html');
   fs.writeFileSync(outputPath, htmlContent, 'utf-8');
+
+  if (tool_context) {
+    await tool_context.saveArtifact('preview.html', {
+      inlineData: {
+        data: Buffer.from(htmlContent).toString('base64'),
+        mimeType: 'text/html',
+      }
+    });
+  }
 
   return `Successfully generated preview page: ${outputPath}`;
 }

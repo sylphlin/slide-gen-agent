@@ -1,4 +1,4 @@
-import { FunctionTool } from '@google/adk';
+import { FunctionTool, Context } from '@google/adk';
 import { z } from 'zod';
 import { exportSessionToPdf } from './compiled_skills/pdfExporter.js';
 
@@ -13,9 +13,9 @@ export const exportSessionToPdfTool = new FunctionTool({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     pdfFileName: z.string().optional().describe('Optional custom filename for the output PDF (defaults to presentation.pdf)'),
   }),
-  execute: async ({ sessionPath, pdfFileName }) => {
+  execute: async ({ sessionPath, pdfFileName }, tool_context) => {
     try {
-      const result = await exportSessionToPdf(sessionPath, pdfFileName);
+      const result = await exportSessionToPdf(sessionPath, pdfFileName, tool_context);
       return JSON.stringify(result);
     } catch (error: any) {
       throw new Error(`PDF compilation failed: ${error.message}`);

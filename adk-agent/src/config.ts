@@ -27,11 +27,11 @@ if (!CONFIG.IMAGEN_LOCATION) {
 }
 
 // Set output session directory in the environment for tools to use.
-// Ensure it resolves to the parent directory if running inside the adk-agent folder.
+// Ensure it resolves to the local adk-agent/artifacts directory (which is expected by adk web)
 if (!process.env.SESSION_OUTPUT_DIR) {
   const cwd = process.cwd();
-  const baseDir = cwd.endsWith('adk-agent') ? path.dirname(cwd) : cwd;
-  process.env.SESSION_OUTPUT_DIR = path.join(baseDir, 'artifacts');
+  const adkAgentDir = cwd.endsWith('adk-agent') ? cwd : path.join(cwd, 'adk-agent');
+  process.env.SESSION_OUTPUT_DIR = path.join(adkAgentDir, 'artifacts');
 }
 
 // Force Gen AI SDK to use Vertex AI mode (Gemini Enterprise)

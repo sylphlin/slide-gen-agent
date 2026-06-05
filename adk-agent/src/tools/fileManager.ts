@@ -1,4 +1,4 @@
-import { FunctionTool } from '@google/adk';
+import { FunctionTool, Context } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -52,9 +52,19 @@ export const saveDesignSpecTool = new FunctionTool({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     designSpecContent: z.string().describe('The full Markdown design specification details'),
   }),
-  execute: async ({ sessionPath, designSpecContent }) => {
+  execute: async ({ sessionPath, designSpecContent }, tool_context) => {
     const filePath = path.join(sessionPath, 'design.md');
     fs.writeFileSync(filePath, designSpecContent, 'utf-8');
+
+    if (tool_context) {
+      await tool_context.saveArtifact('design.md', {
+        inlineData: {
+          data: Buffer.from(designSpecContent).toString('base64'),
+          mimeType: 'text/markdown',
+        }
+      });
+    }
+
     return `Design specification successfully written to ${filePath}`;
   },
 });
@@ -70,9 +80,19 @@ export const saveOutlinesTool = new FunctionTool({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
     outlinesContent: z.string().describe('The full Markdown outline containing the slide table, types, and summaries'),
   }),
-  execute: async ({ sessionPath, outlinesContent }) => {
+  execute: async ({ sessionPath, outlinesContent }, tool_context) => {
     const filePath = path.join(sessionPath, 'outlines.md');
     fs.writeFileSync(filePath, outlinesContent, 'utf-8');
+
+    if (tool_context) {
+      await tool_context.saveArtifact('outlines.md', {
+        inlineData: {
+          data: Buffer.from(outlinesContent).toString('base64'),
+          mimeType: 'text/markdown',
+        }
+      });
+    }
+
     return `Deck outlines successfully written to ${filePath}`;
   },
 });
@@ -91,7 +111,7 @@ export const saveSlideScriptTool = new FunctionTool({
     title: z.string().describe('The slide header/title text to render on the image'),
     script: z.string().describe('The 150-300 character transition and spoken script'),
   }),
-  execute: async ({ sessionPath, slideNumber, slideType, title, script }) => {
+  execute: async ({ sessionPath, slideNumber, slideType, title, script }, tool_context) => {
     const padNum = String(slideNumber).padStart(2, '0');
     const filePath = path.join(sessionPath, 'slides', `slide_${padNum}.md`);
     
@@ -108,6 +128,16 @@ ${script}
 `;
 
     fs.writeFileSync(filePath, fileContent, 'utf-8');
+
+    if (tool_context) {
+      await tool_context.saveArtifact(`slides/slide_${padNum}.md`, {
+        inlineData: {
+          data: Buffer.from(fileContent).toString('base64'),
+          mimeType: 'text/markdown',
+        }
+      });
+    }
+
     return `Slide ${padNum} script successfully written to ${filePath}`;
   },
 });
@@ -122,8 +152,8 @@ export const generatePreviewPageTool = new FunctionTool({
   parameters: z.object({
     sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
   }),
-  execute: async ({ sessionPath }) => {
-    return generatePreviewPage(sessionPath);
+  execute: async ({ sessionPath }, tool_context) => {
+    return generatePreviewPage(sessionPath, tool_context);
   },
 });
 

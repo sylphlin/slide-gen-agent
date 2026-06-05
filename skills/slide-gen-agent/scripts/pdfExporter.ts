@@ -5,8 +5,9 @@ import * as path from 'path';
  * Gathers all slide PNGs in the session slides directory and compiles them into a single PDF presentation.
  * @param sessionPath The absolute session path
  * @param pdfFileName Optional custom filename for the output PDF (defaults to presentation.pdf)
+ * @param tool_context Optional ADK context to register the artifact
  */
-export async function exportSessionToPdf(sessionPath: string, pdfFileName?: string): Promise<{ message: string; pdfName: string; pdfPath: string }> {
+export async function exportSessionToPdf(sessionPath: string, pdfFileName?: string, tool_context?: any): Promise<{ message: string; pdfName: string; pdfPath: string }> {
   // @ts-ignore
   const { PDFDocument } = await import('pdf-lib'); // Dynamic import to keep startup fast
   const slidesDir = path.join(sessionPath, 'slides');
@@ -46,6 +47,15 @@ export async function exportSessionToPdf(sessionPath: string, pdfFileName?: stri
   const outputPath = path.join(sessionPath, outputName);
 
   fs.writeFileSync(outputPath, pdfBytes);
+
+  if (tool_context) {
+    await tool_context.saveArtifact(outputName, {
+      inlineData: {
+        data: Buffer.from(pdfBytes).toString('base64'),
+        mimeType: 'application/pdf',
+      }
+    });
+  }
 
   return {
     message: `Successfully compiled ${pngFiles.length} slides into a single PDF presentation.`,
