@@ -161,13 +161,22 @@ Grant these roles to the service account in **IAM & Admin > IAM**:
 - **Artifact Registry Writer** (`roles/artifactregistry.writer`)
 
 ##### B. Runtime Permissions (Required)
-The deployed Agent Engine (Reasoning Engine) instance uses your project's service account (typically the Compute Engine default service account) to call Vertex AI models and read/write to the GCS bucket:
+The deployed Agent Engine (Reasoning Engine) instance and its platform orchestrator need permissions to call Vertex AI models and read/write to the GCS bucket:
+
 1. Open the **Google Cloud Console**.
 2. Go to **IAM & Admin > IAM**.
-3. Locate the service account used by the agent (by default, the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`).
-4. Grant that Service Account the following roles:
-   - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Imagen 3)
-   - **Storage Object Admin** (`roles/storage.objectAdmin`) (required to save slides, previews, and PDF files to your GCS bucket).
+3. **Grant permissions to the agent's runtime service account**:
+   - Locate your project's runtime identity (typically the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`).
+   - Grant it the following roles:
+     - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Imagen 3)
+     - **Storage Object User** (`roles/storage.objectUser`) (required to read/write slides, previews, and PDF files to your GCS bucket)
+
+4. **Grant permissions to the Vertex AI Service Agent**:
+   - Click **ADD** to add a new principal.
+   - Enter the Vertex AI Reasoning Engine Service Agent address:
+     `service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`
+   - Grant it the following role:
+     - **Storage Object User** (`roles/storage.objectUser`) (required for the platform to synchronize and save artifacts to GCS on behalf of the agent)
 *No raw API keys or secret files need to be managed; the hosted reasoning engine utilizes secure IAM/ADC credentials automatically.*
 
 #### 3. Connect to Gemini Enterprise Console
