@@ -50,22 +50,22 @@ user may accept as-is, tweak individual items, or ask for alternatives.
 
 ## Stage 2: Structured Markdown Generation
 
-Once the user confirms the Stage 1 proposal, you must ALWAYS call the `initializeSession` tool first to create a clean, isolated workspace folder for this session.
+Once the user confirms the Stage 1 proposal, you must initialize a new session workspace first (either by calling the `initializeSession` tool or by creating a dedicated folder in the workspace) to keep all files isolated.
 
-Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide and save them using the corresponding tools.
+Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide.
 
 ### Step 1 — `design.md` (Global Style Spec)
 Define the complete visual system for this deck. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1.
-- **Action**: Call the `saveDesignSpec` tool with the `sessionPath` and the full markdown style content to save the design system.
+- **Action**: Save the style system to `design.md` (by calling the `saveDesignSpec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for all visual decisions in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
 Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
-- **Action**: Call the `saveOutlines` tool with the `sessionPath` and the full markdown outlines table to save it.
+- **Action**: Save the outlines to `outlines.md` (by calling the `saveOutlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slides/slide_xx.md` (Per-slide Scripts)
 Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
-- **Action**: Call the `saveSlideScript` tool for **every single slide** in the deck using the slide's details (number, type, title, and script).
+- **Action**: Save the slide details to `slides/slide_xx.md` (by calling the `saveSlideScript` tool for every slide index, or writing the `slide_xx.md` files directly in the `slides` subfolder).
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
@@ -74,21 +74,29 @@ Generate one file per slide, following `assets/slide_xx.md`. Each file contains 
 **Script Requirements:**
 - **Length**: Strictly limit the script to **260 to 300 words** (for English) or **320 to 400 characters** (for Chinese) (corresponding to a 1–2 minute presentation).
 - **Structure**: Organize every slide's script into two clear phases:
-  1. **Transition & Hook (承上啟下)**: A smooth connection showing how this slide builds upon the previous one.
-  2. **Deep Dive & Core Elaboration (深度解析與實例)**: An in-depth explanation of the slide's technical details, data points, or visual analogies.
+  1. **Transition & Hook**: A smooth connection showing how this slide builds upon the previous one.
+  2. **Deep Dive & Core Elaboration**: An in-depth explanation of the slide's technical details, data points, or visual analogies.
 - **Evocative & Visual Language**: Use specific terminology, statistics, and vivid visual metaphors (e.g. "like a rapid highway branching out...", "a steep upward climb showing 45% growth..."). This rich narrative provides high-quality visual context for Stage 3 image generation.
 
 ---
 
-## Stage 3: Image Generation & Artifact Presentation
+## Stage 3: Image Generation & Review
 
 With all Markdown files saved in the session directory, trigger the image generation for every slide. Work through each slide one at a time:
 
-- **Action**: Call the `generateSlideImage` tool for **every slide index** in the deck.
-- **Behind the scenes**: The tool automatically merges `design.md` and `slide_xx.md` into a highly structured visual prompt, calls Vertex AI Imagen 3 to generate a 16:9 widescreen presentation slide PNG (`slide_xx.png`), and saves it directly in the session's workspace directory (e.g., `slides/slide_xx.png`) as a local file artifact.
-- **Artifact Presentation**: Since the images are saved locally in the active session workspace, they are treated as project artifacts. **Directly display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`)** so the user can inspect them instantly in the front-end file viewer/chat window.
-- **Action (PDF Compilation)**: Once all slide images are generated (and optionally when the user approves them), call the `exportSessionToPdf` tool with the `sessionPath` (and optionally a custom `pdfFileName`) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
-- **PDF Download Link**: Provide the markdown link to the generated PDF (e.g., `[Download presentation.pdf](presentation.pdf)`) so the user can download the compiled presentation deck directly from their browser.
+- **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slides/slide_xx.md` to output `slides/slide_xx.png`).
+- **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slides/slide_xx.png`).
+- **Artifact Presentation**: Directly display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`) so the user can inspect them instantly.
+- **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested.
+
+---
+
+## Stage 4: Widescreen PDF Packaging (On-Demand)
+
+Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck:
+
+- **Action**: Run the `pdfExporter` script (either by calling the `exportSessionToPdf` tool, or by executing `node scripts/pdfExporter.js <sessionPath> [pdfFileName]` in the terminal) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
+- **PDF Download Link**: Provide the markdown link to the generated PDF (e.g., `[Download presentation.pdf](presentation.pdf)`) so the user can download the compiled presentation deck directly.
 
 Once completed, provide a final summary of all artifacts produced, highlighting the download link for the PDF.
 

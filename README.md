@@ -21,7 +21,7 @@ graph TD
     D -->|Output 2| F[outlines.md - Slide Outlines]
     D -->|Output 3| G[slides/slide_xx.md - Slide Details & Script]
     E & F & G -->|Optional: Manual Tweaks| I(Stage 3: Image Generation)
-    I -->|Input: design.md + slide_xx.md| J[Run gemini-3.1-flash-image]
+    I -->|Input: design.md + slide_xx.md| J[Run Image Generator]
     J --> K[Output: slide_xx.png]
 ```
 
@@ -41,7 +41,7 @@ graph TD
 
 3. **Stage 3: Image Generation**
    - The agent merges `design.md` and `slide_xx.md` into a structured XML prompt.
-   - It sends this prompt to `gemini-3.1-flash-image` via Vertex AI to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`).
+   - It sends this prompt to the image generation model to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`).
    - **Why it's easy to modify**: Want a new brand color? Edit `design.md` once and regenerate. Need to fix Slide 5? Edit `slides/slide_05.md` and regenerate just that slide.
 
 ---
@@ -124,11 +124,7 @@ Compile the TypeScript project and launch the local web interface:
 npm run build
 
 # Start the agent in local Web UI mode
-npx adk run src/agent.ts --web
-```
-*Note: If `--web` is not supported by your version of the devtools, you can also try:*
-```bash
-npx adk run src/agent.ts --ui
+npx adk web src/agent.ts
 ```
 This will spin up a local server. Open the provided URL (usually `http://localhost:8080`) in your browser to interact with the Agent visually!
 

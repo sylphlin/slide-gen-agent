@@ -12,7 +12,7 @@ export const CONFIG = {
   IMAGEN_MODEL: process.env.IMAGEN_MODEL || 'imagen-3.0-generate-002',
 
   // Thinking settings
-  THINKING_LEVEL: process.env.THINKING_LEVEL || 'dynamic',
+  THINKING_LEVEL: process.env.THINKING_LEVEL || 'high',
   THINKING_BUDGET: process.env.THINKING_BUDGET ? parseInt(process.env.THINKING_BUDGET) : 2048,
 };
 

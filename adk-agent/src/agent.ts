@@ -56,7 +56,7 @@ export const slideGenAgent = new LlmAgent({
   generateContentConfig: {
     thinkingConfig: {
       thinkingBudget: CONFIG.THINKING_BUDGET,
-      thinkingLevel: CONFIG.THINKING_LEVEL as any,
+      ...(CONFIG.THINKING_LEVEL ? { thinkingLevel: CONFIG.THINKING_LEVEL as any } : {}),
     },
   },
   tools: [
