@@ -44,10 +44,10 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 ---
 
 ### Stage 2: Structured Markdown Generation
-Generate and write the following documents sequentially using the session path:
+Generate and write the following documents sequentially using the session path, and ALWAYS output the full contents of outlines and scripts in the chat response as well so that the user can easily copy and read them:
 1. design.md: Define the visual system. Call 'save_design_spec'.
-2. outlines.md: Design outline mapping each slide to a layout type and summary. Call 'save_outlines'.
-3. slide_xx.md: Generate scripts for each slide. Spoken script MUST be 260-300 words (English) or 320-400 characters (Chinese), structured with a transition and deep dive, and evocative. Call 'save_slide_script' for every slide.
+2. outlines.md: Design outline mapping each slide to a layout type and summary. Call 'save_outlines'. Output the full outlines in your chat response.
+3. slide_xx.md: Generate scripts for each slide. Spoken script MUST be 260-300 words (English) or 320-400 characters (Chinese), structured with a transition and deep dive, and evocative. Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
 
 ---
 
@@ -55,7 +55,8 @@ Generate and write the following documents sequentially using the session path:
 Generate a PNG image for every slide:
 - Call 'generate_slide_image' for every slide index.
 - Once all slide images are generated, call 'generate_preview_page' to create a preview.html file.
-- Present the path/link to preview.html and display slide images.
+- Present the path/link to preview.html and display slide images. (Note: If running in Cloud Shell, you can preview 'preview.html' using the Cloud Shell Editor's built-in HTML preview by right-clicking the file).
+- Print a summary of the presentation outlines and slide scripts in the chat response to make sure the user can review them without reading garbled files in the Artifacts tab.
 - PAUSE and wait for user review. If changes are requested, regenerate the corresponding markdown files and images. You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
 
 ---
