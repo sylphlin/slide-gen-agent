@@ -21,3 +21,7 @@ process.env.SESSION_OUTPUT_DIR = process.env.SESSION_OUTPUT_DIR || 'artifacts';
 
 // Force Gen AI SDK to use Vertex AI mode (Gemini Enterprise)
 process.env.GOOGLE_GENAI_USE_VERTEXAI = 'true';
+
+// Inject project and location into process.env so SDK can resolve them automatically
+process.env.GOOGLE_CLOUD_LOCATION = CONFIG.GOOGLE_CLOUD_LOCATION;
+process.env.GOOGLE_CLOUD_PROJECT = CONFIG.GOOGLE_CLOUD_PROJECT;

@@ -110,14 +110,10 @@ export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
 *(Alternatively, you can modify the default values inside [adk-agent/src/config.ts](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk-agent/src/config.ts)).*
 
-#### 4. Build and Run in Web UI Mode
-Compile the TypeScript project and launch the local web interface:
+#### 4. Run in Web UI Mode
+Launch the local web interface (this will automatically build the project and copy compiled skills assets beforehand):
 ```bash
-# Build the agent
-npm run build
-
-# Start the agent in local Web UI mode
-npx adk web src/agent.ts
+npm run web
 ```
 This will spin up a local server. Open the provided URL (usually `http://localhost:8080`) in your browser to interact with the Agent visually!
 
