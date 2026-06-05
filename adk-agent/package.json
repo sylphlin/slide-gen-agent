@@ -5,7 +5,7 @@
   "description": "ADK-based TypeScript slide generator agent",
   "main": "dist/agent.js",
   "scripts": {
-    "build": "mkdir -p src/tools/compiled_skills && cp ../skills/slide-gen-agent/scripts/pdfExporter.ts src/tools/compiled_skills/pdfExporter.ts && tsc",
+    "build": "mkdir -p src/tools/compiled_skills && cp ../skills/slide-gen-agent/scripts/pdfExporter.ts src/tools/compiled_skills/pdfExporter.ts && cp ../skills/slide-gen-agent/scripts/previewGenerator.ts src/tools/compiled_skills/previewGenerator.ts && tsc",
     "start": "node dist/agent.js",
     "agent": "npx adk run src/agent.ts",
     "web": "npm run build && npx adk web src/agent.ts"

@@ -2,6 +2,7 @@ import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
+import { generatePreviewPage } from './compiled_skills/previewGenerator.js';
 
 /**
  * Helper to ensure directories exist
@@ -110,5 +111,21 @@ ${script}
     return `Slide ${padNum} script successfully written to ${filePath}`;
   },
 });
+
+/**
+ * Tool: generatePreviewPage
+ * Generates an HTML preview page listing all generated slide PNGs.
+ */
+export const generatePreviewPageTool = new FunctionTool({
+  name: 'generatePreviewPage',
+  description: 'Creates a preview.html file inside the session directory displaying all generated slide images in a clean, vertical scrollable layout.',
+  parameters: z.object({
+    sessionPath: z.string().describe('The absolute session path returned by initializeSession'),
+  }),
+  execute: async ({ sessionPath }) => {
+    return generatePreviewPage(sessionPath);
+  },
+});
+
 
 

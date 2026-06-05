@@ -55,7 +55,11 @@ their confirmation or edits before continuing**:
    color. Provide hex codes. Explain briefly why these suit the content.
 
 Keep the proposal concise — a short paragraph or a 4-item list is enough. The
-user may accept as-is, tweak individual items, or ask for alternatives.
+user may accept as-is, tweak individual items, or ask for alternatives. If the
+user requests any modifications, you must update the proposal accordingly and
+present the revised version for their approval. Repeat this verification loop
+until the user explicitly gives full confirmation. Do not proceed to Stage 2
+until the proposal is fully confirmed.
 
 ---
 
@@ -97,8 +101,9 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 - **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slides/slide_xx.md` to output `slides/slide_xx.png`).
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slides/slide_xx.png`).
-- **Artifact Presentation**: Directly display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`) so the user can inspect them instantly.
-- **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested.
+- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generatePreviewPage` tool, or by running `node scripts/previewGenerator.js <sessionPath>` in the terminal).
+- **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`) so the user can inspect them instantly.
+- **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
 ---
 

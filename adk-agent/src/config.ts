@@ -1,6 +1,8 @@
 /**
  * Host ADK Agent Configuration
  */
+import * as path from 'path';
+
 export const CONFIG = {
   // GCP Credentials & Locations
   GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT,
@@ -24,8 +26,13 @@ if (!CONFIG.IMAGEN_LOCATION) {
     : CONFIG.GOOGLE_CLOUD_LOCATION;
 }
 
-// Set output session directory in the environment for tools to use
-process.env.SESSION_OUTPUT_DIR = process.env.SESSION_OUTPUT_DIR || 'artifacts';
+// Set output session directory in the environment for tools to use.
+// Ensure it resolves to the parent directory if running inside the adk-agent folder.
+if (!process.env.SESSION_OUTPUT_DIR) {
+  const cwd = process.cwd();
+  const baseDir = cwd.endsWith('adk-agent') ? path.dirname(cwd) : cwd;
+  process.env.SESSION_OUTPUT_DIR = path.join(baseDir, 'artifacts');
+}
 
 // Force Gen AI SDK to use Vertex AI mode (Gemini Enterprise)
 process.env.GOOGLE_GENAI_USE_VERTEXAI = 'true';
