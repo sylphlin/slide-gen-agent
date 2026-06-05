@@ -7,13 +7,8 @@ import * as path from 'path';
  * @param tool_context Optional ADK context to register the artifact
  */
 export async function generatePreviewPage(sessionPath: string, tool_context?: any): Promise<string> {
-  const slidesDir = path.join(sessionPath, 'slides');
-  if (!fs.existsSync(slidesDir)) {
-    throw new Error(`Slides directory does not exist: ${slidesDir}`);
-  }
-
-  // Find all png files in the slides directory, sorted numerically
-  const files = fs.readdirSync(slidesDir);
+  // Find all png files in the session root directory, sorted numerically
+  const files = fs.readdirSync(sessionPath);
   const pngFiles = files
     .filter(f => f.startsWith('slide_') && f.endsWith('.png'))
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
@@ -28,7 +23,7 @@ export async function generatePreviewPage(sessionPath: string, tool_context?: an
     cardsHtml += `
     <div class="slide-card">
       <div class="slide-header">Slide ${padNum}</div>
-      <img class="slide-img" src="slides/${file}" alt="Slide ${padNum}">
+      <img class="slide-img" src="${file}" alt="Slide ${padNum}">
     </div>`;
   }
 

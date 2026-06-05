@@ -10,25 +10,20 @@ import * as path from 'path';
 export async function exportSessionToPdf(sessionPath: string, pdfFileName?: string, tool_context?: any): Promise<{ message: string; pdfName: string; pdfPath: string }> {
   // @ts-ignore
   const { PDFDocument } = await import('pdf-lib'); // Dynamic import to keep startup fast
-  const slidesDir = path.join(sessionPath, 'slides');
-  if (!fs.existsSync(slidesDir)) {
-    throw new Error(`Slides directory does not exist: ${slidesDir}`);
-  }
-
-  // Read all files and filter for slide_xx.png files
-  const files = fs.readdirSync(slidesDir);
+  // Read all files in the session root directory and filter for slide_xx.png files
+  const files = fs.readdirSync(sessionPath);
   const pngFiles = files
     .filter(file => /^slide_\d+\.png$/.test(file))
     .sort(); // Sorts numerically (slide_01.png, slide_02.png, ...)
 
   if (pngFiles.length === 0) {
-    throw new Error(`No slide PNG images found in ${slidesDir}. Make sure to generate slide images first.`);
+    throw new Error(`No slide PNG images found in ${sessionPath}. Make sure to generate slide images first.`);
   }
 
   const pdfDoc = await PDFDocument.create();
 
   for (const fileName of pngFiles) {
-    const filePath = path.join(slidesDir, fileName);
+    const filePath = path.join(sessionPath, fileName);
     const pngImageBytes = fs.readFileSync(filePath);
     const pngImage = await pdfDoc.embedPng(pngImageBytes);
 

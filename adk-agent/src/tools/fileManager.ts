@@ -113,7 +113,7 @@ export const saveSlideScriptTool = new FunctionTool({
   }),
   execute: async ({ sessionPath, slideNumber, slideType, title, script }, tool_context) => {
     const padNum = String(slideNumber).padStart(2, '0');
-    const filePath = path.join(sessionPath, 'slides', `slide_${padNum}.md`);
+    const filePath = path.join(sessionPath, `slide_${padNum}.md`);
     
     const fileContent = `---
 slide_number: ${slideNumber}
@@ -130,7 +130,7 @@ ${script}
     fs.writeFileSync(filePath, fileContent, 'utf-8');
 
     if (tool_context) {
-      await tool_context.saveArtifact(`slides/slide_${padNum}.md`, {
+      await tool_context.saveArtifact(`slide_${padNum}.md`, {
         inlineData: {
           data: Buffer.from(fileContent).toString('base64'),
           mimeType: 'text/markdown',

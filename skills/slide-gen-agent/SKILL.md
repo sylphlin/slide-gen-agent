@@ -78,9 +78,9 @@ Define the complete visual system for this deck. Base it on `assets/design.md` (
 Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
 - **Action**: Save the outlines to `outlines.md` (by calling the `saveOutlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
-### Step 3 — `slides/slide_xx.md` (Per-slide Scripts)
+### Step 3 — `slide_xx.md` (Per-slide Scripts)
 Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
-- **Action**: Save the slide details to `slides/slide_xx.md` (by calling the `saveSlideScript` tool for every slide index, or writing the `slide_xx.md` files directly in the `slides` subfolder).
+- **Action**: Save the slide details to `slide_xx.md` (by calling the `saveSlideScript` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
@@ -99,10 +99,10 @@ Generate one file per slide, following `assets/slide_xx.md`. Each file contains 
 
 With all Markdown files saved in the session directory, trigger the image generation for every slide. Work through each slide one at a time:
 
-- **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slides/slide_xx.md` to output `slides/slide_xx.png`).
-- **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slides/slide_xx.png`).
+- **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
+- **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slide_xx.png`).
 - **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generatePreviewPage` tool, or by running `node scripts/previewGenerator.js <sessionPath>` in the terminal).
-- **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slides/slide_xx.png)`) so the user can inspect them instantly.
+- **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
 - **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
 ---

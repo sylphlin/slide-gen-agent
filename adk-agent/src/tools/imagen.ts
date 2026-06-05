@@ -25,8 +25,8 @@ export const generateSlideImageTool = new FunctionTool({
     const padNum = String(slideNumber).padStart(2, '0');
     
     const designPath = path.join(sessionPath, 'design.md');
-    const slidePath = path.join(sessionPath, 'slides', `slide_${padNum}.md`);
-    const outputPath = path.join(sessionPath, 'slides', `slide_${padNum}.png`);
+    const slidePath = path.join(sessionPath, `slide_${padNum}.md`);
+    const outputPath = path.join(sessionPath, `slide_${padNum}.png`);
 
     // Validation
     if (!fs.existsSync(designPath)) {
@@ -96,7 +96,7 @@ ${slideContent}
       fs.writeFileSync(outputPath, Buffer.from(base64Data, 'base64'));
 
       if (tool_context) {
-        await tool_context.saveArtifact(`slides/slide_${padNum}.png`, {
+        await tool_context.saveArtifact(`slide_${padNum}.png`, {
           inlineData: {
             data: base64Data,
             mimeType: 'image/png',
