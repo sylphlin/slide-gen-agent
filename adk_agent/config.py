@@ -23,7 +23,7 @@ if not CONFIG['IMAGEN_LOCATION']:
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
     cwd = os.getcwd()
-    adk_agent_dir = cwd if cwd.endswith('adk-agent') else os.path.join(cwd, 'adk-agent')
+    adk_agent_dir = cwd if cwd.endswith('adk_agent') else os.path.join(cwd, 'adk_agent')
     os.environ['SESSION_OUTPUT_DIR'] = os.path.join(adk_agent_dir, 'artifacts')
 
 # Force Gen AI SDK to use Vertex AI mode

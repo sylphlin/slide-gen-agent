@@ -113,7 +113,7 @@ export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 Alternatively, you can create a `.env` file inside the `adk_agent` folder:
 ```text
 GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-GOOGLE_CLOUD_LOCATION="us-central1"
+GOOGLE_CLOUD_LOCATION="global"
 SESSION_OUTPUT_DIR="./artifacts"
 ```
 
