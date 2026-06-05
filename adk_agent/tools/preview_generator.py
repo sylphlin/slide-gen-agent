@@ -135,7 +135,8 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
     with open(preview_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
         
-    artifact_part = Part.from_text(text=html_template)
+    html_bytes = html_template.encode('utf-8')
+    artifact_part = Part.from_bytes(data=html_bytes, mime_type="text/html")
     await tool_context.save_artifact('preview.html', artifact_part)
     
     return f"Preview page successfully generated at {preview_path}"
