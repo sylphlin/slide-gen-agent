@@ -58,18 +58,37 @@ ${slideContent}
         throw new Error('GOOGLE_CLOUD_PROJECT is not configured. Please set the GOOGLE_CLOUD_PROJECT environment variable.');
       }
 
-      // Trigger image generation using Google Gen AI SDK
-      const response = await ai.models.generateImages({
-        model: CONFIG.IMAGEN_MODEL,
-        prompt: mergedPrompt,
-        config: {
-          numberOfImages: 1,
-          aspectRatio: '16:9',
-          outputMimeType: 'image/png',
-        },
-      });
+      const isGeminiImageModel = CONFIG.IMAGEN_MODEL.startsWith('gemini-');
+      let base64Data: string | undefined;
 
-      const base64Data = response.generatedImages?.[0]?.image?.imageBytes;
+      if (isGeminiImageModel) {
+        // Gemini image models must be called via generateContent with responseModalities
+        const response = await ai.models.generateContent({
+          model: CONFIG.IMAGEN_MODEL,
+          contents: mergedPrompt,
+          config: {
+            responseModalities: ['IMAGE'],
+          },
+        });
+
+        const parts = response.candidates?.[0]?.content?.parts;
+        const imagePart = parts?.find(p => p.inlineData?.mimeType?.startsWith('image/'));
+        base64Data = imagePart?.inlineData?.data;
+      } else {
+        // Traditional Imagen models must be called via generateImages
+        const response = await ai.models.generateImages({
+          model: CONFIG.IMAGEN_MODEL,
+          prompt: mergedPrompt,
+          config: {
+            numberOfImages: 1,
+            aspectRatio: '16:9',
+            outputMimeType: 'image/png',
+          },
+        });
+
+        base64Data = response.generatedImages?.[0]?.image?.imageBytes;
+      }
+
       if (!base64Data) {
         throw new Error('Image generation response did not contain any generated image bytes.');
       }

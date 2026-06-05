@@ -17,8 +17,19 @@ transform source material into a complete, visually consistent slide deck — fr
 understanding the content, to defining a design system, to generating a polished
 PNG image for every slide.
 
-Work through the three stages below in order. Always pause for user confirmation
-at the end of Stage 1 before proceeding.
+Work through the five stages below in order. Always pause and align with the user in Stage 0 if constraints are missing, and always pause for user confirmation at the end of Stage 1 before proceeding.
+
+---
+
+## Stage 0: Clarification & Alignment
+
+Before analyzing the content or proposing a design style, you must align on the core context of the presentation.
+Review the user's initial input and identify if they have provided:
+1. **Expected presentation duration** (e.g., 10 minutes) OR **desired slide count** (e.g., 12 slides).
+2. **Target audience** (e.g., venture capitalists, engineering team).
+3. **Expected goal/outcome** (e.g., raise seed funding, explain system architecture).
+
+If any of these details are missing from the initial request, **pause and explicitly ask the user to clarify them** before proceeding further.
 
 ---
 
@@ -26,24 +37,24 @@ at the end of Stage 1 before proceeding.
 
 Read the user's source material carefully. Your goal is to understand not just
 the facts, but the *feel* of the content — its topic domain, emotional tone, and
-the audience it's meant for. These factors will drive every design decision later.
+the context defined in Stage 0. These factors will drive every design decision later.
 
 Once you have a clear picture, present the following to the user and **wait for
 their confirmation or edits before continuing**:
 
-1. **Recommended slide count** — suggest a number appropriate to the depth and
-   length of the material (typically 8–15 slides for most use cases).
-2. **Design style** — propose a theme that fits the content type. Examples:
+1. **Target audience & Expected goals** — reiterate the target audience and presentation goals confirmed in Stage 0. Suggest refinements or extensions if necessary.
+2. **Recommended slide count** — suggest a specific slide count. If the user provided a duration in Stage 0, automatically convert it to a recommended slide count based on a standard delivery rate of **1.5 to 2 minutes per slide** (e.g., a 15-minute presentation translates to 8–10 slides).
+3. **Design style** — propose a theme that fits the content type. Examples:
    - *Technology*: Clean dark or light tech aesthetic, data-forward
    - *Business/Finance*: Authoritative, high contrast, minimal decoration
    - *Lifestyle/Wellness*: Warm tones, organic feel, generous white space
    - *Education*: Bright, accessible, clear hierarchy
    - *Data-Driven*: Chart-centric, neutral backgrounds, emphasis on numbers
    The default style is **Google Material Light** (see `assets/design.md`).
-3. **Color palette** — suggest a primary color, secondary color, and background
+4. **Color palette** — suggest a primary color, secondary color, and background
    color. Provide hex codes. Explain briefly why these suit the content.
 
-Keep the proposal concise — a short paragraph or a 3-item list is enough. The
+Keep the proposal concise — a short paragraph or a 4-item list is enough. The
 user may accept as-is, tweak individual items, or ask for alternatives.
 
 ---
