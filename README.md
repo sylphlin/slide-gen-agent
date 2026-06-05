@@ -116,10 +116,10 @@ GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
 
 #### 4. Run in Web UI Mode
-Launch the local web interface:
+Launch the local web interface (the `--allow_origins="*"` flag is included to ensure it works seamlessly both on local machines and inside Google Cloud Shell):
 ```bash
 source venv/bin/activate
-adk web .
+adk web --allow_origins="*" .
 ```
 This will spin up a local server. Open the provided URL in your browser to interact with the Agent visually!
 
@@ -164,5 +164,5 @@ The deployed Agent Engine (Reasoning Engine) instance uses your project's servic
 To make the agent available to your Enterprise users:
 1. Log in to the **Gemini Enterprise Admin Console**.
 2. Go to **Extensions** or **Agent Management**.
-3. Register a new **Custom Extension** or **Agent Link** using your **Cloud Run Service URL**.
-4. Configure Google OIDC / IAM authentication to secure the connection between Gemini Enterprise and your Cloud Run agent.
+3. Register a new **Custom Extension** or **Agent Link** using your **Reasoning Engine Resource ID** (obtained from the deployment step above).
+4. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
