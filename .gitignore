@@ -1,11 +1,19 @@
-# Dependencies
-node_modules/
-package-lock.json
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
 
-# Compilation outputs
-dist/
-adk-agent/dist/
-adk-agent/src/tools/compiled_skills/
+# Python Cache & Builds
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Local configuration
+.env
 
 # Local cache & artifacts
 artifacts/
