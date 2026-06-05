@@ -97,7 +97,7 @@ Generate and write the following documents sequentially using the session path, 
 Generate a PNG image for every slide:
 - Call 'generate_slide_image' for every slide index.
 - Once all slide images are generated, call 'generate_preview_page' to create a preview.html file.
-- Present the path/link to preview.html and display slide images. (Note: If running in Cloud Shell, you can preview 'preview.html' using the Cloud Shell Editor's built-in HTML preview by right-clicking the file).
+- Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 - Print a summary of the presentation outlines and slide scripts in the chat response to make sure the user can review them without reading garbled files in the Artifacts tab.
 - PAUSE and wait for user review. If changes are requested, regenerate the corresponding markdown files and images. You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
 
@@ -106,7 +106,7 @@ Generate a PNG image for every slide:
 ### Stage 4: Widescreen PDF Packaging (On-Demand)
 Once the user explicitly requests to compile, package, or download the final deck:
 - Call 'export_deck_pdf' to compile the PNGs into a single PDF.
-- Provide the markdown download link to the compiled PDF file."""
+- Provide the GCS URL markdown download link to the compiled PDF file. Do NOT output local container paths."""
 
 # Default Text Model selection
 text_model = CONFIG['TEXT_MODEL']

@@ -44,6 +44,15 @@ async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
         artifact_part = Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
         await tool_context.save_artifact('presentation.pdf', artifact_part)
         
+        try:
+            from ..config import get_gcs_artifact_url
+        except ImportError:
+            from config import get_gcs_artifact_url
+            
+        gcs_url = get_gcs_artifact_url('presentation.pdf', tool_context)
+        if gcs_url:
+            return f"Presentation PDF successfully compiled.\nDownload it here: {gcs_url}"
+            
         return f"Presentation PDF successfully compiled and saved to {pdf_path}"
     except Exception as e:
         return f"Failed to export PDF: {str(e)}"
