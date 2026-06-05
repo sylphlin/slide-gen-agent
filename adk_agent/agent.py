@@ -4,17 +4,21 @@ from dotenv import load_dotenv
 # Load local environment variables if .env exists
 load_dotenv()
 
-from config import CONFIG
-
+try:
+    from .config import CONFIG
+    from .tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
+    from .tools.imagen import generate_slide_image
+    from .tools.pdf_exporter import export_deck_pdf
+    from .tools.preview_generator import generate_preview_page
+except ImportError:
+    from config import CONFIG
+    from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
+    from tools.imagen import generate_slide_image
+    from tools.pdf_exporter import export_deck_pdf
+    from tools.preview_generator import generate_preview_page
 
 from google.adk import Agent
 from google.genai import types
-
-# Import tools
-from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
-from tools.imagen import generate_slide_image
-from tools.pdf_exporter import export_deck_pdf
-from tools.preview_generator import generate_preview_page
 
 # System Instruction translated from TypeScript
 system_instruction = """You are a professional slide design and visual generation agent. Your job is to transform source material into a complete, visually consistent slide deck — from understanding the content, to defining a design system, to generating a polished PNG image for every slide.

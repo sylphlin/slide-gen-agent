@@ -110,11 +110,9 @@ Before running locally, you must set your Google Cloud Project ID as an environm
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 ```
-Alternatively, you can create a `.env` file inside the `adk_agent` folder:
+Alternatively, you can create a `.env` file inside the `adk_agent` folder to specify your GCP project ID (other configs like location default to `'global'` and artifacts directory default to `./artifacts` automatically):
 ```text
 GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-GOOGLE_CLOUD_LOCATION="global"
-SESSION_OUTPUT_DIR="./artifacts"
 ```
 
 #### 4. Run in Web UI Mode

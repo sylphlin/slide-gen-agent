@@ -3,7 +3,10 @@ from google import genai
 from google.genai import types
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
-from config import CONFIG
+try:
+    from ..config import CONFIG
+except ImportError:
+    from config import CONFIG
 
 async def generate_slide_image(
     session_path: str,
