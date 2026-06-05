@@ -84,6 +84,9 @@ async def save_slide_script(
         script: The 150-300 character transition and spoken script
         tool_context: The tool context injected by the framework
     """
+    print(f"DEBUG [save_slide_script] title: {repr(title)}")
+    print(f"DEBUG [save_slide_script] script: {repr(script)}")
+    
     pad_num = f"{slide_number:02d}"
     file_name = f"slide_{pad_num}.md"
     file_path = os.path.join(session_path, file_name)

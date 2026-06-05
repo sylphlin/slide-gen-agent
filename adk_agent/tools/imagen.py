@@ -62,6 +62,7 @@ async def generate_slide_image(
     client = genai.Client()
     
     is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
+    print(f"DEBUG [generate_slide_image] IMAGEN_MODEL: {CONFIG['IMAGEN_MODEL']}, is_gemini: {is_gemini_image_model}")
     
     try:
         if is_gemini_image_model:
