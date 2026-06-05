@@ -20,10 +20,38 @@ export async function generatePreviewPage(sessionPath: string, tool_context?: an
   let cardsHtml = '';
   for (const file of pngFiles) {
     const padNum = file.replace('slide_', '').replace('.png', '');
+    const imgPath = path.join(sessionPath, file);
+    
+    // Read local PNG file bytes and convert to Base64
+    const imgBase64 = fs.readFileSync(imgPath).toString('base64');
+    
+    // Parse speaker notes script if md file exists
+    let notesHtml = '';
+    const mdPath = path.join(sessionPath, `slide_${padNum}.md`);
+    if (fs.existsSync(mdPath)) {
+      const mdContent = fs.readFileSync(mdPath, 'utf-8');
+      const scriptMatch = mdContent.split(/##\s+Script\r?\n/);
+      const scriptText = scriptMatch[1] ? scriptMatch[1].trim() : mdContent.trim();
+      
+      const formattedScript = scriptText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => `<p>${line}</p>`)
+        .join('');
+        
+      notesHtml = `
+      <div class="slide-notes">
+        <div class="notes-label">🗣️ Speaker Notes:</div>
+        <div class="notes-content">${formattedScript}</div>
+      </div>`;
+    }
+
     cardsHtml += `
     <div class="slide-card">
       <div class="slide-header">Slide ${padNum}</div>
-      <img class="slide-img" src="${file}" alt="Slide ${padNum}">
+      <img class="slide-img" src="data:image/png;base64,${imgBase64}" alt="Slide ${padNum}">
+      ${notesHtml}
     </div>`;
   }
 
@@ -53,7 +81,7 @@ export async function generatePreviewPage(sessionPath: string, tool_context?: an
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 40px;
+      gap: 45px;
       width: 100%;
       max-width: 960px;
     }
@@ -61,16 +89,19 @@ export async function generatePreviewPage(sessionPath: string, tool_context?: an
       background: #ffffff;
       border: 1px solid #dadce0;
       border-radius: 8px;
-      padding: 16px;
+      padding: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
       width: 100%;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
     .slide-header {
       font-size: 16px;
       font-weight: 500;
       color: #5f6368;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
       border-bottom: 1px solid #f1f3f4;
       padding-bottom: 8px;
     }
@@ -81,6 +112,32 @@ export async function generatePreviewPage(sessionPath: string, tool_context?: an
       border: 1px solid #e8eaed;
       border-radius: 4px;
       display: block;
+    }
+    .slide-notes {
+      background-color: #f1f3f4;
+      border-left: 4px solid #1a73e8;
+      border-radius: 4px;
+      padding: 14px 18px;
+      text-align: left;
+    }
+    .notes-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a73e8;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .notes-content {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #3c4043;
+    }
+    .notes-content p {
+      margin: 0 0 8px 0;
+    }
+    .notes-content p:last-child {
+      margin-bottom: 0;
     }
   </style>
 </head>
