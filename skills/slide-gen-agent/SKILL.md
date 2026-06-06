@@ -1,7 +1,8 @@
 ---
-# sync-version: 1.0
-# sync-items: script-length (English 260-300 words / CJK 320-400 characters)
 name: slide-gen-agent
+sync-version: "2025-06-06"
+synced-with: adk_agent/agent.py
+sync-items: "stage flow/pause conditions, script length spec (EN/CJK)"
 description: >
   Generate a complete, visually polished slide deck from any source material —
   articles, reports, outlines, or raw notes. Use this skill whenever the user
