@@ -241,25 +241,24 @@ In your GCP project, enable the [Google Drive API](https://console.cloud.google.
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
 3. Click **Authorise**.
 
-**Step 3 — Store the service account key in Secret Manager**
+**Step 3 — Grant signJwt permission to the service account**
+
+The service account needs permission to sign its own JWTs (required for DWD without a key file). Grant it `roles/iam.serviceAccountTokenCreator` on itself:
 
 ```bash
-# Create and download a JSON key for the Agent Engine service account
-gcloud iam service-accounts keys create /tmp/drive-sa-key.json \
-  --iam-account={PROJECT_NUMBER}-compute@developer.gserviceaccount.com
+SA_EMAIL="{PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-# Store in Secret Manager
-gcloud secrets create drive-sa-key \
-  --data-file=/tmp/drive-sa-key.json \
+gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
-
-# Remove the local copy
-rm /tmp/drive-sa-key.json
 ```
 
-**Step 4 — Inject the key at deployment**
+No key file or Secret Manager configuration is required. The agent uses ADC + the IAM Credentials API to sign JWTs at runtime.
 
-Pass the secret as the `DRIVE_SERVICE_ACCOUNT_KEY` environment variable when deploying:
+**Step 4 — Redeploy**
+
+Redeploy the agent so the updated permissions take effect (no extra env vars needed):
 
 ```bash
 adk deploy agent_engine \
@@ -267,7 +266,6 @@ adk deploy agent_engine \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
   --artifact_service_uri="gs://your-runtime-bucket" \
-  --env_vars="DRIVE_SERVICE_ACCOUNT_KEY=$(gcloud secrets versions access latest --secret=drive-sa-key --project=$GOOGLE_CLOUD_PROJECT)" \
   .
 ```
 
