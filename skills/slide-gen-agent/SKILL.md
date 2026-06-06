@@ -146,17 +146,27 @@ After applying any changes, present the updated slides and return to the top of 
 
 ## Stage 5: Presentation Packaging & Download (On-Demand)
 
-Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, offer them two server-side downloads plus one browser-based option:
+Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, **present all four export options and ask the user which format(s) they want**:
+
+> "Your slides are ready to package. Which export format would you like?
+> 1. **PPTX** — PowerPoint file with speaker notes embedded (great for editing or presenting in PowerPoint/Keynote)
+> 2. **PDF: Slides** — Slide images compiled into a single PDF (ideal for sharing or presenting directly)
+> 3. **PDF: Speaker Notes** — Full speaker notes alongside slides, rendered by your browser (handles all languages including CJK perfectly)
+> 4. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser editing and sharing
+>
+> You can request more than one format."
+
+Then execute only the format(s) the user selects:
 
 1. **PPTX (PowerPoint with Speaker Notes)**:
    - **Action**: Run the `pptx_exporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.
    - **Link**: Provide the download link for the generated `.pptx` file.
 
-2. **PDF: Slides (投影片)**:
+2. **PDF: Slides**:
    - **Action**: Run the `pdf_exporter` script (either by calling the `export_deck_pdf` tool, or by running `python3 scripts/pdf_exporter.py <sessionPath>` in the terminal) to compile slide images into a single PDF presentation.
    - **Link**: Provide the download link for the generated `.pdf` file.
 
-3. **PDF: Speaker Notes (演講者備忘稿)**:
+3. **PDF: Speaker Notes**:
    - **Action**: Direct the user to open the preview link and click the **"Save as PDF"** button embedded in the page. The browser renders the PDF using local system fonts, correctly handling all languages including CJK and Southeast Asian scripts — no server-side font dependencies required.
 
 4. **Google Slides (Open & Edit in Browser)**:

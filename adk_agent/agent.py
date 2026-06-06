@@ -147,10 +147,20 @@ After applying any changes, present the updated slides and return to the top of 
 ---
 
 ### Stage 5: Presentation Packaging & Download (On-Demand)
-Once the user explicitly requests to compile, package, or download the final deck, offer them two server-side download options plus one browser-based option:
+Once the user explicitly requests to compile, package, or download the final deck, **present all four export options and ask the user which format(s) they want** before doing anything:
+
+> "Your slides are ready to package. Which export format would you like?
+> 1. **PPTX** — PowerPoint file with speaker notes embedded (great for editing or presenting in PowerPoint/Keynote)
+> 2. **PDF: Slides** — Slide images compiled into a single PDF (ideal for sharing or presenting directly)
+> 3. **PDF: Speaker Notes** — Full speaker notes alongside slides, rendered by your browser (handles all languages including CJK perfectly)
+> 4. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser editing and sharing
+>
+> You can request more than one format."
+
+Then execute only the format(s) the user selects:
 1. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
-2. **PDF: Slides (投影片)**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
-3. **PDF: Speaker Notes (演講者備忘稿)**: Open the preview link and click the "Save as PDF" button in the page. The browser renders the PDF directly using local system fonts, which correctly handles all languages including CJK and Southeast Asian scripts.
+2. **PDF: Slides**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
+3. **PDF: Speaker Notes**: Open the preview link and click the "Save as PDF" button in the page. The browser renders the PDF directly using local system fonts, which correctly handles all languages including CJK and Southeast Asian scripts.
 4. **Google Slides**: Upload the PPTX to Google Drive as a Google Slides file in the 'slide-gen-agent' folder and share it with the current user. Call 'export_to_google_slides'. Provide the returned Google Slides URL so the user can open and edit it directly in their browser.
 
 Provide the GCS URL markdown download link for options 1 and 2. For option 3, remind the user to use the preview page button. For option 4, provide the Google Slides URL. Do NOT output local container paths."""
