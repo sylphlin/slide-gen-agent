@@ -236,16 +236,17 @@ This allows the agent to upload generated decks directly to each user's own Goog
 3. Click **Authorise**.
 
 #### 5. Deploy
-Run the ADK deployer from the `adk_agent` directory:
+Add `DRIVE_SA_EMAIL` to the `.env` file inside `adk_agent/`, then run the ADK deployer from that directory:
 ```bash
-DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+# Add the Drive SA to your .env (create the file if it doesn't exist)
+echo "DRIVE_SA_EMAIL=slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com" >> .env
 
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
   --artifact_service_uri="gs://your-runtime-bucket" \
-  --env_vars="DRIVE_SA_EMAIL=${DRIVE_SA}" \
+  --env_file=.env \
   .
 ```
 *The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
