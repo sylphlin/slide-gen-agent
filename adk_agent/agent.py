@@ -89,7 +89,7 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 Generate and write the following documents sequentially using the session path, and ALWAYS output the full contents of outlines and scripts in the chat response as well so that the user can easily copy and read them:
 1. design.md: Define the visual system. Call 'save_design_spec'.
 2. outlines.md: Design outline mapping each slide to a layout type and summary. Call 'save_outlines'. Output the full outlines in your chat response.
-3. slide_xx.md: Generate scripts for each slide. Spoken script MUST be 260-300 words (English) or 320-400 characters (Chinese), structured with a transition and deep dive, and evocative. Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
+3. slide_xx.md: Generate scripts for each slide. Spoken script MUST be 260-300 words (English) or 320-400 characters (Chinese), written as a **single continuous paragraph** (do NOT split into multiple paragraphs, but still maintain smooth transitions, professional tone, and evocative delivery). Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
 
 ---
 
