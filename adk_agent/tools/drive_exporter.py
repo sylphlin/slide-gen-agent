@@ -22,6 +22,14 @@ def _get_sa_email() -> str:
         return resp.read().decode()
 
 
+def _http_status(e) -> int | None:
+    """Extract HTTP status code from googleapiclient HttpError or urllib HTTPError."""
+    return (
+        getattr(getattr(e, 'resp', None), 'status', None)
+        or getattr(e, 'code', None)
+    )
+
+
 def _get_drive_service_as_user(user_email: str):
     """Returns a Drive v3 service impersonating user_email via DWD.
 
@@ -42,7 +50,10 @@ def _get_drive_service_as_user(user_email: str):
     adc_creds, _ = google.auth.default()
     adc_creds.refresh(google.auth.transport.requests.Request())
 
-    sa_email = _get_sa_email()
+    try:
+        sa_email = _get_sa_email()
+    except Exception as e:
+        raise RuntimeError(f"[step:metadata] Failed to fetch service account email: {e}") from e
 
     # Step 2 — Build DWD JWT payload
     now = int(time.time())
@@ -66,8 +77,16 @@ def _get_drive_service_as_user(user_email: str):
         },
         method="POST"
     )
-    with urllib.request.urlopen(sign_req, timeout=30) as resp:
-        signed_jwt = json.loads(resp.read())["signedJwt"]
+    try:
+        with urllib.request.urlopen(sign_req, timeout=30) as resp:
+            signed_jwt = json.loads(resp.read())["signedJwt"]
+    except Exception as e:
+        status = _http_status(e)
+        hint = (
+            " → SA is missing roles/iam.serviceAccountTokenCreator on itself."
+            if status == 403 else ""
+        )
+        raise RuntimeError(f"[step:signJwt] HTTP {status}: {e}{hint}") from e
 
     # Step 4 — Exchange signed JWT for user access token
     token_body = urllib.parse.urlencode({
@@ -79,9 +98,19 @@ def _get_drive_service_as_user(user_email: str):
         data=token_body,
         method="POST"
     )
-    with urllib.request.urlopen(token_req, timeout=30) as resp:
-        access_token = json.loads(resp.read())["access_token"]
+    try:
+        with urllib.request.urlopen(token_req, timeout=30) as resp:
+            token_data = json.loads(resp.read())
+    except Exception as e:
+        status = _http_status(e)
+        hint = (
+            " → DWD not configured for this SA Client ID, scope mismatch,"
+            f" or user '{user_email}' is not in an authorised OU."
+            if status == 403 else ""
+        )
+        raise RuntimeError(f"[step:tokenExchange] HTTP {status}: {e}{hint}") from e
 
+    access_token = token_data["access_token"]
     return build('drive', 'v3', credentials=Credentials(token=access_token))
 
 
@@ -142,7 +171,11 @@ async def export_to_google_slides(session_path: str, tool_context: ToolContext) 
 
         folder_name = CONFIG.get('DRIVE_FOLDER_NAME', 'slide-gen-agent')
         service = _get_drive_service_as_user(user_email)
-        folder_id = _get_or_create_folder(service, folder_name)
+
+        try:
+            folder_id = _get_or_create_folder(service, folder_name)
+        except Exception as e:
+            raise RuntimeError(f"[step:driveFolder] {e}") from e
 
         file_metadata = {
             'name': slug,
@@ -154,11 +187,14 @@ async def export_to_google_slides(session_path: str, tool_context: ToolContext) 
             mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
             resumable=True
         )
-        file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id,webViewLink'
-        ).execute()
+        try:
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id,webViewLink'
+            ).execute()
+        except Exception as e:
+            raise RuntimeError(f"[step:driveUpload] {e}") from e
 
         slides_url = file['webViewLink']
         return (
@@ -168,26 +204,8 @@ async def export_to_google_slides(session_path: str, tool_context: ToolContext) 
 
     except Exception as e:
         err_str = str(e)
-        # Detect HTTP status from googleapiclient HttpError (.resp.status)
-        # or urllib HTTPError (.code), falling back to string scan.
-        status = (
-            getattr(getattr(e, 'resp', None), 'status', None)
-            or getattr(e, 'code', None)
-        )
+        status = _http_status(e) or (_http_status(e.__cause__) if e.__cause__ else None)
         if status is None and '403' in err_str:
             status = 403
-        if status == 403:
-            return (
-                "Google Drive export failed with HTTP 403 Forbidden. There are two likely causes:\n\n"
-                "1. **Domain security policy**: Your Google Workspace administrator has restricted "
-                "external applications from writing to Google Drive. Ask your IT admin to authorise "
-                "the agent's service account Client ID under "
-                "Security → API controls → Domain-wide delegation in the Google Workspace Admin Console, "
-                "with the scope `https://www.googleapis.com/auth/drive.file`.\n\n"
-                "2. **DWD not configured or mismatched**: The service account has not been granted "
-                "Domain-Wide Delegation for your domain, or the Client ID registered in the Admin "
-                "Console does not match the deployed service account. Verify the Client ID on the "
-                "IAM Service Accounts page matches the one registered in Domain-wide delegation.\n\n"
-                f"Raw error: {err_str}"
-            )
-        return f"Failed to export to Google Slides: {err_str}"
+        # Step-tagged errors from _get_drive_service_as_user already carry a hint
+        return f"Google Drive export failed: {err_str}"
