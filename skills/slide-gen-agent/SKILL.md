@@ -78,7 +78,27 @@ Define the brand system for this deck: color palette, typography, spacing, and v
 - This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
-Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Layout Catalog below), and a 2–3 sentence summary.
+Generate using EXACTLY this structure (the `**Topic**` field drives all downstream file naming — do not omit or rename it):
+
+```markdown
+# Slide Deck Outline
+
+- **Topic**: [presentation title]
+- **Total Slides**: [N]
+- **Target Audience**: [audience]
+- **Estimated Duration**: [X minutes]
+
+---
+
+## Slide List
+
+| #  | Title | Slide Type | Core Content Summary (2-3 Detailed Sentences) |
+|----|-------|------------|-----------------------------------------------|
+| 01 | [Cover Title] | Cover | [summary] |
+| 02 | [Title] | [type] | [summary] |
+| XX | [Closing Title] | Closing / CTA | [summary] |
+```
+
 - **Action**: Save the outlines to `outlines.md` (by calling the `save_outlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
