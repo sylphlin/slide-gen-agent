@@ -1,22 +1,22 @@
 import os
 import glob
 import re
-import base64
 import json
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
 try:
-    from ..config import save_artifact_helper
+    from ..config import save_artifact_helper, get_gcs_artifact_url
 except ImportError:
-    from config import save_artifact_helper
+    from config import save_artifact_helper, get_gcs_artifact_url
 
 
-def get_base64_image(image_path: str) -> str:
-    with open(image_path, "rb") as f:
-        data = f.read()
-        encoded = base64.b64encode(data).decode('utf-8')
-        return f"data:image/png;base64,{encoded}"
+def get_image_src(png_file: str, pad_num: str, tool_context) -> str:
+    """Returns a GCS URL in Agent Engine, or a relative file path for local preview."""
+    if os.environ.get('GOOGLE_CLOUD_AGENT_ENGINE_ID'):
+        return get_gcs_artifact_url(f"slide_{pad_num}.png", tool_context, version=0)
+    # Local: preview.html sits at session root, images are in slides/
+    return f"./slides/{os.path.basename(png_file)}"
 
 def extract_script(md_path: str) -> str:
     if not os.path.exists(md_path):
@@ -61,18 +61,18 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
             continue
         pad_num = slide_num_match.group(1)
         
-        # Read image as base64
-        image_base64 = get_base64_image(png_file)
-        
+        # Get image source (GCS URL in Agent Engine, relative path locally)
+        image_src = get_image_src(png_file, pad_num, tool_context)
+
         # Extract script notes
         md_file = os.path.join(session_path, f"slide_{pad_num}.md")
         script_notes = extract_script(md_file)
-        
+
         # Format HTML block
         slide_items_html.append(f"""
         <div class="slide-container">
             <h3>Slide {pad_num}</h3>
-            <img src="{image_base64}" alt="Slide {pad_num}">
+            <img src="{image_src}" alt="Slide {pad_num}">
             <div class="speaker-notes">
                 <strong>Speaker Notes:</strong><br>
                 {script_notes.replace(chr(10), '<br>')}
