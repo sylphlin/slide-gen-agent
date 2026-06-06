@@ -53,8 +53,8 @@ graph TD
 4. **Stage 4: Presentation Packaging & Download**
    - Once you approve the final slides, the agent packages them into your choice of three download formats:
      - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide.
-     - **PDF: Slides (投影片)**: A PDF compiled from all slide images (perfect for presenting directly).
-     - **PDF: Speaker Notes (演講者備忘稿)**: A PDF document showing each slide's image followed by its title and speaker notes (matching the layout of the preview page, ideal for handouts).
+     - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly).
+     - **PDF: Speaker Notes**: A PDF document showing each slide's image followed by its title and speaker notes (matching the layout of the preview page, ideal for handouts).
 
 ---
 
