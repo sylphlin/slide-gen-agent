@@ -83,6 +83,7 @@ Write the full slide-by-slide outline using `assets/outlines.md` as your guide. 
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
 Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
+- **Progress**: Before writing each slide, output a header line such as **"Slide X / N — [slide title]"** so the user can track progress.
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
 **Content Sourcing Rule:**
@@ -100,11 +101,13 @@ Generate one file per slide, following `assets/slide_xx.md`. Each file contains 
 
 ## Stage 3: Image Generation & Review
 
-With all Markdown files saved in the session directory, trigger the image generation for every slide. Work through each slide one at a time:
+With all Markdown files saved in the session directory, trigger the image generation for every slide. Each image takes 15–30 seconds — always narrate progress so the user knows the system is working and has not stalled. Work through each slide one at a time:
 
+- **Before** generating each slide, output a status line such as **"🎨 Generating image: slide X / N — [slide title]..."**
 - **Action**: Generate the slide image for **every slide index** (either by calling the `generate_slide_image` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
+- **After** each image is ready, output a brief confirmation such as **"✅ Slide X / N done."** before moving to the next.
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slide_xx.png`).
-- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
+- **Preview Generation**: Once all slide images are generated, output "All N images ready. Building preview page..." then compile them into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
 - **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
 - **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
