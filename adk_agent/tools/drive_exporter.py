@@ -51,17 +51,22 @@ def _get_drive_service_as_user(user_email: str):
     adc_creds.refresh(google.auth.transport.requests.Request())
 
     try:
-        sa_email = _get_sa_email()
+        runtime_sa_email = _get_sa_email()
     except Exception as e:
         raise RuntimeError(f"[step:metadata] Failed to fetch service account email: {e}") from e
 
-    import sys
-    print(f"[drive_exporter] using SA: {sa_email}, impersonating: {user_email}", file=sys.stderr)
+    # Use dedicated Drive SA if configured (required when runtime SA is a Google-managed
+    # service agent that cannot be registered for DWD directly).
+    # Falls back to runtime SA for local / user-managed SA deployments.
+    drive_sa_email = CONFIG.get('DRIVE_SA_EMAIL') or runtime_sa_email
 
-    # Step 2 — Build DWD JWT payload
+    import sys
+    print(f"[drive_exporter] runtime_sa={runtime_sa_email}, drive_sa={drive_sa_email}, user={user_email}", file=sys.stderr)
+
+    # Step 2 — Build DWD JWT payload (issued as the Drive SA, acting as the user)
     now = int(time.time())
     jwt_payload = json.dumps({
-        "iss": sa_email,
+        "iss": drive_sa_email,
         "sub": user_email,       # DWD: act as this user
         "scope": " ".join(SCOPES),
         "aud": "https://oauth2.googleapis.com/token",
@@ -70,9 +75,11 @@ def _get_drive_service_as_user(user_email: str):
     })
 
     # Step 3 — Sign JWT via IAM Credentials API (keyless)
+    # Auth uses the runtime SA's ADC token; signs as drive_sa_email.
+    # Runtime SA must have roles/iam.serviceAccountTokenCreator on drive_sa_email.
     sign_body = json.dumps({"payload": jwt_payload}).encode()
     sign_req = urllib.request.Request(
-        f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{sa_email}:signJwt",
+        f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{drive_sa_email}:signJwt",
         data=sign_body,
         headers={
             "Authorization": f"Bearer {adc_creds.token}",

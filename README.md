@@ -184,18 +184,22 @@ Enable the following APIs in your GCP project:
 
 #### 3. Configure IAM Permissions
 
-Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent**: `service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`. This is the identity that calls Vertex AI models, reads/writes GCS artifacts, and signs JWTs for Google Drive export — **not** the Compute Engine default service account.
-
-Run the following commands (or apply equivalent roles via Cloud Console → **IAM & Admin > IAM**):
+Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). This Google-managed SA handles Vertex AI and GCS access, but **cannot** be directly registered for Domain-Wide Delegation (DWD). For Google Drive export, you create a separate user-managed SA (`slide-gen-drive`) that the runtime SA is allowed to impersonate.
 
 ```bash
 PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
 
-# Runtime SA: the identity that runs your agent code inside Agent Engine
+# Runtime SA: Google-managed identity that runs your agent code
 RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
 
-# Build SA: used only during `adk deploy` to push container images and write build logs
+# Build SA: used only during `adk deploy` for container image push and build logs
 BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Drive SA: user-managed SA registered for DWD — created and owned by you
+gcloud iam service-accounts create slide-gen-drive \
+  --display-name="Slide Gen Drive Exporter" \
+  --project=$GOOGLE_CLOUD_PROJECT
+DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 
 # Required: call Vertex AI models and Gemini image generation
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
@@ -207,9 +211,9 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/storage.objectUser"
 
-# Required: sign DWD JWTs for Google Drive export (keyless, no SA key needed)
-gcloud iam service-accounts add-iam-policy-binding $RUNTIME_SA \
-  --member="serviceAccount:$RUNTIME_SA" \
+# Required: allow runtime SA to sign JWTs as the Drive SA (for DWD)
+gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
+  --member="serviceAccount:${RUNTIME_SA}" \
   --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
 
@@ -227,18 +231,21 @@ This allows the agent to upload generated decks directly to each user's own Goog
 
 1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
 2. Click **Add new** and enter:
-   - **Client ID**: the OAuth 2 Client ID of the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). Find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select that account → **Details** tab.
+   - **Client ID**: the OAuth 2 Client ID of the **Drive SA** (`slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com`). Find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select `slide-gen-drive` → **Details** tab.
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
 3. Click **Authorise**.
 
 #### 5. Deploy
 Run the ADK deployer from the `adk_agent` directory:
 ```bash
+DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
   --artifact_service_uri="gs://your-runtime-bucket" \
+  --env_vars="DRIVE_SA_EMAIL=${DRIVE_SA}" \
   .
 ```
 *The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
