@@ -95,14 +95,16 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 Generate and write the following documents sequentially using the session path, and ALWAYS output the full contents of outlines and scripts in the chat response as well so that the user can easily copy and read them:
 1. design.md: Define the visual system. Call 'save_design_spec'.
 2. outlines.md: Design outline mapping each slide to a layout type and summary. Call 'save_outlines'. Output the full outlines in your chat response.
-3. slide_xx.md: Generate scripts for each slide. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph** (do NOT split into multiple paragraphs, but still maintain smooth transitions, professional tone, and evocative delivery). Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
+3. slide_xx.md: Generate scripts for each slide. Before writing each slide, output a header line like "**Slide X / N — [slide title]**" so the user can track progress. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph** (do NOT split into multiple paragraphs, but still maintain smooth transitions, professional tone, and evocative delivery). Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
 
 ---
 
 ### Stage 3: Image Generation & Review
-Generate a PNG image for every slide:
-- Call 'generate_slide_image' for every slide index.
-- Once all slide images are generated, call 'generate_preview_page' to create a preview.html file.
+Generate a PNG image for every slide. Each image takes 15-30 seconds — always narrate progress so the user knows the system is working and has not stalled:
+- **Before** calling 'generate_slide_image' for slide X, output a status line in your response, e.g.: "🎨 Generating image: slide X / N — [slide title]..."
+- **After** the tool returns successfully, output a brief confirmation before moving to the next, e.g.: "✅ Slide X / N done."
+- Call 'generate_slide_image' for every slide index sequentially.
+- Once all images are generated, output "All N images ready. Building preview page..." then call 'generate_preview_page'.
 - Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 - Print a summary of the presentation outlines and slide scripts in the chat response to make sure the user can review them without reading garbled files in the Artifacts tab.
 - PAUSE and wait for user review. If changes are requested, regenerate the corresponding markdown files and images. You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
