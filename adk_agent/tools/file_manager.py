@@ -10,6 +10,21 @@ except ImportError:
     from config import save_artifact_helper
 
 
+def get_topic_slug(session_path: str) -> str:
+    """Reads the Topic field from outlines.md and returns a filename-safe slug."""
+    outlines_path = os.path.join(session_path, 'outlines.md')
+    if os.path.exists(outlines_path):
+        with open(outlines_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        match = re.search(r'\*\*Topic\*\*:\s*(.+)', content)
+        if match:
+            topic = match.group(1).strip()
+            slug = re.sub(r'[^\w\s-]', '', topic)
+            slug = re.sub(r'[\s_]+', '-', slug).strip('-').lower()
+            return slug[:60] if slug else 'presentation'
+    return 'presentation'
+
+
 def initialize_session(project_name: str) -> str:
     """Initializes a new slide deck session. Creates a dedicated folder and returns its absolute path.
     ALWAYS call this first before writing any slide files.

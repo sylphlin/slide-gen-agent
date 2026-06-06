@@ -5,9 +5,11 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
 try:
-    from ..config import save_artifact_helper
+    from ..config import save_artifact_helper, get_gcs_artifact_url
+    from ..tools.file_manager import get_topic_slug
 except ImportError:
-    from config import save_artifact_helper
+    from config import save_artifact_helper, get_gcs_artifact_url
+    from tools.file_manager import get_topic_slug
 
 # Bundled WQY MicroHei — TrueType CJK font covering Simplified Chinese, Traditional Chinese, Japanese
 _BUNDLED_FONT = os.path.join(
@@ -103,7 +105,9 @@ async def export_speaker_notes_pdf(session_path: str, tool_context: ToolContext)
     if not png_files:
         return "Error: No slide PNG images found in the session. Generate images first."
         
-    pdf_path = os.path.join(session_path, 'speaker_notes.pdf')
+    slug = get_topic_slug(session_path)
+    notes_filename = f"{slug}-speaker-notes.pdf"
+    pdf_path = os.path.join(session_path, notes_filename)
     
     try:
         from reportlab.lib.pagesizes import letter
@@ -199,17 +203,12 @@ async def export_speaker_notes_pdf(session_path: str, tool_context: ToolContext)
             pdf_bytes = f.read()
             
         artifact_part = Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
-        await save_artifact_helper('speaker_notes.pdf', artifact_part, tool_context)
-        
-        try:
-            from ..config import get_gcs_artifact_url
-        except ImportError:
-            from config import get_gcs_artifact_url
-            
-        gcs_url = get_gcs_artifact_url('speaker_notes.pdf', tool_context)
+        await save_artifact_helper(notes_filename, artifact_part, tool_context)
+
+        gcs_url = get_gcs_artifact_url(notes_filename, tool_context)
         if gcs_url:
             return f"Speaker notes PDF successfully compiled.\nDownload it here: {gcs_url}"
-            
+
         return f"Speaker notes PDF successfully compiled and saved to {pdf_path}"
         
     except Exception as e:
