@@ -55,6 +55,9 @@ def _get_drive_service_as_user(user_email: str):
     except Exception as e:
         raise RuntimeError(f"[step:metadata] Failed to fetch service account email: {e}") from e
 
+    import sys
+    print(f"[drive_exporter] using SA: {sa_email}, impersonating: {user_email}", file=sys.stderr)
+
     # Step 2 — Build DWD JWT payload
     now = int(time.time())
     jwt_payload = json.dumps({
