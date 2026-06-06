@@ -17,17 +17,15 @@ graph TD
     A[Source Material] --> B(Stage 1: Proposal)
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
-    D -->|Output 1| E[design.md - Design Spec]
-    D -->|Output 2| F[outlines.md - Slide Outlines]
-    D -->|Output 3| G[slides/slide_xx.md - Slide Details & Script]
-    E & F & G -->|Optional: Manual Tweaks| I(Stage 3: Image Generation & Preview)
-    I -->|Input: design.md + slide_xx.md| J[Run Image Generator]
-    J --> K[Output: slide_xx.png]
-    K --> L[Generate preview.html]
-    K & G -->|On-Demand packaging| M(Stage 4: Packaging & Download)
-    M -->|Option 1| N[presentation.pptx - Widescreen PPTX with Speaker Notes]
-    M -->|Option 2| O[presentation.pdf - PDF Slides Only]
-    M -->|Option 3| P[speaker_notes.pdf - PDF with Images + Speaker Notes]
+    D -->|Generates| E[design.md, outlines.md, slide_xx.md]
+    E --> F(Stage 3: Image Generation & Preview)
+    F -->|Generates| G[slide_xx.png & preview.html]
+    G --> H{User Review & Optional Tweaks}
+    H -->|Request Changes/Regenerate| C
+    H -->|User Approves| I(Stage 4: Packaging & Download)
+    I -->|Option 1| J[presentation.pptx - Widescreen PPTX with Speaker Notes]
+    I -->|Option 2| K[presentation.pdf - PDF Slides Only]
+    I -->|Option 3| L[speaker_notes.pdf - PDF with Images + Speaker Notes]
 ```
 
 ### The Four-Stage Pipeline
@@ -38,17 +36,18 @@ graph TD
    - *The agent pauses and waits for you.* You can accept the proposal or adjust the theme/color palette.
 
 2. **Stage 2: Structured Markdown Generation**
-   - Once approved, the agent generates visual specifications and slide-by-slide details as clean Markdown files in an isolated session folder:
+   - Once approved, the agent automatically generates visual specifications and slide-by-slide details as clean Markdown files in an isolated session folder:
      - **`design.md`**: The global design system (hex codes, fonts, layout classes). This acts as the **Single Source of Truth (SSoT)**.
      - **`outlines.md`**: Complete slide list with visual layout type and short summary.
      - **`slides/slide_xx.md`**: Individual slide metadata, title content, and a detailed presenter script (150–300 words).
-   - **Why it's stable**: You can fix typos in a script or title directly in `slide_xx.md` without touching other slides or risking visual template layout corruption.
+   - *The pipeline flows directly into Stage 3 without pausing.*
 
 3. **Stage 3: Image Generation & Preview**
-   - The agent merges `design.md` and `slide_xx.md` into a structured XML prompt.
-   - It sends this prompt to the image generation model to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`).
+   - The agent merges `design.md` and `slide_xx.md` into a structured prompt.
+   - It sends this prompt to the image generation model to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`) for each slide.
    - It automatically compiles all slide images and speaker notes into a local `preview.html` page so you can easily review the full presentation.
-   - **Why it's easy to modify**: Want a new brand color? Edit `design.md` once and regenerate. Need to fix Slide 5? Edit `slides/slide_05.md` and regenerate just that slide.
+   - *The agent pauses and waits for your review.*
+   - **How to Iterate & Tweak**: If you want to make changes (e.g., adjust a slide's script, change colors, or regenerate a specific slide), you can simply tell the agent in the chat. The agent will update the corresponding Markdown files and regenerate only the affected slide images, ensuring fast and consistent iteration.
 
 4. **Stage 4: Presentation Packaging & Download**
    - Once you approve the final slides, the agent packages them into your choice of three download formats:
