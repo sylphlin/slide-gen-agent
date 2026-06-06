@@ -25,9 +25,9 @@ graph TD
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
     
-    D -->|Step 1| E1[design.md - Global Style Spec]
+    D -->|Step 1| E1[design.md - Brand System]
     D -->|Step 2| E2[outlines.md - Slide Outlines]
-    E2 -->|Step 3: Guides Content Routing| E3[slide_xx.md - Per-Slide Scripts]
+    E2 -->|Step 3: Guides Content Routing| E3[slide_xx.md - Script + Optional Layout]
     
     E1 & E3 --> F(Stage 3: Image Generation & Preview)
     F -->|Generates| G1[slide_xx.png - Slide Images]
@@ -35,9 +35,9 @@ graph TD
     
     G1 & G2 --> H{User Review & Optional Tweaks}
     
-    H -->|Request Text/Content Changes| E3
-    H -->|Request Structural/Layout Changes| E2
-    H -->|Request Global Style Changes| E1
+    H -->|Request Script or Layout Changes| E3
+    H -->|Request Outline Changes| E2
+    H -->|Request Brand/Color Changes| E1
     
     H -->|User Approves| I(Stage 4: Packaging & Download)
     I -->|Option 1| J[topic.pptx - Widescreen PPTX with Speaker Notes]
@@ -57,18 +57,18 @@ graph TD
    - *The agent pauses and waits for you.* You can accept the proposal or adjust the theme/color palette.
 
 2. **Stage 2: Structured Markdown Generation**
-   - Once approved, the agent automatically generates visual specifications and slide-by-slide details as clean Markdown files in an isolated session folder:
-     - **`design.md`**: The global design system (hex codes, fonts, layout classes). This acts as the **Single Source of Truth (SSoT)**.
-     - **`outlines.md`**: Complete slide list with visual layout type and short summary.
-     - **`slides/slide_xx.md`**: Individual slide metadata, title content, and a detailed presenter script (150–300 words).
+   - Once approved, the agent generates three types of Markdown files in an isolated session folder:
+     - **`design.md`**: The brand system — hex color palette, typography, spacing, and visual style rules. This is the SSoT for brand consistency across all slides.
+     - **`outlines.md`**: Complete slide list with layout type and 2–3 sentence summary per slide.
+     - **`slide_xx.md`**: Per-slide file with title, speaker script (260–300 words), and an optional `## Layout` section (left empty on first pass — the image model infers a suitable composition from the slide type and script).
    - *The pipeline flows directly into Stage 3 without pausing.*
 
 3. **Stage 3: Image Generation & Preview**
-   - The agent merges `design.md` and `slide_xx.md` into a structured prompt.
-   - It sends this prompt to the image generation model to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`) for each slide.
-   - It automatically compiles all slide images and speaker notes into a local `preview.html` page so you can easily review the full presentation.
+   - The agent combines `design.md` (brand) and `slide_xx.md` (per-slide spec) into a structured prompt for each slide.
+   - It sends this to the image generation model to produce the final 16:9 high-fidelity PNG (`slide_xx.png`).
+   - All slide images and speaker notes are compiled into a `preview.html` page for easy review.
    - *The agent pauses and waits for your review.*
-   - **How to Iterate & Tweak**: If you want to make changes (e.g., adjust a slide's script, change colors, or regenerate a specific slide), you can simply tell the agent in the chat. The agent will update the corresponding Markdown files and regenerate only the affected slide images, ensuring fast and consistent iteration.
+   - **How to Iterate**: Tell the agent what to change in plain language. Script edits update `slide_xx.md`; layout changes (e.g., "make slide 3 two-column, chart on the right") populate the `## Layout` section; color or brand changes update `design.md`. Only the affected slides are regenerated.
 
 4. **Stage 4: Presentation Packaging & Download**
    - Once you approve the final slides, the agent offers three export options:
@@ -87,14 +87,13 @@ slide-gen-agent/
 │   └── slide-gen-agent/     # 🌟 Standard self-contained Agent Skill (for Antigravity/Codex)
 │       ├── SKILL.md         # Playbook/guidelines (YAML frontmatter + instructions)
 │       ├── assets/          # Static templates used by the skill
-│       │   ├── design.md    # Design system template
+│       │   ├── design.md    # Brand system template (colors, typography, visual style)
 │       │   ├── outlines.md  # Deck outline template
-│       │   └── slide_xx.md  # Individual slide content template
+│       │   └── slide_xx.md  # Per-slide template (title, optional layout, script)
 │       └── scripts/         # Custom tools bundled with the skill
 │           ├── pdf_exporter.py # Widescreen presentation PDF compiler
 │           ├── pptx_exporter.py # Widescreen PPTX compiler with speaker notes
-│           ├── notes_pdf_exporter.py # PDF compiler with slide images + speaker notes
-│           └── preview_generator.py # HTML preview page compiler
+│           └── preview_generator.py # HTML preview page compiler (includes Save as PDF)
 └── adk_agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
     ├── requirements.txt     # Python dependency configuration (includes python-pptx & reportlab)
     ├── agent.py             # Main agent entry point
@@ -104,8 +103,7 @@ slide-gen-agent/
         ├── imagen.py        # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
-        ├── notes_pdf_exporter.py # PDF with slide images + speaker notes exporter
-        └── preview_generator.py # HTML slide preview and notes compiler
+        └── preview_generator.py # HTML slide preview and notes compiler (includes Save as PDF)
 ```
 
 ---
