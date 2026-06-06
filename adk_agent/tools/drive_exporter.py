@@ -203,4 +203,7 @@ async def export_to_google_slides(session_path: str, tool_context: ToolContext) 
         )
 
     except Exception as e:
-        return f"Google Drive export failed: {str(e)}"
+        import sys
+        err_str = str(e)
+        print(f"[drive_exporter] export failed: {err_str}", file=sys.stderr)
+        return f"Google Drive export failed: {err_str}"
