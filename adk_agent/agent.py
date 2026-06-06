@@ -10,12 +10,16 @@ try:
     from .tools.imagen import generate_slide_image
     from .tools.pdf_exporter import export_deck_pdf
     from .tools.preview_generator import generate_preview_page
+    from .tools.pptx_exporter import export_deck_pptx
+    from .tools.notes_pdf_exporter import export_speaker_notes_pdf
 except ImportError:
     from config import CONFIG
     from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
     from tools.imagen import generate_slide_image
     from tools.pdf_exporter import export_deck_pdf
     from tools.preview_generator import generate_preview_page
+    from tools.pptx_exporter import export_deck_pptx
+    from tools.notes_pdf_exporter import export_speaker_notes_pdf
 
 from google.adk import Agent
 from google.genai import types
@@ -103,10 +107,13 @@ Generate a PNG image for every slide:
 
 ---
 
-### Stage 4: Widescreen PDF Packaging (On-Demand)
-Once the user explicitly requests to compile, package, or download the final deck:
-- Call 'export_deck_pdf' to compile the PNGs into a single PDF.
-- Provide the GCS URL markdown download link to the compiled PDF file. Do NOT output local container paths."""
+### Stage 4: Presentation Packaging & Download (On-Demand)
+Once the user explicitly requests to compile, package, or download the final deck, offer them three distinct download options:
+1. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
+2. **PDF: Slides (投影片)**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
+3. **PDF: Speaker Notes (演講者備忘稿)**: A PDF showing each slide's image followed by its title and speaker notes (matching the preview.html layout). Call 'export_speaker_notes_pdf'.
+
+Provide the GCS URL markdown download link for the compiled file(s) that the user requests. Do NOT output local container paths."""
 
 # Default Text Model selection
 text_model = CONFIG['TEXT_MODEL']
@@ -139,6 +146,8 @@ root_agent = Agent(
         generate_slide_image,
         generate_preview_page,
         export_deck_pdf,
+        export_deck_pptx,
+        export_speaker_notes_pdf,
     ]
 )
 

@@ -10,7 +10,7 @@ This repository is structured to support three progressive deployment and usage 
 
 Traditional AI slide generators try to create layouts and slide visual files in a single black-box step, which often results in inconsistent designs, random formatting, and an inability to tweak specific parts without regenerating the entire deck.
 
-Our agent uses a **decoupled, three-stage pipeline** with plain-text intermediate outputs. This guarantees that you can easily jump in, modify any design choice or script manually, and get consistent, updated results without having to regenerate the entire deck from scratch.
+Our agent uses a **decoupled, four-stage pipeline** with plain-text intermediate outputs. This guarantees that you can easily jump in, modify any design choice or script manually, and get consistent, updated results without having to regenerate the entire deck from scratch.
 
 ```mermaid
 graph TD
@@ -20,12 +20,17 @@ graph TD
     D -->|Output 1| E[design.md - Design Spec]
     D -->|Output 2| F[outlines.md - Slide Outlines]
     D -->|Output 3| G[slides/slide_xx.md - Slide Details & Script]
-    E & F & G -->|Optional: Manual Tweaks| I(Stage 3: Image Generation)
+    E & F & G -->|Optional: Manual Tweaks| I(Stage 3: Image Generation & Preview)
     I -->|Input: design.md + slide_xx.md| J[Run Image Generator]
     J --> K[Output: slide_xx.png]
+    K --> L[Generate preview.html]
+    K & G -->|On-Demand packaging| M(Stage 4: Packaging & Download)
+    M -->|Option 1| N[presentation.pptx - Widescreen PPTX with Speaker Notes]
+    M -->|Option 2| O[presentation.pdf - PDF Slides Only]
+    M -->|Option 3| P[speaker_notes.pdf - PDF with Images + Speaker Notes]
 ```
 
-### The Three-Stage Pipeline
+### The Four-Stage Pipeline
 
 1. **Stage 1: Content Analysis & Proposal**
    - The agent reads your source material (documents, transcripts, raw notes) to understand the domain, tone, and target audience.
@@ -39,10 +44,17 @@ graph TD
      - **`slides/slide_xx.md`**: Individual slide metadata, title content, and a detailed presenter script (150–300 words).
    - **Why it's stable**: You can fix typos in a script or title directly in `slide_xx.md` without touching other slides or risking visual template layout corruption.
 
-3. **Stage 3: Image Generation**
+3. **Stage 3: Image Generation & Preview**
    - The agent merges `design.md` and `slide_xx.md` into a structured XML prompt.
    - It sends this prompt to the image generation model to generate the final 16:9 high-fidelity slide PNG (`slide_xx.png`).
+   - It automatically compiles all slide images and speaker notes into a local `preview.html` page so you can easily review the full presentation.
    - **Why it's easy to modify**: Want a new brand color? Edit `design.md` once and regenerate. Need to fix Slide 5? Edit `slides/slide_05.md` and regenerate just that slide.
+
+4. **Stage 4: Presentation Packaging & Download**
+   - Once you approve the final slides, the agent packages them into your choice of three download formats:
+     - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide.
+     - **PDF: Slides (投影片)**: A PDF compiled from all slide images (perfect for presenting directly).
+     - **PDF: Speaker Notes (演講者備忘稿)**: A PDF document showing each slide's image followed by its title and speaker notes (matching the layout of the preview page, ideal for handouts).
 
 ---
 
@@ -59,15 +71,20 @@ slide-gen-agent/
 │       │   ├── outlines.md  # Deck outline template
 │       │   └── slide_xx.md  # Individual slide content template
 │       └── scripts/         # Custom tools bundled with the skill
-│           └── pdfExporter.ts # Widescreen presentation PDF compiler (only custom tool needed)
+│           ├── pdf_exporter.py # Widescreen presentation PDF compiler
+│           ├── pptx_exporter.py # Widescreen PPTX compiler with speaker notes
+│           ├── notes_pdf_exporter.py # PDF compiler with slide images + speaker notes
+│           └── preview_generator.py # HTML preview page compiler
 └── adk_agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
-    ├── requirements.txt     # Python dependency configuration
+    ├── requirements.txt     # Python dependency configuration (includes python-pptx & reportlab)
     ├── agent.py             # Main agent entry point
     └── tools/               # Agent tools
         ├── __init__.py
         ├── file_manager.py  # Session initialization and file writer tools
         ├── imagen.py        # Imagen 3 slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
+        ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
+        ├── notes_pdf_exporter.py # PDF with slide images + speaker notes exporter
         └── preview_generator.py # HTML slide preview and notes compiler
 ```
 

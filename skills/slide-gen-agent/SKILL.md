@@ -107,14 +107,23 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 ---
 
-## Stage 4: Widescreen PDF Packaging (On-Demand)
+## Stage 4: Presentation Packaging & Download (On-Demand)
 
-Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck:
+Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, offer them three distinct download options:
 
-- **Action**: Run the `pdfExporter` script (either by calling the `exportSessionToPdf` tool, or by executing `python3 scripts/pdf_exporter.py <sessionPath> [pdfFileName]` in the terminal) to compile all slide PNGs in correct numeric order into a single PDF presentation file.
-- **PDF Download Link**: Provide the markdown link to the generated PDF (e.g., `[Download presentation.pdf](presentation.pdf)`) so the user can download the compiled presentation deck directly.
+1. **PPTX (PowerPoint with Speaker Notes)**:
+   - **Action**: Run the `pptxExporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.
+   - **Link**: Provide the download link for `presentation.pptx`.
 
-Once completed, provide a final summary of all artifacts produced, highlighting the download link for the PDF.
+2. **PDF: Slides (投影片)**:
+   - **Action**: Run the `pdfExporter` script (either by calling the `export_deck_pdf` tool, or by running `python3 scripts/pdf_exporter.py <sessionPath>` in the terminal) to compile slide images into a single PDF presentation.
+   - **Link**: Provide the download link for `presentation.pdf`.
+
+3. **PDF: Speaker Notes (演講者備忘稿)**:
+   - **Action**: Run the `notesPdfExporter` script (either by calling the `export_speaker_notes_pdf` tool, or by running `python3 scripts/notes_pdf_exporter.py <sessionPath>` in the terminal) to compile a PDF containing both slide images and speaker notes (matching the preview.html layout).
+   - **Link**: Provide the download link for `speaker_notes.pdf`.
+
+Once completed, provide a final summary of all artifacts produced, highlighting the download links.
 
 
 
