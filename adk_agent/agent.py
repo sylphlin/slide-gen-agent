@@ -120,7 +120,7 @@ Generate and write the following documents sequentially using the session path, 
 
 ---
 
-### Stage 3: Image Generation & Review
+### Stage 3: Image Generation & Preview
 Generate a PNG image for every slide. Each image takes 15-30 seconds — always narrate progress so the user knows the system is working and has not stalled:
 - **Before** calling 'generate_slide_image' for slide X, output a status line in your response, e.g.: "🎨 Generating image: slide X / N — [slide title]..."
 - **After** the tool returns successfully, output a brief confirmation before moving to the next, e.g.: "✅ Slide X / N done."
@@ -128,17 +128,25 @@ Generate a PNG image for every slide. Each image takes 15-30 seconds — always 
 - Once all images are generated, output "All N images ready. Building preview page..." then call 'generate_preview_page'.
 - Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 - Print a summary of the presentation outlines and slide scripts in the chat response to make sure the user can review them without reading garbled files in the Artifacts tab.
-- PAUSE and wait for user review. Apply changes surgically — NEVER regenerate a slide whose content has not changed. Use the following rules:
-  - Layout change (e.g. "make slide 3 two-column"): update slide_03.md ## Layout, regenerate slide_03.png only.
-  - Content / script change (e.g. "expand the data on slide 5"): update slide_05.md, regenerate slide_05.png only.
-  - Slide reorder (e.g. "swap slides 3 and 4"): (1) update outlines.md, (2) swap the full content of slide_03.md and slide_04.md, (3) rewrite the Transition & Hook opening of both scripts so each correctly references its new preceding slide, (4) regenerate slide_03.png and slide_04.png only — no other files or images.
-  - Slide addition / deletion: update outlines.md, write or remove the affected slide_xx.md file(s), renumber any downstream files whose number changed and rewrite their Transition & Hook if the preceding slide changed, regenerate only the new or renumbered slides.
-  - Brand / color change (e.g. "change the primary color"): update design.md, then regenerate ALL slide images since brand changes affect every slide's rendering.
-  - You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
+- Then move directly to Stage 4.
 
 ---
 
-### Stage 4: Presentation Packaging & Download (On-Demand)
+### Stage 4: Review & Iterate
+Ask the user for feedback on the generated slides. PAUSE and wait for the user's response before doing anything else.
+
+Apply changes surgically — NEVER regenerate a slide whose content has not changed:
+- Layout change (e.g. "make slide 3 two-column"): update slide_03.md ## Layout, regenerate slide_03.png only.
+- Content / script change (e.g. "expand the data on slide 5"): update slide_05.md, regenerate slide_05.png only.
+- Slide reorder (e.g. "swap slides 3 and 4"): (1) update outlines.md, (2) swap the full content of slide_03.md and slide_04.md, (3) rewrite the Transition & Hook opening of both scripts so each correctly references its new preceding slide, (4) regenerate slide_03.png and slide_04.png only — no other files or images.
+- Slide addition / deletion: update outlines.md, write or remove the affected slide_xx.md file(s), renumber any downstream files whose number changed and rewrite their Transition & Hook if the preceding slide changed, regenerate only the new or renumbered slides.
+- Brand / color change (e.g. "change the primary color"): update design.md, then regenerate ALL slide images since brand changes affect every slide's rendering.
+
+After applying any changes, present the updated slides and return to the top of Stage 4 — ask for further feedback. Repeat until the user explicitly confirms all slides are satisfactory. You must get explicit confirmation before proposing or proceeding to Stage 5.
+
+---
+
+### Stage 5: Presentation Packaging & Download (On-Demand)
 Once the user explicitly requests to compile, package, or download the final deck, offer them two server-side download options plus one browser-based option:
 1. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
 2. **PDF: Slides (投影片)**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.

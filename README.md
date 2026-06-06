@@ -16,7 +16,7 @@ This repository is structured to support three progressive deployment and usage 
 
 Traditional AI slide generators create layouts and visuals in a single black-box step, which often results in inconsistent designs, random formatting, and crude iteration — tweaking a single slide's structure or integrating revised speaker content typically requires regenerating the entire deck.
 
-`slide-gen-agent` uses a **decoupled, five-stage pipeline** with plain-text intermediate files as the backbone. Every design decision lives in an editable Markdown file — so you can refine any layer (global style, slide structure, or per-slide content) through chat, and only the affected slides get regenerated.
+`slide-gen-agent` uses a **decoupled, six-stage pipeline** with plain-text intermediate files as the backbone. Every design decision lives in an editable Markdown file — so you can refine any layer (global style, slide structure, or per-slide content) through chat, and only the affected slides get regenerated.
 
 ```mermaid
 graph TD
@@ -24,29 +24,29 @@ graph TD
     A0 -->|User Confirms Context| B(Stage 1: Content Analysis & Proposal)
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
-    
+
     D -->|Step 1| E1[design.md - Brand System]
     D -->|Step 2| E2[outlines.md - Slide Outlines]
     E2 -->|Step 3: Guides Content Routing| E3[slide_xx.md - Script + Optional Layout]
-    
+
     E1 & E3 --> F(Stage 3: Image Generation & Preview)
     F -->|Generates| G1[slide_xx.png - Slide Images]
     F -->|Generates| G2[preview.html - Presentation Preview]
-    
-    G1 & G2 --> H{User Review & Optional Tweaks}
-    
-    H -->|Request Script or Layout Changes| E3
-    H -->|Request Outline Changes| E2
-    H -->|Request Brand/Color Changes| E1
-    
-    H -->|User Approves| I(Stage 4: Packaging & Download)
+
+    G1 & G2 --> H(Stage 4: Review & Iterate)
+
+    H -->|Script or Layout Changes| E3
+    H -->|Outline / Order Changes| E2
+    H -->|Brand / Color Changes| E1
+
+    H -->|User Approves| I(Stage 5: Packaging & Download)
     I -->|Option 1| J[topic.pptx - Widescreen PPTX with Speaker Notes]
     I -->|Option 2| K[topic.pdf - PDF Slides Only]
     I -->|Option 3| L[preview.html → Browser Print-to-PDF with Speaker Notes]
     I -->|Option 4| M[Google Slides - Direct Drive Upload & Share]
 ```
 
-### The Five-Stage Pipeline
+### The Six-Stage Pipeline
 
 0. **Stage 0: Clarification & Alignment**
    - Before touching the source material, the agent confirms three core context elements: **expected presentation duration** (or slide count), **target audience**, and **expected goal/outcome**.
@@ -68,15 +68,22 @@ graph TD
    - The agent combines `design.md` (brand) and `slide_xx.md` (per-slide spec) into a structured prompt for each slide.
    - It sends this to the image generation model to produce the final 16:9 high-fidelity PNG (`slide_xx.png`).
    - All slide images and speaker notes are compiled into a `preview.html` page for easy review.
-   - *The agent pauses and waits for your review.*
-   - **How to Iterate**: Tell the agent what to change in plain language. Script edits update `slide_xx.md`; layout changes (e.g., "make slide 3 two-column, chart on the right") populate the `## Layout` section; color or brand changes update `design.md`. Only the affected slides are regenerated.
+   - *The pipeline flows directly into Stage 4.*
 
-4. **Stage 4: Presentation Packaging & Download**
+4. **Stage 4: Review & Iterate**
+   - *The agent pauses and waits for your feedback.*
+   - Tell the agent what to change in plain language. Changes are applied surgically — only the affected slides are regenerated:
+     - Script or layout edits → update the relevant `slide_xx.md` + regenerate that slide only
+     - Slide reorder / add / delete → update `outlines.md` + affected `slide_xx.md` files (including Transition & Hook rewrites) + regenerate only the changed slides
+     - Brand / color change → update `design.md` + regenerate all slides
+   - The loop repeats until you explicitly approve all slides.
+
+5. **Stage 5: Presentation Packaging & Download**
    - Once you approve the final slides, the agent offers four export options:
      - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide. Filename uses the presentation topic (e.g. `ai-trends-2025.pptx`).
      - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly). Filename uses the presentation topic (e.g. `ai-trends-2025.pdf`).
      - **PDF: Speaker Notes**: Open the `preview.html` link and click the **"Save as PDF"** button. The browser renders each slide and its notes as a clean, paginated PDF using your local system fonts — this correctly handles all languages including CJK and Southeast Asian scripts without any server-side font dependencies.
-     - **Google Slides**: The agent uploads the PPTX to Google Drive as a Google Slides file in the `slide-gen-agent` folder and shares it with you as editor. Opens directly in Google Slides for immediate editing and sharing. *(Requires Google Drive API enabled in GCP and Drive write access on the service account.)*
+     - **Google Slides**: The agent uploads the PPTX to Google Drive as a Google Slides file in the `slide-gen-agent` folder and shares it with you as editor. Opens directly in Google Slides for immediate editing and sharing. *(Requires Google Drive API enabled in GCP and Domain-Wide Delegation configured in Google Workspace Admin.)*
 
 ---
 
