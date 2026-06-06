@@ -168,10 +168,8 @@ This will spin up a local server. Open the provided URL in your browser to inter
 ### 🔹 Method 3: Production Deployment to Agent Engine (Gemini Enterprise)
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
-#### 1. Setup & One-Command Deployment
-Ensure that `a2a-sdk` is listed in your `requirements.txt` (this is already configured in this repository). This is required because the ADK 2.0 deployer hardcodes the `--a2a` flag during Reasoning Engine startup, which requires `a2a-sdk` to be installed in the container to prevent a `ModuleNotFoundError` crash.
-
-If you haven't set up the virtual environment yet, run the following setup commands from the root `slide-gen-agent` directory:
+#### 1. Install Dependencies
+Set up the virtual environment from the root `slide-gen-agent` directory:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -179,87 +177,61 @@ cd adk_agent
 pip install "google-adk[gcp]" google-genai Pillow python-dotenv
 ```
 
-Once dependencies are installed and the virtual environment is active, run the ADK deployer from the `adk_agent` directory:
-```bash
-adk deploy agent_engine \
-  --project=$GOOGLE_CLOUD_PROJECT \
-  --region=us-central1 \
-  --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://your-runtime-bucket" \
-  .
-```
-*Behind the scenes, the ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When the command completes, it will output your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
+#### 2. Enable GCP APIs
+Enable the following APIs in your GCP project:
+- [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
+- [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
 
-#### 2. Configure IAM Permissions
+#### 3. Configure IAM Permissions
+All permissions below apply to the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`.
 
-##### A. Build & Deploy Permissions (One-Time Setup)
-If the deployment command fails with a "Build failed" error, your project's default compute service account (`{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`) might lack permission to write build logs or push built images.
-Grant these roles to the service account in **IAM & Admin > IAM**:
-- **Logs Writer** (`roles/logging.logWriter`)
-- **Artifact Registry Writer** (`roles/artifactregistry.writer`)
-
-##### B. Runtime Permissions (Required)
-The deployed Agent Engine (Reasoning Engine) instance and its platform orchestrator need permissions to call Vertex AI models and read/write to the GCS bucket:
-
-1. Open the **Google Cloud Console**.
-2. Go to **IAM & Admin > IAM**.
-3. **Grant permissions to the agent's runtime service account**:
-   - Locate your project's runtime identity (typically the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`).
-   - Grant it the following roles:
-     - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Gemini image generation)
-     - **Storage Object User** (`roles/storage.objectUser`) (required to read/write slides, previews, and PDF files to your GCS bucket)
-
-4. **Grant permissions to the Vertex AI Service Agent**:
-   - Click **ADD** to add a new principal.
-   - Enter the Vertex AI Reasoning Engine Service Agent address:
-     `service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`
-   - Grant it the following role:
-     - **Storage Object User** (`roles/storage.objectUser`) (required for the platform to synchronize and save artifacts to GCS on behalf of the agent)
-*No raw API keys or secret files need to be managed; the hosted reasoning engine utilizes secure IAM/ADC credentials automatically.*
-
-#### 3. Connect to Gemini Enterprise Console
-To make the agent available to your Enterprise users:
-1. Log in to the **Gemini Enterprise Admin Console**.
-2. Navigate to the **Agents** page from the left sidebar.
-3. Click **+ Add Agent**.
-4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID** (obtained from the deployment step above) in the **Agent Engine reasoning engine** input field.
-5. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
-
-#### 4. (Optional) Enable Google Slides Export
-
-This enables the **"Open in Google Slides"** export option, which uploads the generated deck directly to each user's own Google Drive as a Google Slides file they own.
-
-**Step 1 — Enable Google Drive API**
-
-In your GCP project, enable the [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com).
-
-**Step 2 — Configure Domain-Wide Delegation**
-
-1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
-2. Click **Add new** and enter:
-   - **Client ID**: the client ID of your Agent Engine service account (find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select the account → **Details** tab)
-   - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
-3. Click **Authorise**.
-
-**Step 3 — Grant signJwt permission to the service account**
-
-The service account needs permission to sign its own JWTs (required for DWD without a key file). Grant it `roles/iam.serviceAccountTokenCreator` on itself:
+Run the following commands (or apply equivalent roles via Cloud Console → **IAM & Admin > IAM**):
 
 ```bash
 SA_EMAIL="{PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
+# Required: call Vertex AI models and Gemini image generation
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/aiplatform.user"
+
+# Required: read/write slides, previews, and exports to your GCS bucket
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/storage.objectUser"
+
+# Required: build logs and container image push during deployment
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/artifactregistry.writer"
+
+# Required: sign DWD JWTs for Google Drive export (keyless, no SA key needed)
 gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
   --member="serviceAccount:$SA_EMAIL" \
   --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
+
+# Required: Vertex AI platform agent — sync artifacts to GCS
+VTXAI_SA="service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$VTXAI_SA" \
+  --role="roles/storage.objectUser"
 ```
 
-No key file or Secret Manager configuration is required. The agent uses ADC + the IAM Credentials API to sign JWTs at runtime.
+#### 4. Configure Domain-Wide Delegation (Google Workspace Admin)
+This allows the agent to upload generated decks directly to each user's own Google Drive.
 
-**Step 4 — Redeploy**
+1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
+2. Click **Add new** and enter:
+   - **Client ID**: the client ID of the service account (find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select the account → **Details** tab)
+   - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
+3. Click **Authorise**.
 
-Redeploy the agent so the updated permissions take effect (no extra env vars needed):
-
+#### 5. Deploy
+Run the ADK deployer from the `adk_agent` directory:
 ```bash
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
@@ -268,5 +240,11 @@ adk deploy agent_engine \
   --artifact_service_uri="gs://your-runtime-bucket" \
   .
 ```
+*The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
 
-Once configured, the agent will create a `slide-gen-agent` folder in each user's **My Drive** and save generated presentations there as Google Slides files they fully own.
+#### 6. Connect to Gemini Enterprise Console
+1. Log in to the **Gemini Enterprise Admin Console**.
+2. Navigate to **Agents** in the left sidebar.
+3. Click **+ Add Agent**.
+4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID**.
+5. Configure IAM authentication permissions to secure the connection.
