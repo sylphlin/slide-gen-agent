@@ -13,6 +13,7 @@ try:
     from .tools.pdf_exporter import export_deck_pdf
     from .tools.preview_generator import generate_preview_page
     from .tools.pptx_exporter import export_deck_pptx
+    from .tools.drive_exporter import export_to_google_slides
 except ImportError:
     from config import CONFIG
     from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
@@ -20,6 +21,7 @@ except ImportError:
     from tools.pdf_exporter import export_deck_pdf
     from tools.preview_generator import generate_preview_page
     from tools.pptx_exporter import export_deck_pptx
+    from tools.drive_exporter import export_to_google_slides
 
 from google.adk import Agent
 from google.genai import types
@@ -114,8 +116,9 @@ Once the user explicitly requests to compile, package, or download the final dec
 1. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
 2. **PDF: Slides (投影片)**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
 3. **PDF: Speaker Notes (演講者備忘稿)**: Open the preview link and click the "Save as PDF" button in the page. The browser renders the PDF directly using local system fonts, which correctly handles all languages including CJK and Southeast Asian scripts.
+4. **Google Slides**: Upload the PPTX to Google Drive as a Google Slides file in the 'slide-gen-agent' folder and share it with the current user. Call 'export_to_google_slides'. Provide the returned Google Slides URL so the user can open and edit it directly in their browser.
 
-Provide the GCS URL markdown download link for options 1 and 2. For option 3, remind the user to use the preview page button. Do NOT output local container paths."""
+Provide the GCS URL markdown download link for options 1 and 2. For option 3, remind the user to use the preview page button. For option 4, provide the Google Slides URL. Do NOT output local container paths."""
 
 # Default Text Model selection
 text_model = CONFIG['TEXT_MODEL']
@@ -147,6 +150,7 @@ root_agent = Agent(
         generate_preview_page,
         export_deck_pdf,
         export_deck_pptx,
+        export_to_google_slides,
     ]
 )
 

@@ -13,6 +13,9 @@ CONFIG = {
     # Thinking settings
     'THINKING_LEVEL': os.environ.get('THINKING_LEVEL') or 'high',
     'THINKING_BUDGET': int(os.environ.get('THINKING_BUDGET') or '2048'),
+
+    # Google Drive export
+    'DRIVE_FOLDER_NAME': os.environ.get('DRIVE_FOLDER_NAME') or 'slide-gen-agent',
 }
 
 # Normalize and auto-fill image generation endpoint location

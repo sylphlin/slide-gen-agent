@@ -143,6 +143,11 @@ Once the user is completely satisfied with the slides and explicitly requests to
 3. **PDF: Speaker Notes (演講者備忘稿)**:
    - **Action**: Direct the user to open the preview link and click the **"Save as PDF"** button embedded in the page. The browser renders the PDF using local system fonts, correctly handling all languages including CJK and Southeast Asian scripts — no server-side font dependencies required.
 
+4. **Google Slides (Open & Edit in Browser)**:
+   - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
+   - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
+   - *Note: Requires the Google Drive API to be enabled in the GCP project and the Agent Engine service account to have Drive write access.*
+
 Once completed, provide a final summary of all artifacts produced, highlighting the download links.
 
 

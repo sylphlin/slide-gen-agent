@@ -71,10 +71,11 @@ graph TD
    - **How to Iterate**: Tell the agent what to change in plain language. Script edits update `slide_xx.md`; layout changes (e.g., "make slide 3 two-column, chart on the right") populate the `## Layout` section; color or brand changes update `design.md`. Only the affected slides are regenerated.
 
 4. **Stage 4: Presentation Packaging & Download**
-   - Once you approve the final slides, the agent offers three export options:
+   - Once you approve the final slides, the agent offers four export options:
      - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide. Filename uses the presentation topic (e.g. `ai-trends-2025.pptx`).
      - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly). Filename uses the presentation topic (e.g. `ai-trends-2025.pdf`).
      - **PDF: Speaker Notes**: Open the `preview.html` link and click the **"Save as PDF"** button. The browser renders each slide and its notes as a clean, paginated PDF using your local system fonts — this correctly handles all languages including CJK and Southeast Asian scripts without any server-side font dependencies.
+     - **Google Slides**: The agent uploads the PPTX to Google Drive as a Google Slides file in the `slide-gen-agent` folder and shares it with you as editor. Opens directly in Google Slides for immediate editing and sharing. *(Requires Google Drive API enabled in GCP and Drive write access on the service account.)*
 
 ---
 
