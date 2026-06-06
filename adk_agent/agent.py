@@ -94,7 +94,14 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path, and ALWAYS output the full contents of outlines and scripts in the chat response as well so that the user can easily copy and read them:
 1. design.md: Define the brand system (color palette, typography, spacing, visual style). This file does NOT include per-slide layout definitions. Call 'save_design_spec'.
-2. outlines.md: Slide-by-slide outline mapping each slide to a layout type (Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA) and summary. Call 'save_outlines'. Output the full outlines in your chat response.
+2. outlines.md: MUST start with the metadata block exactly as follows (this is required for file naming downstream):
+   ```
+   - **Topic**: [presentation title]
+   - **Total Slides**: [N]
+   - **Target Audience**: [audience]
+   - **Estimated Duration**: [X minutes]
+   ```
+   Then include the full slide-by-slide table mapping each slide to a layout type (Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA) and a 2-3 sentence summary. Call 'save_outlines'. Output the full outlines in your chat response.
 3. slide_xx.md: Generate scripts for each slide. Before writing each slide, output a header line like "**Slide X / N — [slide title]**" so the user can track progress. Leave the '## Layout' section empty on first generation — the image model infers a suitable composition from the Slide Type and Script. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
 
 ---

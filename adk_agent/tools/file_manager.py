@@ -11,7 +11,8 @@ except ImportError:
 
 
 def get_topic_slug(session_path: str) -> str:
-    """Reads the Topic field from outlines.md and returns a filename-safe slug."""
+    """Reads the Topic field from outlines.md and returns a filename-safe slug.
+    Falls back to the session folder name if the Topic field is not found."""
     outlines_path = os.path.join(session_path, 'outlines.md')
     if os.path.exists(outlines_path):
         with open(outlines_path, 'r', encoding='utf-8') as f:
@@ -22,6 +23,11 @@ def get_topic_slug(session_path: str) -> str:
             slug = re.sub(r'[^\w\s-]', '', topic)
             slug = re.sub(r'[\s_]+', '-', slug).strip('-').lower()
             return slug[:60] if slug else 'presentation'
+    # Fallback: derive from session folder name (session_{project_name}_{timestamp})
+    folder = os.path.basename(session_path)
+    match = re.match(r'session_(.+)_\d{12}$', folder)
+    if match:
+        return match.group(1)
     return 'presentation'
 
 
@@ -88,37 +94,39 @@ async def save_outlines(session_path: str, outlines_content: str, tool_context: 
     return f"Deck outlines successfully written to {file_path}"
 
 async def save_slide_script(
-    session_path: str, 
-    slide_number: int, 
-    slide_type: str, 
-    title: str, 
-    script: str, 
-    tool_context: ToolContext
+    session_path: str,
+    slide_number: int,
+    slide_type: str,
+    title: str,
+    script: str,
+    tool_context: ToolContext,
+    layout: str = '',
 ) -> str:
     """Saves an individual slide script (slide_xx.md) with transition and spoken script content.
-    
+
     Args:
         session_path: The absolute session path returned by initialize_session
         slide_number: The 1-indexed slide number (e.g. 1, 2, 3)
         slide_type: Layout type of the slide (e.g. Cover, Section Header, Two-Column, Data & Stat)
         title: The slide header/title text to render on the image
-        script: The 150-300 character transition and spoken script
+        script: The 260-300 word (EN) or 320-400 character (CJK) spoken script
         tool_context: The tool context injected by the framework
+        layout: Optional visual layout override. Leave empty on first generation.
+                Fill in only when the user requests a specific composition change.
     """
-    print(f"DEBUG [save_slide_script] title: {repr(title)}")
-    print(f"DEBUG [save_slide_script] script: {repr(script)}")
-    
     pad_num = f"{slide_number:02d}"
     file_name = f"slide_{pad_num}.md"
     file_path = os.path.join(session_path, file_name)
-    
+
+    layout_section = f"\n## Layout\n\n{layout.strip()}\n" if layout and layout.strip() else "\n## Layout\n\n"
+
     file_content = f"""---
 slide_number: {slide_number}
 slide_type: "{slide_type}"
 ---
 
 # {title}
-
+{layout_section}
 ## Script
 
 {script}
