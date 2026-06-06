@@ -68,8 +68,20 @@ except Exception as e:
     print(f"Failed to monkey-patch VertexAiSessionService: {e}")
 
 
-# System Instruction translated from TypeScript
-system_instruction = """You are a professional slide design and visual generation agent. Your job is to transform source material into a complete, visually consistent slide deck — from understanding the content, to defining a design system, to generating a polished PNG image for every slide.
+def _load_asset(name: str) -> str:
+    """Load a template file from the assets/ directory next to this file."""
+    path = os.path.join(os.path.dirname(__file__), 'assets', name)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return f'[{name} template not found]'
+
+_design_template = _load_asset('design.md')
+_outlines_template = _load_asset('outlines.md')
+_slide_template = _load_asset('slide_xx.md')
+
+system_instruction = f"""You are a professional slide design and visual generation agent. Your job is to transform source material into a complete, visually consistent slide deck — from understanding the content, to defining a design system, to generating a polished PNG image for every slide.
 
 Work through the five stages below in order. Always pause and align with the user in Stage 0 if constraints are missing, and always pause for user confirmation at the end of Stage 1 before proceeding.
 
@@ -93,71 +105,18 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path, and ALWAYS output the full contents of outlines and scripts in the chat response as well so that the user can easily copy and read them:
-1. design.md: Generate using EXACTLY this structure — adapt every field to the agreed style and palette, but keep all section headings and the Color Palette table intact:
-   ```
-   # Slide Design Specifications
-
-   ## Style Profile
-   - **Theme Name**: [theme]
-   - **Content Type**: [Technology / Lifestyle / Business / Education / Data-Driven]
-   - **Tone**: [Professional / Casual / Inspiring / Analytical]
-   - **Target Audience**: [audience]
-   - **Language**: [e.g. English / Traditional Chinese]
-
-   ---
-
-   ## Color Palette
-   | Role           | Color Name | Hex     |
-   |----------------|------------|---------|
-   | Primary        | ...        | #...    |
-   | Secondary      | ...        | #...    |
-   | Accent         | ...        | #...    |
-   | Background     | ...        | #...    |
-   | Surface        | ...        | #...    |
-   | Text Primary   | ...        | #...    |
-   | Text Secondary | ...        | #...    |
-
-   ---
-
-   ## Layout Rules
-   - **Aspect Ratio / Dimensions**: 16:9 widescreen (1920×1080 px)
-   - **Safe Margin**: 80 px on all sides
-   - **White Space**: Maintain at least 40% breathing room per slide
-   - **Text Alignment**: Left-align body; center only for hero numbers or title slides
-   - **Max Text per Slide**: 40 words for body copy
-   - **Hierarchy**: One clear focal point per slide
-
-   ---
-
-   ## Visual Style
-   - **Icons**: [style]
-   - **Illustrations**: [style]
-   - **Photography**: [style]
-   - **Charts & Graphs**: [style]
-   - **Dividers**: [style]
-   ```
-   This file does NOT include per-slide layout definitions. Call 'save_design_spec'.
-2. outlines.md: Generate using EXACTLY this structure (the **Topic** field drives all downstream file naming — do not omit or rename it):
-   ```
-   # Slide Deck Outline
-
-   - **Topic**: [presentation title]
-   - **Total Slides**: [N]
-   - **Target Audience**: [audience]
-   - **Estimated Duration**: [X minutes]
-
-   ---
-
-   ## Slide List
-
-   | #  | Title | Slide Type | Core Content Summary (2-3 Detailed Sentences) |
-   |----|-------|------------|-----------------------------------------------|
-   | 01 | [Cover Title] | Cover | [summary] |
-   | 02 | [Title] | [type] | [summary] |
-   | XX | [Closing Title] | Closing / CTA | [summary] |
-   ```
-   Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA. Call 'save_outlines'. Output the full outlines in your chat response.
-3. slide_xx.md: Generate scripts for each slide. Before writing each slide, output a header line like "**Slide X / N — [slide title]**" so the user can track progress. Leave the '## Layout' section empty on first generation — the image model infers a suitable composition from the Slide Type and Script. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
+1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Call 'save_design_spec'.
+<DESIGN_TEMPLATE>
+{_design_template}
+</DESIGN_TEMPLATE>
+2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA. Call 'save_outlines'. Output the full outlines in your chat response.
+<OUTLINES_TEMPLATE>
+{_outlines_template}
+</OUTLINES_TEMPLATE>
+3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "**Slide X / N — [slide title]**". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. Call 'save_slide_script' for every slide. Output the full script in your chat response as you generate it.
+<SLIDE_TEMPLATE>
+{_slide_template}
+</SLIDE_TEMPLATE>
 
 ---
 
