@@ -39,7 +39,7 @@ if CONFIG['GOOGLE_CLOUD_PROJECT']:
 os.environ['GOOGLE_CLOUD_LOCATION'] = CONFIG['GOOGLE_CLOUD_LOCATION']
 os.environ['IMAGEN_LOCATION'] = CONFIG['IMAGEN_LOCATION']
 
-def get_gcs_artifact_url(filename: str, tool_context) -> str:
+def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
     """Helper to generate the authenticated Cloud Storage link for an artifact inside Agent Engine."""
     import os
     if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' in os.environ:
@@ -50,8 +50,7 @@ def get_gcs_artifact_url(filename: str, tool_context) -> str:
             app_name = tool_context._invocation_context.app_name or 'adk_agent'
             user_id = tool_context._invocation_context.user_id or 'vais-query-reasoning-engine'
             # GCS Artifact service saves as {app_name}/{user_id}/{session_id}/{filename}/{version}
-            # The initial version is always 0.
-            return f"https://storage.cloud.google.com/{bucket}/{app_name}/{user_id}/{session_id}/{filename}/0"
+            return f"https://storage.cloud.google.com/{bucket}/{app_name}/{user_id}/{session_id}/{filename}/{version}"
     return ""
 
 async def save_artifact_helper(filename: str, artifact, tool_context) -> int:

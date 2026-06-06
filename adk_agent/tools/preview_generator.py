@@ -143,14 +143,14 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
         
     html_bytes = html_template.encode('utf-8')
     artifact_part = Part.from_bytes(data=html_bytes, mime_type="text/html")
-    await save_artifact_helper('preview.html', artifact_part, tool_context)
-    
+    version = await save_artifact_helper('preview.html', artifact_part, tool_context)
+
     try:
         from ..config import get_gcs_artifact_url
     except ImportError:
         from config import get_gcs_artifact_url
-        
-    gcs_url = get_gcs_artifact_url('preview.html', tool_context)
+
+    gcs_url = get_gcs_artifact_url('preview.html', tool_context, version=version)
     if gcs_url:
         return f"Preview page successfully generated.\nView it here: {gcs_url}"
         
