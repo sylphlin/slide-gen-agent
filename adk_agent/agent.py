@@ -66,38 +66,6 @@ except Exception as e:
     print(f"Failed to monkey-patch VertexAiSessionService: {e}")
 
 
-# Monkey-patch google-genai AsyncModels.generate_content to retry on 429/ResourceExhausted/503
-try:
-    import asyncio as _asyncio
-    from google.genai import models as _genai_models
-
-    _RETRY_PHRASES = ('429', 'resource exhausted', 'quota exceeded', 'rate limit', 'too many requests', '503')
-
-    if hasattr(_genai_models, 'AsyncModels'):
-        _orig_async_generate_content = _genai_models.AsyncModels.generate_content
-
-        async def _patched_async_generate_content(self, *args, **kwargs):
-            delay = 5.0
-            for attempt in range(5):
-                try:
-                    return await _orig_async_generate_content(self, *args, **kwargs)
-                except Exception as e:
-                    err_str = str(e).lower()
-                    if attempt < 4 and any(p in err_str for p in _RETRY_PHRASES):
-                        print(f"[agent] Text model retryable error (attempt {attempt + 1}/4). Waiting {delay:.0f}s...")
-                        await _asyncio.sleep(delay)
-                        delay = min(delay * 2, 120)
-                    else:
-                        raise
-
-        _genai_models.AsyncModels.generate_content = _patched_async_generate_content
-        print("Applied 429 retry to google-genai AsyncModels.generate_content.")
-    else:
-        print("AsyncModels not found in google.genai.models — text model retry not applied.")
-except Exception as e:
-    print(f"Failed to apply text model retry patch: {e}")
-
-
 # System Instruction translated from TypeScript
 system_instruction = """You are a professional slide design and visual generation agent. Your job is to transform source material into a complete, visually consistent slide deck — from understanding the content, to defining a design system, to generating a polished PNG image for every slide.
 
