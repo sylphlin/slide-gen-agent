@@ -9,13 +9,29 @@ try:
 except ImportError:
     from config import save_artifact_helper
 
+# Bundled WQY MicroHei — TrueType CJK font covering Simplified Chinese, Traditional Chinese, Japanese
+_BUNDLED_FONT = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'assets', 'fonts', 'wqy-microhei.ttc'
+)
+
 
 def register_unicode_font() -> str:
-    """Finds and registers a Unicode-compatible font from the system to support multilingual speaker notes."""
+    """Registers a CJK-capable font with reportlab. Tries the bundled WQY MicroHei first,
+    then falls back to common system fonts, then to Helvetica (Latin-only)."""
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
-    # Candidates list of tuples: (absolute_path, font_name)
+    # 1. Bundled WQY MicroHei (TrueType, compatible with reportlab)
+    if os.path.exists(_BUNDLED_FONT):
+        for idx in range(3):
+            try:
+                pdfmetrics.registerFont(TTFont('WQYMicroHei', _BUNDLED_FONT, subfontIndex=idx))
+                return 'WQYMicroHei'
+            except Exception:
+                continue
+
+    # 2. System font fallbacks
     candidates = [
         # macOS
         ("/System/Library/Fonts/STHeiti Light.ttc", "STHeiti-Light"),
@@ -39,7 +55,7 @@ def register_unicode_font() -> str:
             except Exception:
                 continue
 
-    return "Helvetica"  # Default fallback (only supports Latin characters)
+    return "Helvetica"
 
 
 def extract_title_and_script(md_path: str) -> tuple[str, str]:
