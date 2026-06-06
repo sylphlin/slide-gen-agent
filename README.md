@@ -224,3 +224,51 @@ To make the agent available to your Enterprise users:
 3. Click **+ Add Agent**.
 4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID** (obtained from the deployment step above) in the **Agent Engine reasoning engine** input field.
 5. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
+
+#### 4. (Optional) Enable Google Slides Export
+
+This enables the **"Open in Google Slides"** export option, which uploads the generated deck directly to each user's own Google Drive as a Google Slides file they own.
+
+**Step 1 — Enable Google Drive API**
+
+In your GCP project, enable the [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com).
+
+**Step 2 — Configure Domain-Wide Delegation**
+
+1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
+2. Click **Add new** and enter:
+   - **Client ID**: the client ID of your Agent Engine service account (find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select the account → **Details** tab)
+   - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
+3. Click **Authorise**.
+
+**Step 3 — Store the service account key in Secret Manager**
+
+```bash
+# Create and download a JSON key for the Agent Engine service account
+gcloud iam service-accounts keys create /tmp/drive-sa-key.json \
+  --iam-account={PROJECT_NUMBER}-compute@developer.gserviceaccount.com
+
+# Store in Secret Manager
+gcloud secrets create drive-sa-key \
+  --data-file=/tmp/drive-sa-key.json \
+  --project=$GOOGLE_CLOUD_PROJECT
+
+# Remove the local copy
+rm /tmp/drive-sa-key.json
+```
+
+**Step 4 — Inject the key at deployment**
+
+Pass the secret as the `DRIVE_SERVICE_ACCOUNT_KEY` environment variable when deploying:
+
+```bash
+adk deploy agent_engine \
+  --project=$GOOGLE_CLOUD_PROJECT \
+  --region=us-central1 \
+  --display_name="slide-gen-agent" \
+  --artifact_service_uri="gs://your-runtime-bucket" \
+  --env_vars="DRIVE_SERVICE_ACCOUNT_KEY=$(gcloud secrets versions access latest --secret=drive-sa-key --project=$GOOGLE_CLOUD_PROJECT)" \
+  .
+```
+
+Once configured, the agent will create a `slide-gen-agent` folder in each user's **My Drive** and save generated presentations there as Google Slides files they fully own.

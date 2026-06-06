@@ -146,7 +146,7 @@ Once the user is completely satisfied with the slides and explicitly requests to
 4. **Google Slides (Open & Edit in Browser)**:
    - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
    - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
-   - *Note: Requires the Google Drive API to be enabled in the GCP project and the Agent Engine service account to have Drive write access.*
+   - *Note: Requires Google Drive API enabled, Domain-Wide Delegation configured in Google Workspace Admin, and `DRIVE_SERVICE_ACCOUNT_KEY` env var set. See README Method 3 Step 4 for setup instructions.*
 
 Once completed, provide a final summary of all artifacts produced, highlighting the download links.
 
