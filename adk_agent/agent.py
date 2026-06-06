@@ -107,7 +107,13 @@ Generate a PNG image for every slide. Each image takes 15-30 seconds — always 
 - Once all images are generated, output "All N images ready. Building preview page..." then call 'generate_preview_page'.
 - Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 - Print a summary of the presentation outlines and slide scripts in the chat response to make sure the user can review them without reading garbled files in the Artifacts tab.
-- PAUSE and wait for user review. If changes are requested, regenerate the corresponding markdown files and images. You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
+- PAUSE and wait for user review. Apply changes surgically — NEVER regenerate a slide whose content has not changed. Use the following rules:
+  - Layout change (e.g. "make slide 3 two-column"): update slide_03.md ## Layout, regenerate slide_03.png only.
+  - Content / script change (e.g. "expand the data on slide 5"): update slide_05.md, regenerate slide_05.png only.
+  - Slide reorder (e.g. "swap slides 3 and 4"): (1) update outlines.md, (2) swap the full content of slide_03.md and slide_04.md, (3) rewrite the Transition & Hook opening of both scripts so each correctly references its new preceding slide, (4) regenerate slide_03.png and slide_04.png only — no other files or images.
+  - Slide addition / deletion: update outlines.md, write or remove the affected slide_xx.md file(s), renumber any downstream files whose number changed and rewrite their Transition & Hook if the preceding slide changed, regenerate only the new or renumbered slides.
+  - Brand / color change (e.g. "change the primary color"): update design.md, then regenerate ALL slide images since brand changes affect every slide's rendering.
+  - You must get explicit confirmation that all slide images are satisfactory before proposing or proceeding to Stage 4.
 
 ---
 
