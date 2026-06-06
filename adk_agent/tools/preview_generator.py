@@ -150,6 +150,8 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
             body {{ background: white; padding: 0; display: block; }}
             .slide-container {{
                 page-break-after: always;
+                page-break-inside: avoid;
+                break-inside: avoid;
                 box-shadow: none;
                 border-radius: 0;
                 margin: 0;
