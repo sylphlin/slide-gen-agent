@@ -16,9 +16,9 @@ CONFIG = {
 
     # Google Drive export (requires Domain-Wide Delegation)
     'DRIVE_FOLDER_NAME': os.environ.get('DRIVE_FOLDER_NAME') or 'slide-gen-agent',
-    # Dedicated user-managed SA for DWD signJwt (required when runtime SA is a
-    # Google-managed service agent that cannot be directly registered for DWD).
-    # Set to: slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com
+    # Dedicated user-managed SA for DWD signJwt. Defaults to the standard naming
+    # convention (slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com) so no
+    # extra env var is needed as long as the SA was created with that name.
     'DRIVE_SA_EMAIL': os.environ.get('DRIVE_SA_EMAIL'),
 }
 

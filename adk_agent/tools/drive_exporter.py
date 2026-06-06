@@ -55,10 +55,13 @@ def _get_drive_service_as_user(user_email: str):
     except Exception as e:
         raise RuntimeError(f"[step:metadata] Failed to fetch service account email: {e}") from e
 
-    # Use dedicated Drive SA if configured (required when runtime SA is a Google-managed
-    # service agent that cannot be registered for DWD directly).
-    # Falls back to runtime SA for local / user-managed SA deployments.
-    drive_sa_email = CONFIG.get('DRIVE_SA_EMAIL') or runtime_sa_email
+    # Resolve Drive SA: explicit env var > derived from project ID > runtime SA fallback.
+    # Agent Engine's runtime SA is a Google-managed service agent that cannot be
+    # registered for DWD, so we use a dedicated user-managed SA (slide-gen-drive)
+    # whose Client ID is registered in Google Workspace Admin Console.
+    project_id = CONFIG.get('GOOGLE_CLOUD_PROJECT') or os.environ.get('GOOGLE_CLOUD_PROJECT')
+    default_drive_sa = f"slide-gen-drive@{project_id}.iam.gserviceaccount.com" if project_id else None
+    drive_sa_email = CONFIG.get('DRIVE_SA_EMAIL') or default_drive_sa or runtime_sa_email
 
     import sys
     print(f"[drive_exporter] runtime_sa={runtime_sa_email}, drive_sa={drive_sa_email}, user={user_email}", file=sys.stderr)
