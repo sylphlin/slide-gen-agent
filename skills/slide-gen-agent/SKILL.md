@@ -73,7 +73,51 @@ Once the user confirms the Stage 1 proposal, you must initialize a new session w
 Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide.
 
 ### Step 1 — `design.md` (Brand System)
-Define the brand system for this deck: color palette, typography, spacing, and visual style rules. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1. This file does **not** include per-slide layout definitions — layout is handled in each `slide_xx.md`.
+Generate using EXACTLY this structure — adapt every field to the agreed style and palette, keep all section headings and the Color Palette table intact. Base defaults on `assets/design.md` (Google Material Light). This file does **not** include per-slide layout definitions.
+
+```markdown
+# Slide Design Specifications
+
+## Style Profile
+- **Theme Name**: [theme]
+- **Content Type**: [Technology / Lifestyle / Business / Education / Data-Driven]
+- **Tone**: [Professional / Casual / Inspiring / Analytical]
+- **Target Audience**: [audience]
+- **Language**: [e.g. English / Traditional Chinese]
+
+---
+
+## Color Palette
+| Role           | Color Name | Hex     |
+|----------------|------------|---------|
+| Primary        | ...        | #...    |
+| Secondary      | ...        | #...    |
+| Accent         | ...        | #...    |
+| Background     | ...        | #...    |
+| Surface        | ...        | #...    |
+| Text Primary   | ...        | #...    |
+| Text Secondary | ...        | #...    |
+
+---
+
+## Layout Rules
+- **Aspect Ratio / Dimensions**: 16:9 widescreen (1920×1080 px)
+- **Safe Margin**: 80 px on all sides
+- **White Space**: Maintain at least 40% breathing room per slide
+- **Text Alignment**: Left-align body; center only for hero numbers or title slides
+- **Max Text per Slide**: 40 words for body copy
+- **Hierarchy**: One clear focal point per slide
+
+---
+
+## Visual Style
+- **Icons**: [style]
+- **Illustrations**: [style]
+- **Photography**: [style]
+- **Charts & Graphs**: [style]
+- **Dividers**: [style]
+```
+
 - **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.
 
@@ -102,7 +146,25 @@ Generate using EXACTLY this structure (the `**Topic**` field drives all downstre
 - **Action**: Save the outlines to `outlines.md` (by calling the `save_outlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
-Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, an optional **layout override**, and a **full spoken script** — written in natural language as if the presenter were saying it aloud.
+Generate one file per slide using EXACTLY this structure:
+
+```markdown
+---
+slide_number: XX
+slide_type: "Cover"
+---
+
+# [Slide Title]
+
+## Layout
+
+[Leave empty on first generation. Fill in only when the user requests a specific visual change — describe exact composition: column ratios, element positions, what occupies each zone.]
+
+## Script
+
+[Single continuous paragraph, 260–300 words (English) or 320–400 characters (CJK). Structure: (1) Transition & Hook from previous slide; (2) Deep Dive with specific data, terminology, and vivid visual metaphors.]
+```
+
 - **Progress**: Before writing each slide, output a header line such as **"Slide X / N — [slide title]"** so the user can track progress.
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
