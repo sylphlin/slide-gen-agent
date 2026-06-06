@@ -17,11 +17,20 @@ graph TD
     A[Source Material] --> B(Stage 1: Proposal)
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
-    D -->|Generates| E[design.md, outlines.md, slide_xx.md]
-    E --> F(Stage 3: Image Generation & Preview)
-    F -->|Generates| G[slide_xx.png & preview.html]
-    G --> H{User Review & Optional Tweaks}
-    H -->|Request Changes/Regenerate| C
+    
+    D -->|Generates| E1[design.md - Global Style Spec]
+    D -->|Generates| E2[outlines.md - Slide Outlines]
+    D -->|Generates| E3[slide_xx.md - Per-Slide Script]
+    
+    E1 & E3 --> F(Stage 3: Image Generation & Preview)
+    F -->|Generates| G1[slide_xx.png - Slide Images]
+    F -->|Generates| G2[preview.html - Presentation Preview]
+    
+    G1 & G2 --> H{User Review & Optional Tweaks}
+    
+    H -->|Request Text/Content Changes| E3
+    H -->|Request Global Style Changes| E1
+    
     H -->|User Approves| I(Stage 4: Packaging & Download)
     I -->|Option 1| J[presentation.pptx - Widescreen PPTX with Speaker Notes]
     I -->|Option 2| K[presentation.pdf - PDF Slides Only]
@@ -198,6 +207,7 @@ The deployed Agent Engine (Reasoning Engine) instance and its platform orchestra
 #### 3. Connect to Gemini Enterprise Console
 To make the agent available to your Enterprise users:
 1. Log in to the **Gemini Enterprise Admin Console**.
-2. Go to **Extensions** or **Agent Management**.
-3. Register a new **Custom Extension** or **Agent Link** using your **Reasoning Engine Resource ID** (obtained from the deployment step above).
-4. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
+2. Navigate to the **Agents** page from the left sidebar.
+3. Click **+ Add Agent**.
+4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID** (obtained from the deployment step above) in the **Agent Engine reasoning engine** input field.
+5. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
