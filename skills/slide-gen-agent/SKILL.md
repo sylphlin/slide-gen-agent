@@ -72,19 +72,34 @@ Once the user confirms the Stage 1 proposal, you must initialize a new session w
 
 Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide.
 
-### Step 1 — `design.md` (Global Style Spec)
-Define the complete visual system for this deck. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1.
-- **Action**: Save the style system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
-- This file is the Single Source of Truth (SSoT) for all visual decisions in Stage 3.
+### Step 1 — `design.md` (Brand System)
+Define the brand system for this deck: color palette, typography, spacing, and visual style rules. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1. This file does **not** include per-slide layout definitions — layout is handled in each `slide_xx.md`.
+- **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
+- This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
-Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
+Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Layout Catalog below), and a 2–3 sentence summary.
 - **Action**: Save the outlines to `outlines.md` (by calling the `save_outlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
-Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
+Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, an optional **layout override**, and a **full spoken script** — written in natural language as if the presenter were saying it aloud.
 - **Progress**: Before writing each slide, output a header line such as **"Slide X / N — [slide title]"** so the user can track progress.
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
+
+**Layout Catalog** — use these types in the `Slide Type` field of `outlines.md` and `slide_xx.md`:
+
+| Slide Type       | Default Visual Composition                                      |
+|------------------|-----------------------------------------------------------------|
+| Cover            | Full-bleed color block (Primary), centered title + subtitle     |
+| Section Header   | Left-aligned title on Surface color, decorative accent bar      |
+| Content (Text)   | Title top-left, 2–3 bullet points, optional icon right side     |
+| Content (Image)  | 60% image left or right, 40% text opposite                      |
+| Data & Stat      | Hero number centered (72 px Bold), 1-line label below           |
+| Two-Column       | Equal split; left = text/bullets, right = chart or image        |
+| Quote            | Large pull quote centered, attributed name bottom-right         |
+| Closing / CTA    | Mirror of Cover; bold call-to-action text centered              |
+
+**`## Layout` section** — leave empty on first generation. The image model infers a suitable layout from the Slide Type and Script content. Only fill this in during Stage 3 iteration when the user requests a specific visual change (e.g., "put the chart on the right", "make it two-column"). Describe the exact composition concretely: column ratios, element positions, what visual occupies each zone.
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
@@ -109,7 +124,7 @@ With all Markdown files saved in the session directory, trigger the image genera
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slide_xx.png`).
 - **Preview Generation**: Once all slide images are generated, output "All N images ready. Building preview page..." then compile them into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
 - **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
-- **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
+- **Review and Iterate**: Ask the user for feedback on the generated slides. If the user requests a layout change (e.g., "make slide 3 two-column"), update the `## Layout` section in the corresponding `slide_xx.md` with a concrete visual description, then regenerate that slide's image. For content or script changes, update the relevant section and regenerate. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
 ---
 
@@ -139,9 +154,9 @@ Once completed, provide a final summary of all artifacts produced, highlighting 
 
 | File | Purpose |
 |---|---|
-| `assets/design.md` | Visual system template — color, type, layout rules |
+| `assets/design.md` | Brand system template — color palette, typography, spacing, visual style |
 | `assets/outlines.md` | Full deck outline — slide list with types and summaries |
-| `assets/slide_xx.md` | Per-slide content — title and spoken script |
+| `assets/slide_xx.md` | Per-slide content — title, optional layout override, and spoken script |
 
 Read the relevant template before generating each output type in Stage 2. The
 templates contain field-by-field guidance and notes for adapting to different

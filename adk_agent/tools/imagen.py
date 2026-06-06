@@ -73,18 +73,18 @@ async def generate_slide_image(
     except Exception as e:
         return f"Failed to read session Markdown files: {str(e)}"
         
-    # Construct merged XML-style prompt as defined in slide-gen-agent SKILL.md
-    prompt = f"""Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the design system and slide content below.
-- **DO** render the "Title" text from <slide_content> clearly on the slide, respecting the layout, typography, and colors defined in <design_system>.
-- **DO NOT** render the "Script" text literally; use it only as contextual inspiration to generate the background illustration or visual elements.
+    prompt = f"""Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the brand system and slide specification below.
+- **DO** render the "Title" from <slide_spec> clearly on the slide, applying the colors and typography defined in <brand_system>.
+- **DO** follow the "## Layout" section in <slide_spec> precisely if it is present; otherwise infer an appropriate visual composition from the Slide Type and Script content.
+- **DO NOT** render the "Script" text literally; use it only as contextual inspiration for background visuals and thematic elements.
 
-<design_system>
+<brand_system>
 {design_content}
-</design_system>
+</brand_system>
 
-<slide_content>
+<slide_spec>
 {slide_content}
-</slide_content>"""
+</slide_spec>"""
 
     # Initialize genai client.
     # In Reasoning Engine, this automatically uses default credentials and Vertex AI routing.
