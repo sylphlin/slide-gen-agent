@@ -115,19 +115,18 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 ## Stage 4: Presentation Packaging & Download (On-Demand)
 
-Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, offer them three distinct download options:
+Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, offer them two server-side downloads plus one browser-based option:
 
 1. **PPTX (PowerPoint with Speaker Notes)**:
    - **Action**: Run the `pptx_exporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.
-   - **Link**: Provide the download link for `presentation.pptx`.
+   - **Link**: Provide the download link for the generated `.pptx` file.
 
 2. **PDF: Slides (投影片)**:
    - **Action**: Run the `pdf_exporter` script (either by calling the `export_deck_pdf` tool, or by running `python3 scripts/pdf_exporter.py <sessionPath>` in the terminal) to compile slide images into a single PDF presentation.
-   - **Link**: Provide the download link for `presentation.pdf`.
+   - **Link**: Provide the download link for the generated `.pdf` file.
 
 3. **PDF: Speaker Notes (演講者備忘稿)**:
-   - **Action**: Run the `notes_pdf_exporter` script (either by calling the `export_speaker_notes_pdf` tool, or by running `python3 scripts/notes_pdf_exporter.py <sessionPath>` in the terminal) to compile a PDF containing both slide images and speaker notes (matching the preview.html layout).
-   - **Link**: Provide the download link for `speaker_notes.pdf`.
+   - **Action**: Direct the user to open the preview link and click the **"Save as PDF"** button embedded in the page. The browser renders the PDF using local system fonts, correctly handling all languages including CJK and Southeast Asian scripts — no server-side font dependencies required.
 
 Once completed, provide a final summary of all artifacts produced, highlighting the download links.
 

@@ -82,7 +82,7 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
         """)
         
     slides_content_html = "\n".join(slide_items_html)
-    
+
     html_template = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -101,6 +101,22 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
         h1 {{
             color: #333;
         }}
+        .print-btn {{
+            position: sticky;
+            top: 16px;
+            align-self: flex-end;
+            margin-bottom: 8px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 100;
+        }}
+        .print-btn:hover {{ background: #0056b3; }}
         .slide-container {{
             background: #fff;
             border-radius: 8px;
@@ -129,9 +145,23 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
             line-height: 1.5;
             word-wrap: break-word;
         }}
+        @media print {{
+            .print-btn {{ display: none; }}
+            body {{ background: white; padding: 0; display: block; }}
+            .slide-container {{
+                page-break-after: always;
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+                padding: 16px;
+                width: 100%;
+                box-sizing: border-box;
+            }}
+        }}
     </style>
 </head>
 <body>
+    <button class="print-btn" onclick="window.print()">⬇ Save as PDF (with Speaker Notes)</button>
     <h1>Presentation Slide Deck Preview</h1>
     {slides_content_html}
 </body>
@@ -141,7 +171,7 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
     os.makedirs(os.path.dirname(preview_path), exist_ok=True)
     with open(preview_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
-        
+
     html_bytes = html_template.encode('utf-8')
     artifact_part = Part.from_bytes(data=html_bytes, mime_type="text/html")
     version = await save_artifact_helper('preview.html', artifact_part, tool_context)
