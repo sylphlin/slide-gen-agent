@@ -183,42 +183,43 @@ Enable the following APIs in your GCP project:
 - [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
 
 #### 3. Configure IAM Permissions
-All permissions below apply to the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`.
+
+Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent**: `service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`. This is the identity that calls Vertex AI models, reads/writes GCS artifacts, and signs JWTs for Google Drive export — **not** the Compute Engine default service account.
 
 Run the following commands (or apply equivalent roles via Cloud Console → **IAM & Admin > IAM**):
 
 ```bash
-SA_EMAIL="{PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
+
+# Runtime SA: the identity that runs your agent code inside Agent Engine
+RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+
+# Build SA: used only during `adk deploy` to push container images and write build logs
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 # Required: call Vertex AI models and Gemini image generation
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$SA_EMAIL" \
+  --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/aiplatform.user"
 
 # Required: read/write slides, previews, and exports to your GCS bucket
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$SA_EMAIL" \
+  --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/storage.objectUser"
 
-# Required: build logs and container image push during deployment
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/logging.logWriter"
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/artifactregistry.writer"
-
 # Required: sign DWD JWTs for Google Drive export (keyless, no SA key needed)
-gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
-  --member="serviceAccount:$SA_EMAIL" \
+gcloud iam service-accounts add-iam-policy-binding $RUNTIME_SA \
+  --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
 
-# Required: Vertex AI platform agent — sync artifacts to GCS
-VTXAI_SA="service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+# Required for adk deploy: build logs and container image push
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$VTXAI_SA" \
-  --role="roles/storage.objectUser"
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/artifactregistry.writer"
 ```
 
 #### 4. Configure Domain-Wide Delegation (Google Workspace Admin)
@@ -226,7 +227,7 @@ This allows the agent to upload generated decks directly to each user's own Goog
 
 1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
 2. Click **Add new** and enter:
-   - **Client ID**: the client ID of the service account (find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select the account → **Details** tab)
+   - **Client ID**: the OAuth 2 Client ID of the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). Find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select that account → **Details** tab.
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
 3. Click **Authorise**.
 
