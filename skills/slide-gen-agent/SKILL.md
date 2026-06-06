@@ -1,5 +1,8 @@
 ---
 name: slide-gen-agent
+sync-version: "2025-06-06"
+synced-with: adk_agent/agent.py
+sync-items: "stage flow/pause conditions, script length spec (EN/CJK)"
 description: >
   Generate a complete, visually polished slide deck from any source material —
   articles, reports, outlines, or raw notes. Use this skill whenever the user
@@ -65,29 +68,29 @@ until the proposal is fully confirmed.
 
 ## Stage 2: Structured Markdown Generation
 
-Once the user confirms the Stage 1 proposal, you must initialize a new session workspace first (either by calling the `initializeSession` tool or by creating a dedicated folder in the workspace) to keep all files isolated.
+Once the user confirms the Stage 1 proposal, you must initialize a new session workspace first (either by calling the `initialize_session` tool or by creating a dedicated folder in the workspace) to keep all files isolated.
 
 Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide.
 
 ### Step 1 — `design.md` (Global Style Spec)
 Define the complete visual system for this deck. Base it on `assets/design.md` (Google Material Light defaults), but adapt every field to match the agreed style, palette, and content type from Stage 1.
-- **Action**: Save the style system to `design.md` (by calling the `saveDesignSpec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
+- **Action**: Save the style system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for all visual decisions in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
 Write the full slide-by-slide outline using `assets/outlines.md` as your guide. Each row in the Slide List should have a clear title, a slide type (from the Slide Structure Defaults in `design.md`), and a 2–3 sentence summary.
-- **Action**: Save the outlines to `outlines.md` (by calling the `saveOutlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
+- **Action**: Save the outlines to `outlines.md` (by calling the `save_outlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
 Generate one file per slide, following `assets/slide_xx.md`. Each file contains the slide metadata (number, type), the **title**, and a **full spoken script** for that slide — written in natural language as if the presenter were saying it aloud.
-- **Action**: Save the slide details to `slide_xx.md` (by calling the `saveSlideScript` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
+- **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
 - **Outline as a Map**: Use `outlines.md` as a router and structural guide to determine *which part* of the original material belongs to this slide. Do NOT write the script solely based on the outline summary; go back to the original text to extract precise specs, figures, and nuances.
 
 **Script Requirements:**
-- **Length**: Strictly limit the script to **260 to 300 words** (for English) or **320 to 400 characters** (for Chinese) (corresponding to a 1–2 minute presentation).
+- **Length**: Strictly limit the script to **260 to 300 words** (for English) or **320 to 400 characters** (for CJK) (corresponding to a 1–2 minute presentation).
 - **Structure**: Organize every slide's script into two clear phases:
   1. **Transition & Hook**: A smooth connection showing how this slide builds upon the previous one.
   2. **Deep Dive & Core Elaboration**: An in-depth explanation of the slide's technical details, data points, or visual analogies.
@@ -99,9 +102,9 @@ Generate one file per slide, following `assets/slide_xx.md`. Each file contains 
 
 With all Markdown files saved in the session directory, trigger the image generation for every slide. Work through each slide one at a time:
 
-- **Action**: Generate the slide image for **every slide index** (either by calling the `generateSlideImage` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
+- **Action**: Generate the slide image for **every slide index** (either by calling the `generate_slide_image` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory (e.g., `slide_xx.png`).
-- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generatePreviewPage` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
+- **Preview Generation**: Once all slide images are generated, compile them into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
 - **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
 - **Review and Iterate**: Ask the user for feedback on the generated slides. If the user wants to modify any slide contents, layouts, or designs, regenerate the corresponding markdown files and images as requested. **You must pause and wait until the user explicitly confirms that all generated slide images are satisfactory. Do not propose or transition to Stage 4 until the user gives their explicit approval of the finalized slides.**
 
@@ -112,15 +115,15 @@ With all Markdown files saved in the session directory, trigger the image genera
 Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, offer them three distinct download options:
 
 1. **PPTX (PowerPoint with Speaker Notes)**:
-   - **Action**: Run the `pptxExporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.
+   - **Action**: Run the `pptx_exporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.
    - **Link**: Provide the download link for `presentation.pptx`.
 
 2. **PDF: Slides (投影片)**:
-   - **Action**: Run the `pdfExporter` script (either by calling the `export_deck_pdf` tool, or by running `python3 scripts/pdf_exporter.py <sessionPath>` in the terminal) to compile slide images into a single PDF presentation.
+   - **Action**: Run the `pdf_exporter` script (either by calling the `export_deck_pdf` tool, or by running `python3 scripts/pdf_exporter.py <sessionPath>` in the terminal) to compile slide images into a single PDF presentation.
    - **Link**: Provide the download link for `presentation.pdf`.
 
 3. **PDF: Speaker Notes (演講者備忘稿)**:
-   - **Action**: Run the `notesPdfExporter` script (either by calling the `export_speaker_notes_pdf` tool, or by running `python3 scripts/notes_pdf_exporter.py <sessionPath>` in the terminal) to compile a PDF containing both slide images and speaker notes (matching the preview.html layout).
+   - **Action**: Run the `notes_pdf_exporter` script (either by calling the `export_speaker_notes_pdf` tool, or by running `python3 scripts/notes_pdf_exporter.py <sessionPath>` in the terminal) to compile a PDF containing both slide images and speaker notes (matching the preview.html layout).
    - **Link**: Provide the download link for `speaker_notes.pdf`.
 
 Once completed, provide a final summary of all artifacts produced, highlighting the download links.
@@ -152,4 +155,4 @@ content categories.
 - **Consistency.** Every slide must feel like it belongs to the same deck.
   The `design.md` file exists precisely to enforce this — refer back to it
   whenever you are unsure about a color, font, or layout choice.
-- **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 260–300 words (English) or 320–400 characters (Chinese) and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.
+- **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 260–300 words (English) or 320–400 characters (CJK) and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.
