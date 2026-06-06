@@ -14,7 +14,8 @@ except ImportError:
 def get_image_src(png_file: str, pad_num: str, tool_context) -> str:
     """Returns a GCS URL in Agent Engine, or a relative file path for local preview."""
     if os.environ.get('GOOGLE_CLOUD_AGENT_ENGINE_ID'):
-        return get_gcs_artifact_url(f"slide_{pad_num}.png", tool_context, version=0)
+        version = tool_context.state.get(f"slide_{pad_num}_gcs_version", 0)
+        return get_gcs_artifact_url(f"slide_{pad_num}.png", tool_context, version=version)
     # Local: preview.html sits at session root, images are in slides/
     return f"./slides/{os.path.basename(png_file)}"
 

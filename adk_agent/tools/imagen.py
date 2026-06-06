@@ -115,10 +115,11 @@ async def generate_slide_image(
         with open(file_path, 'wb') as f:
             f.write(image_bytes)
             
-        # Save as artifact
+        # Save as artifact and record the GCS version in session state
         artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
-        await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
-        
+        version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
+        tool_context.state[f"slide_{pad_num}_gcs_version"] = version
+
         return f"Image for slide {pad_num} successfully generated and written to {file_path}"
     except Exception as e:
         return f"Failed to generate image for Slide {pad_num}: {str(e)}"
