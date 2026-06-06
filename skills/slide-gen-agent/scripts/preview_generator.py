@@ -177,18 +177,27 @@ def generate_preview_page(session_path: str) -> str:
     .print-btn:hover {{ background: #1557b0; }}
     @media print {{
       .print-btn {{ display: none; }}
-      body {{ background: white; padding: 0; display: block; }}
+      h1 {{ display: none; }}
+      body {{ background: white; padding: 0; margin: 0; display: block; }}
+      .deck-container {{ gap: 0; }}
       .slide-card {{
         page-break-after: always;
-        page-break-inside: avoid;
-        break-inside: avoid;
+        break-after: always;
+        height: 100vh;
         box-shadow: none;
         border-radius: 0;
         border: none;
         margin: 0;
-        padding: 16px;
+        padding: 12px;
         width: 100%;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }}
+      .slide-notes {{
+        flex: 1;
+        overflow: hidden;
       }}
     }}
   </style>
