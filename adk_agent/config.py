@@ -12,7 +12,7 @@ CONFIG = {
 
     # Thinking settings
     'THINKING_LEVEL': os.environ.get('THINKING_LEVEL') or 'high',
-    'THINKING_BUDGET': int(os.environ.get('THINKING_BUDGET') or '2048'),
+    'THINKING_BUDGET': int(os.environ.get('THINKING_BUDGET')) if os.environ.get('THINKING_BUDGET') else None,
 }
 
 # Normalize and auto-fill image generation endpoint location

@@ -127,13 +127,14 @@ is_thinking_model = "-thinking" in text_model or "3.5-flash" in text_model or "3
 
 generate_content_config = None
 if is_thinking_model:
-    # Set thinking config based on CONFIG
-    generate_content_config = types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            thinking_level=CONFIG['THINKING_LEVEL'].upper() if CONFIG['THINKING_LEVEL'] else None,
-            thinking_budget=CONFIG['THINKING_BUDGET'] if not CONFIG['THINKING_LEVEL'] else None
+    _budget = CONFIG['THINKING_BUDGET']
+    if _budget is not None:
+        _thinking_config = types.ThinkingConfig(thinking_budget=_budget)
+    else:
+        _thinking_config = types.ThinkingConfig(
+            thinking_level=getattr(types.ThinkingLevel, CONFIG['THINKING_LEVEL'].upper(), types.ThinkingLevel.HIGH)
         )
-    )
+    generate_content_config = types.GenerateContentConfig(thinking_config=_thinking_config)
 
 # Instantiate the Python ADK 2.0 Agent
 root_agent = Agent(
