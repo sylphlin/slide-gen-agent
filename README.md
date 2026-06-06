@@ -4,6 +4,7 @@
 
 **Key capabilities:**
 - **Conversational & iterative** — tell the agent to adjust a slide's content, swap a color, or restructure the entire outline mid-session. Changes are applied surgically without regenerating the whole deck.
+- **Speaker scripts included** — every slide comes with a full 1–2 minute spoken script, written as natural presenter delivery. Scripts are embedded in the PPTX notes section and included in the preview page, so you walk into the room prepared.
 - **Multilingual** — handles content and speaker notes in any language, including CJK (Chinese, Japanese, Korean) and Southeast Asian scripts. Export to PDF via browser print to preserve system fonts without server-side font dependencies.
 - **Production-ready exports** — download as PPTX (with embedded speaker notes), PDF slides, or a browser-printed speaker-notes PDF.
 
