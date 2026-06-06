@@ -34,9 +34,9 @@ graph TD
     H -->|Request Global Style Changes| E1
     
     H -->|User Approves| I(Stage 4: Packaging & Download)
-    I -->|Option 1| J[presentation.pptx - Widescreen PPTX with Speaker Notes]
-    I -->|Option 2| K[presentation.pdf - PDF Slides Only]
-    I -->|Option 3| L[speaker_notes.pdf - PDF with Images + Speaker Notes]
+    I -->|Option 1| J[topic.pptx - Widescreen PPTX with Speaker Notes]
+    I -->|Option 2| K[topic.pdf - PDF Slides Only]
+    I -->|Option 3| L[preview.html → Browser Print-to-PDF with Speaker Notes]
 ```
 
 ### The Five-Stage Pipeline
@@ -65,10 +65,10 @@ graph TD
    - **How to Iterate & Tweak**: If you want to make changes (e.g., adjust a slide's script, change colors, or regenerate a specific slide), you can simply tell the agent in the chat. The agent will update the corresponding Markdown files and regenerate only the affected slide images, ensuring fast and consistent iteration.
 
 4. **Stage 4: Presentation Packaging & Download**
-   - Once you approve the final slides, the agent packages them into your choice of three download formats:
-     - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide.
-     - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly).
-     - **PDF: Speaker Notes**: A PDF document showing each slide's image followed by its title and speaker notes (matching the layout of the preview page, ideal for handouts).
+   - Once you approve the final slides, the agent offers three export options:
+     - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide. Filename uses the presentation topic (e.g. `ai-trends-2025.pptx`).
+     - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly). Filename uses the presentation topic (e.g. `ai-trends-2025.pdf`).
+     - **PDF: Speaker Notes**: Open the `preview.html` link and click the **"Save as PDF"** button. The browser renders each slide and its notes as a clean, paginated PDF using your local system fonts — this correctly handles all languages including CJK and Southeast Asian scripts without any server-side font dependencies.
 
 ---
 

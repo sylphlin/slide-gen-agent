@@ -2,7 +2,6 @@
 
 - **Topic**: [Main topic or title of the presentation]
 - **Total Slides**: [X]
-- **Design Theme**: [Theme name from design.md, e.g. Google Material Light]
 - **Target Audience**: [e.g. General public / Engineers / Executives]
 - **Estimated Duration**: [e.g. 10 minutes]
 

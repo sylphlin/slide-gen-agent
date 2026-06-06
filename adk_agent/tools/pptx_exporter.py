@@ -7,9 +7,11 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
 try:
-    from ..config import save_artifact_helper
+    from ..config import save_artifact_helper, get_gcs_artifact_url
+    from ..tools.file_manager import get_topic_slug
 except ImportError:
-    from config import save_artifact_helper
+    from config import save_artifact_helper, get_gcs_artifact_url
+    from tools.file_manager import get_topic_slug
 
 
 def extract_script(md_path: str) -> str:
@@ -41,7 +43,9 @@ async def export_deck_pptx(session_path: str, tool_context: ToolContext) -> str:
         slides_dir = session_path
         png_files = sorted(glob.glob(os.path.join(slides_dir, 'slide_*.png')))
         
-    pptx_path = os.path.join(session_path, 'presentation.pptx')
+    slug = get_topic_slug(session_path)
+    pptx_filename = f"{slug}.pptx"
+    pptx_path = os.path.join(session_path, pptx_filename)
     
     if not png_files:
         return "Error: No slide PNG images found in the session. Generate images first."
@@ -91,20 +95,15 @@ async def export_deck_pptx(session_path: str, tool_context: ToolContext) -> str:
             pptx_bytes = f.read()
             
         artifact_part = Part.from_bytes(
-            data=pptx_bytes, 
+            data=pptx_bytes,
             mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
         )
-        await save_artifact_helper('presentation.pptx', artifact_part, tool_context)
-        
-        try:
-            from ..config import get_gcs_artifact_url
-        except ImportError:
-            from config import get_gcs_artifact_url
-            
-        gcs_url = get_gcs_artifact_url('presentation.pptx', tool_context)
+        await save_artifact_helper(pptx_filename, artifact_part, tool_context)
+
+        gcs_url = get_gcs_artifact_url(pptx_filename, tool_context)
         if gcs_url:
             return f"Presentation PPTX successfully compiled with speaker notes.\nDownload it here: {gcs_url}"
-            
+
         return f"Presentation PPTX successfully compiled and saved to {pptx_path}"
     except Exception as e:
         return f"Failed to export PPTX: {str(e)}"

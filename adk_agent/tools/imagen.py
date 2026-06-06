@@ -1,5 +1,6 @@
 import os
 import base64
+import asyncio
 from google import genai
 from google.genai import types
 from google.adk.tools.tool_context import ToolContext
@@ -15,6 +16,28 @@ try:
     from ..config import CONFIG
 except ImportError:
     from config import CONFIG
+
+_RETRYABLE_PHRASES = (
+    '429', 'resource exhausted', 'quota exceeded',
+    'rate limit', 'too many requests', '503', 'service unavailable',
+)
+
+
+async def _call_with_retry(fn, max_retries: int = 4, initial_delay: float = 5.0):
+    """Calls a synchronous API fn(), retrying on 429/ResourceExhausted/503 with exponential backoff."""
+    delay = initial_delay
+    for attempt in range(max_retries + 1):
+        try:
+            return fn()
+        except Exception as e:
+            err_str = str(e).lower()
+            if attempt < max_retries and any(p in err_str for p in _RETRYABLE_PHRASES):
+                print(f"[imagen] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...")
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 120)
+            else:
+                raise
+
 
 async def generate_slide_image(
     session_path: str,
@@ -68,19 +91,20 @@ async def generate_slide_image(
     client = genai.Client()
     
     is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
-    print(f"DEBUG [generate_slide_image] IMAGEN_MODEL: {CONFIG['IMAGEN_MODEL']}, is_gemini: {is_gemini_image_model}")
-    
+
     try:
         if is_gemini_image_model:
             # Gemini image models must be called via generate_content with response_modalities
-            response = client.models.generate_content(
-                model=CONFIG['IMAGEN_MODEL'],
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_modalities=["IMAGE"]
+            response = await _call_with_retry(
+                lambda: client.models.generate_content(
+                    model=CONFIG['IMAGEN_MODEL'],
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_modalities=["IMAGE"]
+                    )
                 )
             )
-            
+
             # Extract image parts
             parts = response.candidates[0].content.parts
             image_part = None
@@ -88,10 +112,10 @@ async def generate_slide_image(
                 if part.inline_data and part.inline_data.mime_type.startswith('image/'):
                     image_part = part
                     break
-            
+
             if not image_part:
                 return f"Failed to generate image for Slide {pad_num}: No image bytes returned in Gemini response."
-            
+
             # Handle both base64 string and raw bytes (depends on REST vs gRPC transport)
             raw_data = image_part.inline_data.data
             if isinstance(raw_data, str):
@@ -100,13 +124,15 @@ async def generate_slide_image(
                 image_bytes = raw_data
         else:
             # Traditional Imagen models must be called via generate_images
-            result = client.models.generate_images(
-                model=CONFIG['IMAGEN_MODEL'],
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1,
-                    output_mime_type='image/png',
-                    aspect_ratio='16:9',
+            result = await _call_with_retry(
+                lambda: client.models.generate_images(
+                    model=CONFIG['IMAGEN_MODEL'],
+                    prompt=prompt,
+                    config=types.GenerateImagesConfig(
+                        number_of_images=1,
+                        output_mime_type='image/png',
+                        aspect_ratio='16:9',
+                    )
                 )
             )
             image_bytes = result.generated_images[0].image.image_bytes

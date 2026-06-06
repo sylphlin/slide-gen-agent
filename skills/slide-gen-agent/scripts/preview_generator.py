@@ -159,9 +159,51 @@ def generate_preview_page(session_path: str) -> str:
     .notes-content p:last-child {{
       margin-bottom: 0;
     }}
+    .print-btn {{
+      position: sticky;
+      top: 16px;
+      align-self: flex-end;
+      margin-bottom: 8px;
+      padding: 10px 20px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 100;
+    }}
+    .print-btn:hover {{ background: #1557b0; }}
+    @media print {{
+      .print-btn {{ display: none; }}
+      h1 {{ display: none; }}
+      body {{ background: white; padding: 0; margin: 0; display: block; }}
+      .deck-container {{ gap: 0; }}
+      .slide-card {{
+        page-break-after: always;
+        break-after: always;
+        height: 100vh;
+        box-shadow: none;
+        border-radius: 0;
+        border: none;
+        margin: 0;
+        padding: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }}
+      .slide-notes {{
+        flex: 1;
+        overflow: hidden;
+      }}
+    }}
   </style>
 </head>
 <body>
+  <button class="print-btn" onclick="window.print()">⬇ Save as PDF (with Speaker Notes)</button>
   <h1>Presentation Deck Preview</h1>
   <div class="deck-container">{cards_html}
   </div>
