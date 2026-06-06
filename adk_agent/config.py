@@ -13,6 +13,10 @@ CONFIG = {
     # Thinking settings
     'THINKING_LEVEL': os.environ.get('THINKING_LEVEL') or 'high',
     'THINKING_BUDGET': int(os.environ.get('THINKING_BUDGET') or '2048'),
+
+    # Google Drive export (requires Domain-Wide Delegation)
+    'DRIVE_FOLDER_NAME': os.environ.get('DRIVE_FOLDER_NAME') or 'slide-gen-agent',
+    'DRIVE_SERVICE_ACCOUNT_KEY': os.environ.get('DRIVE_SERVICE_ACCOUNT_KEY'),  # service account key JSON string
 }
 
 # Normalize and auto-fill image generation endpoint location

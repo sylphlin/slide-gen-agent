@@ -6,7 +6,7 @@
 - **Conversational & iterative** — tell the agent to adjust a slide's content, swap a color, or restructure the entire outline mid-session. Changes are applied surgically without regenerating the whole deck.
 - **Speaker scripts included** — every slide comes with a full 1–2 minute spoken script, written as natural presenter delivery. Scripts are embedded in the PPTX notes section and included in the preview page, so you walk into the room prepared.
 - **Multilingual** — handles content and speaker notes in any language, including CJK (Chinese, Japanese, Korean) and Southeast Asian scripts. Export to PDF via browser print to preserve system fonts without server-side font dependencies.
-- **Production-ready exports** — download as PPTX (with embedded speaker notes), PDF slides, or a browser-printed speaker-notes PDF.
+- **Production-ready exports** — download as PPTX (with embedded speaker notes), PDF slides, browser-printed speaker-notes PDF, or push directly to **Google Slides** for instant in-browser editing and sharing.
 
 This repository is structured to support three progressive deployment and usage methods, ranging from lightweight prompt-based skills to production-grade enterprise agents.
 
@@ -43,6 +43,7 @@ graph TD
     I -->|Option 1| J[topic.pptx - Widescreen PPTX with Speaker Notes]
     I -->|Option 2| K[topic.pdf - PDF Slides Only]
     I -->|Option 3| L[preview.html → Browser Print-to-PDF with Speaker Notes]
+    I -->|Option 4| M[Google Slides - Direct Drive Upload & Share]
 ```
 
 ### The Five-Stage Pipeline
@@ -71,10 +72,11 @@ graph TD
    - **How to Iterate**: Tell the agent what to change in plain language. Script edits update `slide_xx.md`; layout changes (e.g., "make slide 3 two-column, chart on the right") populate the `## Layout` section; color or brand changes update `design.md`. Only the affected slides are regenerated.
 
 4. **Stage 4: Presentation Packaging & Download**
-   - Once you approve the final slides, the agent offers three export options:
+   - Once you approve the final slides, the agent offers four export options:
      - **PPTX (PowerPoint with Speaker Notes)**: A widescreen PowerPoint file featuring slide images, with speaker notes fully embedded in the PowerPoint notes section of each slide. Filename uses the presentation topic (e.g. `ai-trends-2025.pptx`).
      - **PDF: Slides**: A PDF compiled from all slide images (perfect for presenting directly). Filename uses the presentation topic (e.g. `ai-trends-2025.pdf`).
      - **PDF: Speaker Notes**: Open the `preview.html` link and click the **"Save as PDF"** button. The browser renders each slide and its notes as a clean, paginated PDF using your local system fonts — this correctly handles all languages including CJK and Southeast Asian scripts without any server-side font dependencies.
+     - **Google Slides**: The agent uploads the PPTX to Google Drive as a Google Slides file in the `slide-gen-agent` folder and shares it with you as editor. Opens directly in Google Slides for immediate editing and sharing. *(Requires Google Drive API enabled in GCP and Drive write access on the service account.)*
 
 ---
 
@@ -103,6 +105,7 @@ slide-gen-agent/
         ├── imagen.py        # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
+        ├── drive_exporter.py # Google Drive upload → Google Slides converter & sharer
         └── preview_generator.py # HTML slide preview and notes compiler (includes Save as PDF)
 ```
 
@@ -221,3 +224,51 @@ To make the agent available to your Enterprise users:
 3. Click **+ Add Agent**.
 4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID** (obtained from the deployment step above) in the **Agent Engine reasoning engine** input field.
 5. Configure IAM authentication permissions to secure the connection between Gemini Enterprise and your Reasoning Engine agent.
+
+#### 4. (Optional) Enable Google Slides Export
+
+This enables the **"Open in Google Slides"** export option, which uploads the generated deck directly to each user's own Google Drive as a Google Slides file they own.
+
+**Step 1 — Enable Google Drive API**
+
+In your GCP project, enable the [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com).
+
+**Step 2 — Configure Domain-Wide Delegation**
+
+1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
+2. Click **Add new** and enter:
+   - **Client ID**: the client ID of your Agent Engine service account (find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select the account → **Details** tab)
+   - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
+3. Click **Authorise**.
+
+**Step 3 — Store the service account key in Secret Manager**
+
+```bash
+# Create and download a JSON key for the Agent Engine service account
+gcloud iam service-accounts keys create /tmp/drive-sa-key.json \
+  --iam-account={PROJECT_NUMBER}-compute@developer.gserviceaccount.com
+
+# Store in Secret Manager
+gcloud secrets create drive-sa-key \
+  --data-file=/tmp/drive-sa-key.json \
+  --project=$GOOGLE_CLOUD_PROJECT
+
+# Remove the local copy
+rm /tmp/drive-sa-key.json
+```
+
+**Step 4 — Inject the key at deployment**
+
+Pass the secret as the `DRIVE_SERVICE_ACCOUNT_KEY` environment variable when deploying:
+
+```bash
+adk deploy agent_engine \
+  --project=$GOOGLE_CLOUD_PROJECT \
+  --region=us-central1 \
+  --display_name="slide-gen-agent" \
+  --artifact_service_uri="gs://your-runtime-bucket" \
+  --env_vars="DRIVE_SERVICE_ACCOUNT_KEY=$(gcloud secrets versions access latest --secret=drive-sa-key --project=$GOOGLE_CLOUD_PROJECT)" \
+  .
+```
+
+Once configured, the agent will create a `slide-gen-agent` folder in each user's **My Drive** and save generated presentations there as Google Slides files they fully own.
