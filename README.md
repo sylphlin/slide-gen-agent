@@ -10,11 +10,12 @@ This repository is structured to support three progressive deployment and usage 
 
 Traditional AI slide generators try to create layouts and slide visual files in a single black-box step, which often results in inconsistent designs, random formatting, and an inability to tweak specific parts without regenerating the entire deck.
 
-Our agent uses a **decoupled, four-stage pipeline** with plain-text intermediate outputs. This guarantees that you can easily jump in, modify any design choice or script manually, and get consistent, updated results without having to regenerate the entire deck from scratch.
+Our agent uses a **decoupled, five-stage pipeline** with plain-text intermediate outputs. This guarantees that you can easily jump in, modify any design choice or script manually, and get consistent, updated results without having to regenerate the entire deck from scratch.
 
 ```mermaid
 graph TD
-    A[Source Material] --> B(Stage 1: Proposal)
+    A[Source Material] --> A0(Stage 0: Clarification & Alignment)
+    A0 -->|User Confirms Context| B(Stage 1: Content Analysis & Proposal)
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
     
@@ -38,7 +39,11 @@ graph TD
     I -->|Option 3| L[speaker_notes.pdf - PDF with Images + Speaker Notes]
 ```
 
-### The Four-Stage Pipeline
+### The Five-Stage Pipeline
+
+0. **Stage 0: Clarification & Alignment**
+   - Before touching the source material, the agent confirms three core context elements: **expected presentation duration** (or slide count), **target audience**, and **expected goal/outcome**.
+   - *The agent pauses and waits for you.* If any of these are missing from your initial request, it will ask before proceeding.
 
 1. **Stage 1: Content Analysis & Proposal**
    - The agent reads your source material (documents, transcripts, raw notes) to understand the domain, tone, and target audience.
