@@ -6,7 +6,7 @@
 - **Conversational & iterative** — tell the agent to adjust a slide's content, swap a color, or restructure the entire outline mid-session. Changes are applied surgically without regenerating the whole deck.
 - **Speaker scripts included** — every slide comes with a full 1–2 minute spoken script, written as natural presenter delivery. Scripts are embedded in the PPTX notes section and included in the preview page, so you walk into the room prepared.
 - **Multilingual** — handles content and speaker notes in any language, including CJK (Chinese, Japanese, Korean) and Southeast Asian scripts. Export to PDF via browser print to preserve system fonts without server-side font dependencies.
-- **Production-ready exports** — download as PPTX (with embedded speaker notes), PDF slides, or a browser-printed speaker-notes PDF.
+- **Production-ready exports** — download as PPTX (with embedded speaker notes), PDF slides, browser-printed speaker-notes PDF, or push directly to **Google Slides** for instant in-browser editing and sharing.
 
 This repository is structured to support three progressive deployment and usage methods, ranging from lightweight prompt-based skills to production-grade enterprise agents.
 
@@ -43,6 +43,7 @@ graph TD
     I -->|Option 1| J[topic.pptx - Widescreen PPTX with Speaker Notes]
     I -->|Option 2| K[topic.pdf - PDF Slides Only]
     I -->|Option 3| L[preview.html → Browser Print-to-PDF with Speaker Notes]
+    I -->|Option 4| M[Google Slides - Direct Drive Upload & Share]
 ```
 
 ### The Five-Stage Pipeline
@@ -104,6 +105,7 @@ slide-gen-agent/
         ├── imagen.py        # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
+        ├── drive_exporter.py # Google Drive upload → Google Slides converter & sharer
         └── preview_generator.py # HTML slide preview and notes compiler (includes Save as PDF)
 ```
 
