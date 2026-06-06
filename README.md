@@ -18,9 +18,9 @@ graph TD
     B -->|User Approves| C[Create isolated Workspace Session]
     C --> D(Stage 2: Structured Markdown Generation)
     
-    D -->|Generates| E1[design.md - Global Style Spec]
-    D -->|Generates| E2[outlines.md - Slide Outlines]
-    D -->|Generates| E3[slide_xx.md - Per-Slide Script]
+    D -->|Step 1| E1[design.md - Global Style Spec]
+    D -->|Step 2| E2[outlines.md - Slide Outlines]
+    E2 -->|Step 3: Guides Content Routing| E3[slide_xx.md - Per-Slide Scripts]
     
     E1 & E3 --> F(Stage 3: Image Generation & Preview)
     F -->|Generates| G1[slide_xx.png - Slide Images]
@@ -29,6 +29,7 @@ graph TD
     G1 & G2 --> H{User Review & Optional Tweaks}
     
     H -->|Request Text/Content Changes| E3
+    H -->|Request Structural/Layout Changes| E2
     H -->|Request Global Style Changes| E1
     
     H -->|User Approves| I(Stage 4: Packaging & Download)
@@ -89,7 +90,7 @@ slide-gen-agent/
     └── tools/               # Agent tools
         ├── __init__.py
         ├── file_manager.py  # Session initialization and file writer tools
-        ├── imagen.py        # Imagen 3 slide image generator tool
+        ├── imagen.py        # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
         ├── notes_pdf_exporter.py # PDF with slide images + speaker notes exporter
@@ -193,7 +194,7 @@ The deployed Agent Engine (Reasoning Engine) instance and its platform orchestra
 3. **Grant permissions to the agent's runtime service account**:
    - Locate your project's runtime identity (typically the **Compute Engine default service account**: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`).
    - Grant it the following roles:
-     - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Imagen 3)
+     - **Agent Platform User** (`roles/aiplatform.user`) (required for calling Vertex AI models and Gemini image generation)
      - **Storage Object User** (`roles/storage.objectUser`) (required to read/write slides, previews, and PDF files to your GCS bucket)
 
 4. **Grant permissions to the Vertex AI Service Agent**:
