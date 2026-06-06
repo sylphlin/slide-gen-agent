@@ -204,8 +204,26 @@ async def export_to_google_slides(session_path: str, tool_context: ToolContext) 
 
     except Exception as e:
         err_str = str(e)
-        status = _http_status(e) or (_http_status(e.__cause__) if e.__cause__ else None)
+        # Detect HTTP status from googleapiclient HttpError (.resp.status)
+        # or urllib HTTPError (.code), falling back to string scan.
+        status = (
+            getattr(getattr(e, 'resp', None), 'status', None)
+            or getattr(e, 'code', None)
+        )
         if status is None and '403' in err_str:
             status = 403
-        # Step-tagged errors from _get_drive_service_as_user already carry a hint
-        return f"Google Drive export failed: {err_str}"
+        if status == 403:
+            return (
+                "Google Drive export failed with HTTP 403 Forbidden. There are two likely causes:\n\n"
+                "1. **Domain security policy**: Your Google Workspace administrator has restricted "
+                "external applications from writing to Google Drive. Ask your IT admin to authorise "
+                "the agent's service account Client ID under "
+                "Security → API controls → Domain-wide delegation in the Google Workspace Admin Console, "
+                "with the scope `https://www.googleapis.com/auth/drive.file`.\n\n"
+                "2. **DWD not configured or mismatched**: The service account has not been granted "
+                "Domain-Wide Delegation for your domain, or the Client ID registered in the Admin "
+                "Console does not match the deployed service account. Verify the Client ID on the "
+                "IAM Service Accounts page matches the one registered in Domain-wide delegation.\n\n"
+                f"Raw error: {err_str}"
+            )
+        return f"Failed to export to Google Slides: {err_str}"
