@@ -1,4 +1,5 @@
 import os
+import time
 import json
 from google.adk.tools.tool_context import ToolContext
 
@@ -10,28 +11,82 @@ except ImportError:
     from tools.file_manager import get_topic_slug
 
 
+def _get_sa_email() -> str:
+    """Fetches the current service account email from the GCE metadata server."""
+    import urllib.request
+    req = urllib.request.Request(
+        'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
+        headers={'Metadata-Flavor': 'Google'}
+    )
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        return resp.read().decode()
+
+
 def _get_drive_service_as_user(user_email: str):
-    """Returns a Drive v3 service impersonating user_email via Domain-Wide Delegation."""
-    key_json_str = CONFIG.get('DRIVE_SERVICE_ACCOUNT_KEY')
-    if not key_json_str:
-        raise RuntimeError(
-            "DRIVE_SERVICE_ACCOUNT_KEY is not set. "
-            "Store the service account key JSON in Secret Manager and inject it as this env var."
-        )
-    from google.oauth2 import service_account
+    """Returns a Drive v3 service impersonating user_email via DWD.
+
+    Uses IAM Credentials signJwt API — no service account key file required.
+    The service account must have roles/iam.serviceAccountTokenCreator on itself
+    and Domain-Wide Delegation configured in Google Workspace Admin Console.
+    """
+    import urllib.request
+    import urllib.parse
     from googleapiclient.discovery import build
+    from google.oauth2.credentials import Credentials
+    import google.auth
+    import google.auth.transport.requests
 
-    key_info = json.loads(key_json_str)
-    creds = service_account.Credentials.from_service_account_info(
-        key_info,
-        scopes=['https://www.googleapis.com/auth/drive.file']
-    ).with_subject(user_email)
+    SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-    return build('drive', 'v3', credentials=creds)
+    # Step 1 — Refresh ADC token (Compute Engine metadata, no key needed)
+    adc_creds, _ = google.auth.default()
+    adc_creds.refresh(google.auth.transport.requests.Request())
+
+    sa_email = _get_sa_email()
+
+    # Step 2 — Build DWD JWT payload
+    now = int(time.time())
+    jwt_payload = json.dumps({
+        "iss": sa_email,
+        "sub": user_email,       # DWD: act as this user
+        "scope": " ".join(SCOPES),
+        "aud": "https://oauth2.googleapis.com/token",
+        "iat": now,
+        "exp": now + 3600,
+    })
+
+    # Step 3 — Sign JWT via IAM Credentials API (keyless)
+    sign_body = json.dumps({"payload": jwt_payload}).encode()
+    sign_req = urllib.request.Request(
+        f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{sa_email}:signJwt",
+        data=sign_body,
+        headers={
+            "Authorization": f"Bearer {adc_creds.token}",
+            "Content-Type": "application/json",
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(sign_req, timeout=30) as resp:
+        signed_jwt = json.loads(resp.read())["signedJwt"]
+
+    # Step 4 — Exchange signed JWT for user access token
+    token_body = urllib.parse.urlencode({
+        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        "assertion": signed_jwt,
+    }).encode()
+    token_req = urllib.request.Request(
+        "https://oauth2.googleapis.com/token",
+        data=token_body,
+        method="POST"
+    )
+    with urllib.request.urlopen(token_req, timeout=30) as resp:
+        access_token = json.loads(resp.read())["access_token"]
+
+    return build('drive', 'v3', credentials=Credentials(token=access_token))
 
 
 def _get_or_create_folder(service, folder_name: str) -> str:
-    """Returns the folder ID in the impersonated user's Drive, creating it if needed."""
+    """Returns the folder ID in the user's Drive, creating it if needed."""
     results = service.files().list(
         q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false",
         fields='files(id)',
@@ -60,7 +115,10 @@ def _get_user_email(tool_context: ToolContext) -> str | None:
 async def export_to_google_slides(session_path: str, tool_context: ToolContext) -> str:
     """Uploads the generated PPTX to the current user's Google Drive as a Google Slides
     presentation in their 'slide-gen-agent' folder. The user is the file owner.
-    Requires Domain-Wide Delegation configured on the service account.
+
+    Uses keyless DWD via IAM Credentials signJwt — no service account key file needed.
+    Requires: Drive API enabled, DWD configured in Google Workspace Admin,
+    and roles/iam.serviceAccountTokenCreator granted to the service account on itself.
 
     Args:
         session_path: The absolute session path returned by initialize_session

@@ -16,7 +16,6 @@ CONFIG = {
 
     # Google Drive export (requires Domain-Wide Delegation)
     'DRIVE_FOLDER_NAME': os.environ.get('DRIVE_FOLDER_NAME') or 'slide-gen-agent',
-    'DRIVE_SERVICE_ACCOUNT_KEY': os.environ.get('DRIVE_SERVICE_ACCOUNT_KEY'),  # service account key JSON string
 }
 
 # Normalize and auto-fill image generation endpoint location
