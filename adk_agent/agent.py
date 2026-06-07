@@ -3,8 +3,12 @@
 import os
 from dotenv import load_dotenv
 
-# Load local environment variables if .env exists
-load_dotenv()
+# Load local environment variables if .env exists. override=True because a
+# bundled .env is an explicit, authoritative source — it must win over wrong
+# values some managed runtimes (e.g. Agent Engine) pre-inject into os.environ
+# (e.g. GOOGLE_CLOUD_PROJECT set to the numeric project NUMBER instead of the
+# string project ID), which would otherwise silently shadow it.
+load_dotenv(override=True)
 
 try:
     from .config import CONFIG
