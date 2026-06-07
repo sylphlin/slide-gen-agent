@@ -149,6 +149,8 @@ Enable the following APIs in your GCP project:
 Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). This Google-managed SA handles Vertex AI and GCS access, but **cannot** be directly registered for Domain-Wide Delegation (DWD). For Google Drive export, you create a separate user-managed SA (`slide-gen-drive`) that the runtime SA is allowed to impersonate.
 
 ```bash
+export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+
 PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
 
 # Runtime SA: Google-managed identity that runs your agent code
