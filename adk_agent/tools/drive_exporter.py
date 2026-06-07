@@ -47,7 +47,7 @@ def _get_drive_service_as_user(user_email: str):
     SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
     # Step 1 — Refresh ADC token (Compute Engine metadata, no key needed)
-    adc_creds, adc_project_id = google.auth.default()
+    adc_creds, _ = google.auth.default()
     adc_creds.refresh(google.auth.transport.requests.Request())
 
     try:
@@ -59,10 +59,9 @@ def _get_drive_service_as_user(user_email: str):
     # Agent Engine's runtime SA is a Google-managed service agent that cannot be
     # registered for DWD, so we use a dedicated user-managed SA (slide-gen-drive)
     # whose Client ID is registered in Google Workspace Admin Console.
-    # GOOGLE_CLOUD_PROJECT may not be injected into the deployed Agent Engine
-    # container, so fall back to the project ID resolved by ADC (always
-    # available via the metadata server in any GCP runtime).
-    project_id = CONFIG.get('GOOGLE_CLOUD_PROJECT') or os.environ.get('GOOGLE_CLOUD_PROJECT') or adc_project_id
+    # CONFIG['GOOGLE_CLOUD_PROJECT'] is resolved via ADC at startup (config.py),
+    # which already covers env vars and the Agent Engine metadata server.
+    project_id = CONFIG.get('GOOGLE_CLOUD_PROJECT')
     default_drive_sa = f"slide-gen-drive@{project_id}.iam.gserviceaccount.com" if project_id else None
     drive_sa_email = CONFIG.get('DRIVE_SA_EMAIL') or default_drive_sa or runtime_sa_email
 

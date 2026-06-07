@@ -1,8 +1,27 @@
 import os
+import sys
+
+
+def _resolve_project_id() -> str | None:
+    """Resolves the GCP project ID via ADC (covers env vars, ADC credentials
+    file, and the GCE/Agent Engine metadata server in the standard precedence
+    order Google's own libraries use)."""
+    try:
+        import google.auth
+        _, project_id = google.auth.default()
+        if not project_id:
+            print("[config] Warning: google.auth.default() did not resolve a project ID. "
+                  "Set GOOGLE_CLOUD_PROJECT explicitly if Vertex AI or Drive export calls fail.", file=sys.stderr)
+        return project_id
+    except Exception as e:
+        print(f"[config] Warning: Failed to resolve project ID via ADC ({e}). "
+              "Set GOOGLE_CLOUD_PROJECT explicitly if Vertex AI or Drive export calls fail.", file=sys.stderr)
+        return None
+
 
 CONFIG = {
     # GCP Credentials & Locations
-    'GOOGLE_CLOUD_PROJECT': os.environ.get('GOOGLE_CLOUD_PROJECT'),
+    'GOOGLE_CLOUD_PROJECT': _resolve_project_id(),
     'GOOGLE_CLOUD_LOCATION': 'global',
     'IMAGEN_LOCATION': os.environ.get('IMAGEN_LOCATION'),
 
