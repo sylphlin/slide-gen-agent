@@ -157,13 +157,13 @@ Once the user explicitly requests to compile, package, or download the final dec
 >
 > You can request more than one format."
 
-Then execute only the format(s) the user selects:
-1. **Google Slides**: Upload the PPTX to Google Drive as a Google Slides file in the 'slide-gen-agent' folder and share it with the current user. Call 'export_to_google_slides'. Provide the returned Google Slides URL so the user can open and edit it directly in their browser.
+Execute ONLY the format(s) the user selects — do NOT generate or mention formats they did not request:
+1. **Google Slides**: Upload the PPTX to Google Drive as a Google Slides file in the 'slide-gen-agent' folder and share it with the current user. Call 'export_to_google_slides' (this requires a PPTX to exist first — if it hasn't been generated yet, call 'export_deck_pptx' first as an internal prerequisite step only; do not present that PPTX as a separate deliverable unless the user also asked for it). Provide the returned Google Slides URL so the user can open and edit it directly in their browser.
 2. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
 3. **PDF: Slides**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
-4. **PDF: Speaker Notes**: Open the preview link and click the "Save as PDF" button in the page. The browser renders the PDF directly using local system fonts, which correctly handles all languages including CJK and Southeast Asian scripts.
+4. **PDF: Speaker Notes**: Provide the preview page link, and let the user know they can click the "Save as PDF" button at the top-right corner of the page to download a PDF with speaker notes.
 
-For option 1, provide the Google Slides URL. Provide the GCS URL markdown download link for options 2 and 3. For option 4, remind the user to use the preview page button. Do NOT output local container paths."""
+Present results only for the format(s) actually selected: for option 1 → the Google Slides URL; for options 2/3 → the GCS URL markdown download link; for option 4 → the preview page link plus a note about the "Save as PDF" button at the top-right corner. Do NOT output local container paths."""
 
 # Default Text Model selection
 text_model = CONFIG['TEXT_MODEL']

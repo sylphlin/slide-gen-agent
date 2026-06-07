@@ -156,10 +156,11 @@ Once the user is completely satisfied with the slides and explicitly requests to
 >
 > You can request more than one format."
 
-Then execute only the format(s) the user selects:
+Execute ONLY the format(s) the user selects — do NOT generate or mention formats they did not request:
 
 1. **Google Slides (Open & Edit in Browser)**:
    - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
+   - *Note: This requires a PPTX to exist first. If it hasn't been generated yet, run the `pptx_exporter` first as an internal prerequisite step only — do not present that PPTX as a separate deliverable unless the user also asked for it.*
    - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
    - *Note: Requires Google Drive API enabled and Domain-Wide Delegation configured in Google Workspace Admin. See README Method 3 Steps 3–4 for setup instructions.*
 
@@ -172,9 +173,9 @@ Then execute only the format(s) the user selects:
    - **Link**: Provide the download link for the generated `.pdf` file.
 
 4. **PDF: Speaker Notes**:
-   - **Action**: Direct the user to open the preview link and click the **"Save as PDF"** button embedded in the page. The browser renders the PDF using local system fonts, correctly handling all languages including CJK and Southeast Asian scripts — no server-side font dependencies required.
+   - **Action**: Provide the preview page link, and let the user know they can click the **"Save as PDF"** button at the top-right corner of the page to download a PDF with speaker notes.
 
-Once completed, provide a final summary of all artifacts produced, highlighting the download links.
+Once completed, provide a final summary only of the artifact(s) actually produced, highlighting their download links.
 
 
 
