@@ -109,11 +109,11 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path. Narrate progress as you go — output a status line before each step and a brief confirmation after it completes — so the user can track what's happening. Full file contents do not need to be pasted into the chat:
-1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Output a status line before starting, e.g. "🎨 Step 1/3: Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
+1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
-2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA. Output a status line before starting, e.g. "🗂️ Step 2/3: Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
+2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA. Output a status line before starting, e.g. "🗂️ Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
 <OUTLINES_TEMPLATE>
 {_outlines_template}
 </OUTLINES_TEMPLATE>
