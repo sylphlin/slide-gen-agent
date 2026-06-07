@@ -229,6 +229,15 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --role="roles/artifactregistry.writer"
 ```
 
+> **Note**: If a binding for the same role + member already exists with a condition (e.g. left over from another setup like Cloud Build), `gcloud` will prompt you to choose how to apply the new one:
+> ```
+>  [1] EXPRESSION=request.time < timestamp(...), TITLE=cloudbuild-connection-setup
+>  [2] None
+>  [3] Specify a new condition
+> ```
+> Select **`[2] None`** — the bindings above must be unconditional so the agent always has these permissions.
+
+
 ##### 3. Configure Domain-Wide Delegation (Google Workspace Admin)
 This allows the agent to upload generated decks directly to each user's own Google Drive.
 
