@@ -164,7 +164,7 @@ Execute ONLY the format(s) the user selects — do NOT generate or mention forma
    - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
    - *Note: This requires a PPTX to exist first. If it hasn't been generated yet, run the `pptx_exporter` first as an internal prerequisite step only — do not present that PPTX as a separate deliverable unless the user also asked for it.*
    - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
-   - *Note: Requires Google Drive API enabled and Domain-Wide Delegation configured in Google Workspace Admin. See README Method 3 Steps 3–4 for setup instructions.*
+   - *Note: Requires Google Drive API enabled and Domain-Wide Delegation configured in Google Workspace Admin. See README Method 2 Steps 3–4 for setup instructions.*
 
 2. **PPTX (PowerPoint with Speaker Notes)**:
    - **Action**: Run the `pptx_exporter` script (either by calling the `export_deck_pptx` tool, or by running `python3 scripts/pptx_exporter.py <sessionPath>` in the terminal) to compile slide images and embed speaker notes from the markdown scripts.

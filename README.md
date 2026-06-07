@@ -124,55 +124,14 @@ Select the installation method that fits your target environment:
 
 ### 🔹 Method 1: Universal Skill (`SKILL.md`) — Platform-Agnostic
 This is a pure prompt/guideline-based installation, requiring no code hosting.
-* **Use Case**: General LLM systems (like Antigravity, Codex, or standard chat assistants with image-generation abilities).
+* **Use Case**: LLM systems that support Agent Skills, provide a sandboxed code-execution environment, and have text-to-image generation capabilities (e.g., Antigravity, Codex).
 * **How to Install**:
   1. Import or copy the contents of [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) into your LLM assistant's custom system instructions or system prompts.
   2. Reference the Markdown files in the `skills/slide-gen-agent/templates/` directory as examples for the assistant to follow.
 
 ---
 
-### 🔹 Method 2: Local Verification via ADK Web (Recommended for Testing)
-Run the fully functional Python agent locally on your computer with a visual Web UI. This is much easier to test and verify than standard command-line interfaces.
-
-#### 1. Prerequisites
-- **Python 3.10** (v3.11 recommended)
-- **Google Cloud SDK (gcloud)** installed and authenticated on your machine.
-- A **Google Cloud Project (GCP)** with the **Vertex AI API** enabled.
-- Local IAM credentials configured (`gcloud auth application-default login`).
-
-#### 2. Project Installation
-Create a virtual environment in the **root** `slide-gen-agent` directory (creating the virtual environment in the root directory rather than `adk_agent` prevents it from being staged during deployment), then activate it and install dependencies:
-```bash
-# Navigate to the root slide-gen-agent directory:
-python3 -m venv venv
-source venv/bin/activate
-
-# Navigate to the adk_agent directory and install dependencies:
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
-```
-
-#### 3. Configure Environment Variables
-Before running locally, you must set your Google Cloud Project ID as an environment variable:
-```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-```
-Alternatively, you can create a `.env` file inside the `adk_agent` folder to specify your GCP project ID (other configs like location default to `'global'` and artifacts directory default to `./artifacts` automatically):
-```text
-GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-```
-
-#### 4. Run in Web UI Mode
-Launch the local web interface from the `adk_agent` directory (the `--allow_origins="*"` flag is included to ensure it works seamlessly both on local machines and inside Google Cloud Shell):
-```bash
-# Ensure you are inside the adk_agent directory and your virtual environment is active:
-adk web --allow_origins="*" .
-```
-This will spin up a local server. Open the provided URL in your browser to interact with the Agent visually!
-
----
-
-### 🔹 Method 3: Production Deployment to Agent Engine (Gemini Enterprise)
+### 🔹 Method 2: Production Deployment to Agent Engine (Gemini Enterprise)
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
 ---
