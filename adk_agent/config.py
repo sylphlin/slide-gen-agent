@@ -10,12 +10,17 @@ def _resolve_project_id() -> str | None:
         import google.auth
         _, project_id = google.auth.default()
         if not project_id:
-            print("[config] Warning: google.auth.default() did not resolve a project ID. "
-                  "Set GOOGLE_CLOUD_PROJECT explicitly if Vertex AI or Drive export calls fail.", file=sys.stderr)
+            # google.auth.default() itself checks GOOGLE_CLOUD_PROJECT/GCLOUD_PROJECT
+            # and would have returned it here if set — so this means it's genuinely unset.
+            print("[config] Warning: Could not resolve a project ID from ADC credentials or "
+                  "the metadata server. Set the GOOGLE_CLOUD_PROJECT environment variable explicitly.", file=sys.stderr)
         return project_id
     except Exception as e:
-        print(f"[config] Warning: Failed to resolve project ID via ADC ({e}). "
-              "Set GOOGLE_CLOUD_PROJECT explicitly if Vertex AI or Drive export calls fail.", file=sys.stderr)
+        # Failure here means ADC itself couldn't load credentials — setting
+        # GOOGLE_CLOUD_PROJECT would not fix this; the credentials setup is the issue.
+        print(f"[config] Warning: Failed to load Application Default Credentials ({e}). "
+              "Run 'gcloud auth application-default login' locally, or verify the "
+              "runtime's service account is correctly configured.", file=sys.stderr)
         return None
 
 
