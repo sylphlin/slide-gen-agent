@@ -74,16 +74,18 @@ Then, generate all three types of Markdown files in the following order — each
 
 ### Step 1 — `design.md` (Brand System)
 Read `assets/design.md` first, then generate following that exact structure — adapt every field to the agreed style and palette, keep all section headings and the Color Palette table intact. This file does **not** include per-slide layout definitions.
+- **Progress**: Output a status line before starting, e.g. **"🎨 Step 1/3: Designing the overall visual style and color palette..."**, and a brief confirmation after saving, e.g. **"✅ Visual style & color palette defined."** Full file contents do not need to be pasted into the chat.
 - **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.
 
 ### Step 2 — `outlines.md` (Deck Outline)
 Read `assets/outlines.md` first, then generate following that exact structure. The `**Topic**` field drives all downstream file naming — do not omit or rename it.
+- **Progress**: Output a status line before starting, e.g. **"🗂️ Step 2/3: Drafting the slide-by-slide outline..."**, and a brief confirmation after saving that includes the slide count, e.g. **"✅ Outline ready — N slides planned."** Full file contents do not need to be pasted into the chat.
 - **Action**: Save the outlines to `outlines.md` (by calling the `save_outlines` tool with the `sessionPath`, or writing `outlines.md` directly in the session workspace folder).
 
 ### Step 3 — `slide_xx.md` (Per-slide Scripts)
 Read `assets/slide_xx.md` first, then generate one file per slide following that exact structure. Leave the `## Layout` section empty on first generation.
-- **Progress**: Before writing each slide, output a header line such as **"Slide X / N — [slide title]"** so the user can track progress.
+- **Progress**: Before writing each slide, output a header line such as **"✍️ Slide X / N — [slide title]"**; after saving, output a brief confirmation such as **"✅ Slide X / N script ready."** Full script contents do not need to be pasted into the chat.
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
 **Layout Catalog** — use these types in the `Slide Type` field of `outlines.md` and `slide_xx.md`:
