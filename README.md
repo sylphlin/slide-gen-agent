@@ -223,6 +223,8 @@ Repeat these steps for every fresh install or redeploy.
 ##### 1. Install Dependencies
 Set up the virtual environment from the root `slide-gen-agent` directory:
 ```bash
+export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+
 python3 -m venv venv
 source venv/bin/activate
 cd adk_agent
