@@ -3,24 +3,31 @@ import sys
 
 
 def _resolve_project_id() -> str | None:
-    """Resolves the GCP project ID via ADC (covers env vars, ADC credentials
-    file, and the GCE/Agent Engine metadata server in the standard precedence
-    order Google's own libraries use)."""
+    """Resolves the GCP project ID (string form, e.g. 'my-project', as required
+    to construct service account emails like slide-gen-drive@{project_id}...).
+
+    Prefers the GOOGLE_CLOUD_PROJECT env var (explicit override for local dev),
+    then queries the GCE/Agent Engine metadata server's project-id endpoint
+    directly. google.auth.default()'s project_id is intentionally NOT used here:
+    under some Agent Engine runtime credential contexts it returns the numeric
+    project NUMBER instead of the string project ID, producing a malformed,
+    non-existent service account email.
+    """
+    env_project = os.environ.get('GOOGLE_CLOUD_PROJECT')
+    if env_project:
+        return env_project
     try:
-        import google.auth
-        _, project_id = google.auth.default()
-        if not project_id:
-            # google.auth.default() itself checks GOOGLE_CLOUD_PROJECT/GCLOUD_PROJECT
-            # and would have returned it here if set — so this means it's genuinely unset.
-            print("[config] Warning: Could not resolve a project ID from ADC credentials or "
-                  "the metadata server. Set the GOOGLE_CLOUD_PROJECT environment variable explicitly.", file=sys.stderr)
-        return project_id
+        import urllib.request
+        req = urllib.request.Request(
+            'http://metadata.google.internal/computeMetadata/v1/project/project-id',
+            headers={'Metadata-Flavor': 'Google'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.read().decode()
     except Exception as e:
-        # Failure here means ADC itself couldn't load credentials — setting
-        # GOOGLE_CLOUD_PROJECT would not fix this; the credentials setup is the issue.
-        print(f"[config] Warning: Failed to load Application Default Credentials ({e}). "
-              "Run 'gcloud auth application-default login' locally, or verify the "
-              "runtime's service account is correctly configured.", file=sys.stderr)
+        print(f"[config] Warning: Could not resolve a project ID from the "
+              f"GOOGLE_CLOUD_PROJECT env var or the metadata server ({e}). "
+              "Set the GOOGLE_CLOUD_PROJECT environment variable explicitly.", file=sys.stderr)
         return None
 
 
