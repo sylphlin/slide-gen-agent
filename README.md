@@ -175,21 +175,17 @@ This will spin up a local server. Open the provided URL in your browser to inter
 ### 🔹 Method 3: Production Deployment to Agent Engine (Gemini Enterprise)
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
-#### 1. Install Dependencies
-Set up the virtual environment from the root `slide-gen-agent` directory:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
-```
+---
 
-#### 2. Enable GCP APIs
+#### Part A — One-Time Project Setup
+Do this once per GCP project. You won't need to repeat these steps for future installs or redeploys.
+
+##### 1. Enable GCP APIs
 Enable the following APIs in your GCP project:
 - [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
 - [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
 
-#### 3. Configure IAM Permissions
+##### 2. Configure IAM Permissions
 
 Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). This Google-managed SA handles Vertex AI and GCS access, but **cannot** be directly registered for Domain-Wide Delegation (DWD). For Google Drive export, you create a separate user-managed SA (`slide-gen-drive`) that the runtime SA is allowed to impersonate.
 
@@ -233,7 +229,7 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --role="roles/artifactregistry.writer"
 ```
 
-#### 4. Configure Domain-Wide Delegation (Google Workspace Admin)
+##### 3. Configure Domain-Wide Delegation (Google Workspace Admin)
 This allows the agent to upload generated decks directly to each user's own Google Drive.
 
 1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
@@ -242,7 +238,21 @@ This allows the agent to upload generated decks directly to each user's own Goog
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
 3. Click **Authorise**.
 
-#### 5. Deploy
+---
+
+#### Part B — Install & Deploy
+Repeat these steps for every fresh install or redeploy.
+
+##### 1. Install Dependencies
+Set up the virtual environment from the root `slide-gen-agent` directory:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+cd adk_agent
+pip install "google-adk[gcp]" google-genai Pillow python-dotenv
+```
+
+##### 2. Deploy
 Run the ADK deployer from the `adk_agent` directory. No extra env vars are needed — the agent automatically resolves the Drive SA as `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com` using the project ID already available at runtime:
 ```bash
 adk deploy agent_engine \
@@ -254,7 +264,7 @@ adk deploy agent_engine \
 ```
 *The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
 
-#### 6. Connect to Gemini Enterprise Console
+##### 3. Connect to Gemini Enterprise Console
 1. Log in to the **Gemini Enterprise Admin Console**.
 2. Navigate to **Agents** in the left sidebar.
 3. Click **+ Add Agent**.
