@@ -229,7 +229,7 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --role="roles/artifactregistry.writer"
 ```
 
-> **Note**: If a binding for the same role + member already exists with a condition (e.g. left over from another setup like Cloud Build), `gcloud` will prompt you to choose how to apply the new one:
+> **Note**: If a binding for the same role + member already exists — regardless of whether it has a condition (e.g. left over from another setup like Cloud Build) — `gcloud` will prompt you to choose how to apply the new one:
 > ```
 >  [1] EXPRESSION=request.time < timestamp(...), TITLE=cloudbuild-connection-setup
 >  [2] None
