@@ -12,9 +12,15 @@ def _resolve_project_id() -> str | None:
     under some Agent Engine runtime credential contexts it returns the numeric
     project NUMBER instead of the string project ID, producing a malformed,
     non-existent service account email.
+
+    A purely-numeric GOOGLE_CLOUD_PROJECT value is distrusted and skipped: real
+    project IDs always start with a lowercase letter and never look like a bare
+    number, but some managed runtimes (e.g. Agent Engine) auto-inject this env
+    var set to the numeric project NUMBER, which would otherwise short-circuit
+    straight to the same malformed-email bug we're fixing here.
     """
     env_project = os.environ.get('GOOGLE_CLOUD_PROJECT')
-    if env_project:
+    if env_project and not env_project.isdigit():
         return env_project
     try:
         import urllib.request
