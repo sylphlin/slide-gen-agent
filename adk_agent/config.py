@@ -6,35 +6,18 @@ def _resolve_project_id() -> str | None:
     """Resolves the GCP project ID (string form, e.g. 'my-project', as required
     to construct service account emails like slide-gen-drive@{project_id}...).
 
-    Prefers the GOOGLE_CLOUD_PROJECT env var (explicit override for local dev),
-    then queries the GCE/Agent Engine metadata server's project-id endpoint
-    directly. google.auth.default()'s project_id is intentionally NOT used here:
-    under some Agent Engine runtime credential contexts it returns the numeric
-    project NUMBER instead of the string project ID, producing a malformed,
-    non-existent service account email.
-
-    A purely-numeric GOOGLE_CLOUD_PROJECT value is distrusted and skipped: real
-    project IDs always start with a lowercase letter and never look like a bare
-    number, but some managed runtimes (e.g. Agent Engine) auto-inject this env
-    var set to the numeric project NUMBER, which would otherwise short-circuit
-    straight to the same malformed-email bug we're fixing here.
+    Auto-detection (ADC, metadata server) proved unreliable across runtime
+    contexts — each returns a different wrong value (numeric project NUMBER,
+    or an unrelated tenant project ID) depending on where the agent is hosted.
+    So GOOGLE_CLOUD_PROJECT must be set explicitly (e.g. via a deployed .env
+    file — see README) and is trusted as-is.
     """
-    env_project = os.environ.get('GOOGLE_CLOUD_PROJECT')
-    if env_project and not env_project.isdigit():
-        return env_project
-    try:
-        import urllib.request
-        req = urllib.request.Request(
-            'http://metadata.google.internal/computeMetadata/v1/project/project-id',
-            headers={'Metadata-Flavor': 'Google'}
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.read().decode()
-    except Exception as e:
-        print(f"[config] Warning: Could not resolve a project ID from the "
-              f"GOOGLE_CLOUD_PROJECT env var or the metadata server ({e}). "
-              "Set the GOOGLE_CLOUD_PROJECT environment variable explicitly.", file=sys.stderr)
-        return None
+    project_id = os.environ.get('GOOGLE_CLOUD_PROJECT')
+    if not project_id:
+        print("[config] Warning: GOOGLE_CLOUD_PROJECT is not set. Set it via the "
+              "GOOGLE_CLOUD_PROJECT environment variable or a .env file in adk_agent/ "
+              "(see README) — it cannot be reliably auto-detected at runtime.", file=sys.stderr)
+    return project_id
 
 
 CONFIG = {

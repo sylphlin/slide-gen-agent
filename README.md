@@ -268,8 +268,16 @@ cd adk_agent
 pip install "google-adk[gcp]" google-genai Pillow python-dotenv
 ```
 
-##### 2. Deploy
-Run the ADK deployer from the `adk_agent` directory. No extra env vars are needed — the agent automatically resolves the Drive SA as `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com` using the project ID already available at runtime:
+##### 2. Configure Environment Variables
+Create a `.env` file inside the `adk_agent` directory so it gets bundled into the deployed container and loaded at startup. **This is required** — the deployed runtime cannot reliably auto-detect your project ID (different hosting contexts resolve it to the wrong value, e.g. a numeric project number or an unrelated tenant project), and a wrong value breaks both model calls and the Drive SA email used for export:
+```bash
+cat > .env <<EOF
+GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
+EOF
+```
+
+##### 3. Deploy
+Run the ADK deployer from the `adk_agent` directory. The agent resolves the Drive SA as `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com` using the `GOOGLE_CLOUD_PROJECT` from your `.env`:
 ```bash
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
@@ -280,7 +288,7 @@ adk deploy agent_engine \
 ```
 *The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
 
-##### 3. Connect to Gemini Enterprise Console
+##### 4. Connect to Gemini Enterprise Console
 1. Log in to the **Gemini Enterprise Admin Console**.
 2. Navigate to **Agents** in the left sidebar.
 3. Click **+ Add Agent**.
