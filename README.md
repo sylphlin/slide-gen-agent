@@ -214,7 +214,12 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/storage.objectUser"
 
-# Required: allow runtime SA to sign JWTs as the Drive SA (for DWD)
+# Required: allow runtime SA to sign JWTs as the Drive SA (for DWD).
+# NOTE the direction here is the OPPOSITE of the project-level bindings above/below:
+# the Drive SA is the resource (`service-accounts add-iam-policy-binding $DRIVE_SA`)
+# and the runtime SA is the `--member` being granted a role ON it — not the other
+# way around. Reversing this grants the Drive SA permission to impersonate ANY SA
+# in the project (wrong, and will not fix a signJwt 404).
 gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
   --member="serviceAccount:${RUNTIME_SA}" \
   --role="roles/iam.serviceAccountTokenCreator" \
@@ -236,6 +241,8 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
 >  [3] Specify a new condition
 > ```
 > Select **`[2] None`** — the bindings above must be unconditional so the agent always has these permissions.
+
+> **Note**: The Drive SA binding (`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA ...`) is the **one binding in this script with a reversed direction** compared to the rest. Every other command grants a role *on the project* to some SA (`gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member="serviceAccount:<SA>" ...`). This one instead grants a role *on the Drive SA itself* to the runtime SA (`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA --member="serviceAccount:$RUNTIME_SA" ...`). If you accidentally copy the project-level pattern here — granting `roles/iam.serviceAccountTokenCreator` to `$DRIVE_SA` at the project level — the Drive SA ends up able to impersonate *any* SA in the project (a much broader, incorrect grant), while the runtime SA still lacks permission to impersonate the Drive SA, and Google Drive export keeps failing with `[step:signJwt] HTTP 404`. Run `gcloud iam service-accounts get-iam-policy $DRIVE_SA` to verify the binding actually landed on the Drive SA resource (you should see `roles/iam.serviceAccountTokenCreator` with `$RUNTIME_SA` as the member).
 
 
 ##### 3. Configure Domain-Wide Delegation (Google Workspace Admin)
