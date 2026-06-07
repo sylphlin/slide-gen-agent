@@ -223,8 +223,6 @@ Repeat these steps for every fresh install or redeploy.
 ##### 1. Install Dependencies
 Set up the virtual environment from the root `slide-gen-agent` directory:
 ```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-
 python3 -m venv venv
 source venv/bin/activate
 cd adk_agent
@@ -234,6 +232,8 @@ pip install "google-adk[gcp]" google-genai Pillow python-dotenv
 ##### 2. Configure Environment Variables
 Create a `.env` file inside the `adk_agent` directory so it gets bundled into the deployed container and loaded at startup. **This is required** — the deployed runtime cannot reliably auto-detect your project ID (different hosting contexts resolve it to the wrong value, e.g. a numeric project number or an unrelated tenant project), and a wrong value breaks both model calls and the Drive SA email used for export:
 ```bash
+export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+
 cat > .env <<EOF
 GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
 EOF
