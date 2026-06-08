@@ -1,6 +1,6 @@
 ---
 name: slide-gen-agent
-sync-version: "2025-06-06"
+sync-version: "2026-06-08"
 synced-with: adk_agent/agent.py
 sync-items: "stage flow/pause conditions, script length spec (EN/CJK)"
 description: >
@@ -74,6 +74,8 @@ Then, generate all three types of Markdown files in the following order — each
 
 ### Step 1 — `design.md` (Brand System)
 Read `assets/design.md` first, then generate following that exact structure — adapt every field to the agreed style and palette, keep all section headings and the Color Palette table intact. This file does **not** include per-slide layout definitions.
+
+Pay special attention to the **Slide Frame & Persistent Elements** and **Icon System** sections — these define structural elements (border/frame, page numbers, logo, icon stroke/fill/size) that the image model must render *identically* on every single slide, since each slide image is generated independently with no shared visual memory. Fill them with concrete, unambiguous values, exactly as rigorously as the Color Palette table — a vague description here (e.g. "outlined icons" without specifying stroke width, fill rule, and size) is the most common cause of a deck where some slides have a frame and others don't, or icons look different from page to page.
 - **Progress**: Output a status line before starting, e.g. **"🎨 Designing the overall visual style and color palette..."**, and a brief confirmation after saving, e.g. **"✅ Visual style & color palette defined."** Full file contents do not need to be pasted into the chat.
 - **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.

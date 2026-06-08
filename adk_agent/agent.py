@@ -1,4 +1,4 @@
-# Sync version: 2025-06-06 | Synced with: skills/slide-gen-agent/SKILL.md
+# Sync version: 2026-06-08 | Synced with: skills/slide-gen-agent/SKILL.md
 # Sync items: stage flow/pause conditions, script length spec (EN/CJK)
 import os
 from dotenv import load_dotenv
@@ -109,7 +109,7 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path. Narrate progress as you go — output a status line before each step and a brief confirmation after it completes — so the user can track what's happening. Full file contents do not need to be pasted into the chat:
-1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
+1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Pay special attention to the Slide Frame & Persistent Elements and Icon System sections — these define structural elements (border/frame, page numbers, logo, icon stroke/fill/size) that the image model must render identically on every slide, since each slide image is generated independently with no shared visual memory. Fill them with concrete, unambiguous values, as rigorously as the Color Palette table — vague descriptions here are the most common cause of a deck where some slides have a frame and others don't, or icons look different from page to page. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
