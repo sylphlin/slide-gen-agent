@@ -2,283 +2,260 @@
 
 [English](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
 
-`slide-gen-agent` は、対話型のスライドデック生成器です。エージェントとチャットするだけで、あらゆるソース素材（記事、レポート、アウトライン、生のメモなど）を、完成された美しく洗練されたプレゼンテーションに変換します。要望を伝え、出力をレビューし、納得がいくまで自然な会話を通じて微調整を行うことができます。
+`slide-gen-agent` は対話型のスライドデック生成エージェントです——エージェントとチャットするだけで、あらゆる素材（記事、レポート、アウトライン、メモなど）を完成度の高い、視覚的に洗練されたプレゼンテーションへと変換できます。要望を伝え、生成結果を確認し、自然な対話を通じて納得のいく仕上がりになるまで何度でも調整できます。
 
-**主な機能：**
-- **対話型かつ反復的な調整** — スライドのコンテンツ調整、色の変更、あるいはセッション途中でのアウトライン全体の再構築などをエージェントに指示できます。変更はスライド全体を再生成することなく、必要な箇所にのみ適用されます。
-- **スピーカー原稿を同梱** — 各スライドには、自然なプレゼンターの口調で書かれた 1〜2 分のスピーカー原稿が用意されています。原稿は PPTX のノートセクションに埋め込まれ、プレビューページにも表示されるため、本番に自信を持って臨むことができます。
-- **多言語対応** — CJK（日本語・中国語・韓国語）や東南アジアの文字を含む、あらゆる言語のコンテンツとスピーカーノートをサポートしています。サーバー側のフォントに依存せず、ブラウザ印刷経由で PDF に書き出すことで、ローカルシステムフォントを保持できます。
-- **本番環境対応の書き出し** — PPTX（スピーカーノート付き）、スライド PDF、ブラウザ印刷用スピーカーノート付き PDF としてダウンロードできるほか、**Google スライド**に直接アップロードして、ブラウザ上での即時編集や共有が可能です。
+**主な特徴：**
+- **対話型・反復改善** — スライドの内容を調整したり、配色を変更したり、セッションの途中でアウトライン全体を作り直すよう指示できます。変更は対象範囲に対してピンポイントで適用され、デック全体を再生成する必要はありません。
+- **スピーカースクリプト同梱** — 各スライドには、自然な発表者の語り口で書かれた1〜2分の完全なスピーチ原稿が付属します。原稿は PPTX のノート欄に埋め込まれ、プレビューページにも表示されるため、本番に向けた準備が万全に整います。
+- **多言語対応** — 繁体字中国語・簡体字中国語・英語・日本語・韓国語・タイ語・ベトナム語をはじめ、100 以上の言語と各種アジア文字に対応し、スライド本文・スピーカーノートの両方で利用できます。ブラウザ印刷による PDF 出力にも対応しており、サーバー側のフォント依存なしにシステムフォントをそのまま維持できます。
+- **すぐに使えるエクスポート形式** — スピーカーノートを埋め込んだ PPTX、スライド PDF、ブラウザ印刷によるスピーカーノート付き PDF としてダウンロードできるほか、**Google スライド**へ直接アップロードしてブラウザ上で即座に編集・共有することもできます。
 
-このリポジトリは、軽量なプロンプトベースのスキルから、本番稼働可能なエンタープライズ向けエージェントまで、3つの段階的なデプロイおよび利用方法に対応するように構成されています。
+本リポジトリは、軽量なプロンプトベースのスキルからエンタープライズ向けの本番運用エージェントまで、段階的に導入できる 3 つの方式に対応した構成になっています。
 
 ---
 
-## 📖 コア設計思想とロジック
+## 📖 設計思想とロジック
 
-従来の AI スライド生成器は、レイアウトとビジュアルを単一のブラックボックス的なステップで作成するため、デザインの一貫性が失われたり、フォーマットがランダムになったり、プレゼンテーション全体を再生成しないと個々のスライドを微調整できないという問題がありました。
+従来の AI スライド生成ツールは、レイアウトとビジュアルを単一のブラックボックス処理で同時に作り出すため、デザインに一貫性がなくなったり、書式がランダムになったり、反復作業が雑になりがちでした——あるスライドの構成を少し直したい、あるいは更新済みのスピーチ内容を反映したいだけでも、デック全体を作り直す必要があるのが常でした。
 
-`slide-gen-agent` は、プレーンテキストの中間ファイルをバックボーンとする**分離された 5 段階のパイプライン**を採用しています。すべてのデザイン決定は編集可能な Markdown ファイルに保存されるため、チャットを通じて任意のレイヤー（グローバルスタイル、スライド構成、またはスライドごとのコンテンツ）を調整でき、影響を受けるスライドのみが再生成されます。
+`slide-gen-agent` は、プレーンテキストの中間ファイルを軸とした**疎結合な 6 段階パイプライン**を採用しています。あらゆるデザイン上の決定は編集可能な Markdown ファイルとして保存されるため、チャットを通じて任意のレイヤー（全体スタイル、スライド構成、各スライドの内容）を調整でき、影響を受けるスライドだけが再生成されます。
 
 ```mermaid
 graph TD
-    A[元の素材] --> A0(ステージ 0: 確認と認識合わせ)
-    A0 -->|ユーザーがコンテキストを確認| B(ステージ 1: コンテンツ分析と提案)
-    B -->|ユーザーが承認| C[隔離されたワークスペースセッションの作成]
-    C --> D(ステージ 2: 構造化 Markdown 生成)
-    
-    D -->|ステップ 1| E1[design.md - ブランドシステム]
-    D -->|ステップ 2| E2[outlines.md - スライド構成案]
-    E2 -->|ステップ 3: コンテンツルーティングのガイド| E3[slide_xx.md - 原稿 + オプションレイアウト]
-    
-    E1 & E3 --> F(ステージ 3: 画像生成とプレビュー)
+    A[ソース素材] --> A0(ステージ 0：要件のすり合わせ)
+    A0 -->|ユーザーが前提条件を確認| B(ステージ 1：内容分析と提案)
+    B -->|ユーザーが承認| C[独立した作業セッションを作成]
+    C --> D(ステージ 2：構造化 Markdown の生成)
+
+    D -->|手順 1| E1[design.md - ブランドシステム]
+    D -->|手順 2| E2[outlines.md - スライドアウトライン]
+    E2 -->|手順 3：内容のルーティングを誘導| E3[slide_xx.md - 原稿 + 任意のレイアウト]
+
+    E1 & E3 --> F(ステージ 3：画像生成とプレビュー)
     F -->|生成| G1[slide_xx.png - スライド画像]
     F -->|生成| G2[preview.html - プレゼンテーションプレビュー]
-    
-    G1 & G2 --> H{ユーザーレビューとオプション調整}
-    
-    H -->|原稿またはレイアウト変更をリクエスト| E3
-    H -->|構成案の変更をリクエスト| E2
-    H -->|ブランド/カラーの変更をリクエスト| E1
-    
-    H -->|ユーザーが承認| I(ステージ 4: パッケージングとダウンロード)
+
+    G1 & G2 --> H(ステージ 4：レビューと修正)
+
+    H -->|原稿・レイアウトの変更| E3
+    H -->|アウトライン／順序の変更| E2
+    H -->|ブランド／配色の変更| E1
+
+    H -->|ユーザーが承認| I(ステージ 5：パッケージングとダウンロード)
     I -->|オプション 1| J[topic.pptx - スピーカーノート付きワイドスクリーン PPTX]
     I -->|オプション 2| K[topic.pdf - スライドのみの PDF]
-    I -->|オプション 3| L[preview.html → スピーカーノート付きブラウザ印刷 PDF]
-    I -->|オプション 4| M[Google Slides - ドライブへの直接アップロードと共有]
+    I -->|オプション 3| L[preview.html → ブラウザ印刷でスピーカーノート付き PDF を作成]
+    I -->|オプション 4| M[Google スライド - Drive へ直接アップロードして共有]
 ```
 
-### 5段階のパイプライン
+### 6 段階のパイプライン
 
-0. **ステージ 0: 確認と認識合わせ (Clarification & Alignment)**
-   - ソース素材を処理する前に、エージェントは3つのコアコンテキスト要素を確認します：**想定プレゼンテーション時間**（またはスライド枚数）、**ターゲット層**、および**期待されるゴール/成果**。
-   - *エージェントは一時停止し、ユーザーの入力を待ちます。* 初回の指示でこれらが不足している場合、続行する前に質問します。
+0. **ステージ 0：要件のすり合わせ**
+   - 素材を分析したりデザインスタイルを提案したりする前に、エージェントはプレゼンテーションの中心となる 3 つの前提条件を確認します：**想定する発表時間**（またはスライド枚数）、**想定する聴衆**、**達成したい目標／成果**です。
+   - *エージェントはここで一旦立ち止まり、ユーザーからの返答を待ちます。* 最初のリクエストにこれらの情報が欠けている場合、エージェントは先に進む前に確認の質問をします。
 
-1. **ステージ 1: コンテンツ分析と提案 (Content Analysis & Proposal)**
-   - エージェントはソース素材（ドキュメント、トランスクリプト、未整理のメモなど）を読み取り、領域、トーン、ターゲット層を理解します。
-   - スライドの**想定枚数**、**デザインテーマ**、**16進数カラーコードのパレット**を提案します。
-   - *エージェントは一時停止し、ユーザーの入力を待ちます。* 提案を受け入れるか、テーマやパレットを調整できます。
+1. **ステージ 1：内容分析と提案**
+   - エージェントは提供された素材（文書、書き起こし、メモなど）を丁寧に読み込み、その内容のドメイン、トーン、そしてステージ 0 で確認した前提条件を理解します。
+   - 続いて、推奨する**スライド枚数**、**デザインテーマ**、**16 進数カラーコードによる配色案**を提示します。
+   - *エージェントはここで一旦立ち止まり、ユーザーからの返答を待ちます。* 提案をそのまま承認することも、テーマや配色の調整を求めることもできます。
 
-2. **ステージ 2: 構造化 Markdown 生成 (Structured Markdown Generation)**
-   - 承認されると、エージェントは隔離されたセッションフォルダー内に3種類の Markdown ファイルを生成します：
-     - **`design.md`**：ブランドシステム — カラーパレット、タイポグラフィ、スペーシング、ビジュアルスタイルルール。スライド全体のブランド一貫性を保つための「唯一の真実のソース（SSoT）」です。
-     - **`outlines.md`**：各スライドのレイアウトタイプと 2〜3 文の要約を含むスライドリスト。
-     - **`slide_xx.md`**：スライドごとのファイル。タイトル、スピーカー原稿（260〜300文字）、およびオプションの `## Layout` セクション（初回生成時は空欄 — スライドタイプと原稿から画像モデルが適切な構成を推測します）。
-   - *パイプラインは停止することなく、ステージ 3 に直接進みます。*
+2. **ステージ 2：構造化 Markdown の生成**
+   - 承認が得られると、エージェントは独立したセッションフォルダ内に 3 種類の Markdown ファイルを生成します：
+     - **`design.md`**：ブランドシステム——16 進数のカラーパレット、タイポグラフィ、余白、ビジュアルスタイルのルールをまとめたもの。すべてのスライドにおけるブランドの一貫性を担保する単一の正典（SSoT）です。
+     - **`outlines.md`**：各スライドのレイアウトタイプと 2〜3 文の要約を含む、デック全体のスライド一覧。
+     - **`slide_xx.md`**：各スライドごとのファイルで、タイトル、スピーカー原稿（260〜300 語）、そして任意の `## Layout` セクション（初回生成時は空のまま——画像生成モデルがスライドの種類と原稿の内容から適切な構図を推測します）を含みます。
+   - *一時停止することなく、そのままステージ 3 へ進みます。*
 
-3. **ステージ 3: 画像生成とプレビュー (Image Generation & Preview)**
-   - エージェントは `design.md`（ブランド）と `slide_xx.md`（スライド仕様）を組み合わせて、スライドごとの構造化プロンプトを作成します。
-   - これを画像生成モデルに送信し、最終的な 16:9 高解像度 PNG (`slide_xx.png`) を生成します。
-   - スライド画像とスピーカーノートは、レビューしやすいように `preview.html` ページにコンパイルされます。
-   - *エージェントは一時停止し、ユーザーのレビューを待ちます。*
-   - **調整方法**: 修正したい内容を自然な言葉でエージェントに伝えます。原稿の修正は `slide_xx.md` を更新し、レイアウトの変更（例：「スライド3を2カラムにして、グラフを右側に配置」）は `## Layout` セクションを更新し、カラーやブランドの変更は `design.md` を更新します。影響を受けるスライドのみが再生成されます。
+3. **ステージ 3：画像生成とプレビュー**
+   - エージェントは `design.md`（ブランド情報）と `slide_xx.md`（各スライドの仕様）を統合し、各スライド用の構造化されたプロンプトを作成します。
+   - これを画像生成モデルに送信し、最終的な 16:9 の高品質な PNG 画像（`slide_xx.png`）を生成します。
+   - すべてのスライド画像とスピーカーノートは `preview.html` ページにまとめられ、レビューしやすい形で提供されます。
+   - *そのままステージ 4 へ進みます。*
 
-4. **ステージ 4: パッケージングとダウンロード (Presentation Packaging & Download)**
-   - 最終的なスライドを承認すると、エージェントは4つの書き出しオプションを提供します：
-     - **PPTX（スピーカーノート付き PowerPoint）**：スライド画像を含み、各スライドのノートセクションにスピーカーノートが埋め込まれたワイドスクリーンの PowerPoint ファイル。ファイル名にはプレゼンテーションのトピックが使用されます（例：`ai-trends-2025.pptx`）。
-     - **PDF: スライドのみ**：スライド画像からコンパイルされた PDF（プレゼンに最適）。ファイル名にはプレゼンテーションのトピックが使用されます（例：`ai-trends-2025.pdf`）。
-     - **PDF: スピーカーノート付き**：`preview.html` リンクを開き、**「PDF として保存」**ボタンをクリックします。ブラウザは、ローカルシステムフォントを使用して、各スライドとノートをきれいにページ分けされた PDF としてレンダリングします。これにより、サーバー側のフォントに依存せず、日本語（CJK）や東南アジア言語も正しく処理されます。
-     - **Google スライド**：エージェントは PPTX を Google ドライブの `slide-gen-agent` フォルダーにアップロードし、編集権限付きで共有します。Google スライドで直接開いて編集や共有が可能です。*(GCP で Google Drive API が有効化され、サービスアカウントにドライブの書き込み権限が付与されている必要があります。)*
+4. **ステージ 4：レビューと修正**
+   - *エージェントはユーザーからのフィードバックを待って一旦停止します。*
+   - 自然な言葉で変更したい内容を伝えてください。変更は的確に適用され——影響を受けるスライドだけが再生成されます：
+     - 原稿やレイアウトの修正 → 該当する `slide_xx.md` を更新し、そのスライドのみ再生成
+     - スライドの並べ替え／追加／削除 → `outlines.md` と影響を受ける `slide_xx.md` を更新（つなぎの導入部分も書き直し）し、変更があったスライドのみ再生成
+     - ブランド／配色の変更 → `design.md` を更新し、すべてのスライドを再生成
+   - このサイクルは、ユーザーがすべてのスライドに明確に満足を示すまで繰り返されます。
+
+5. **ステージ 5：プレゼンテーションのパッケージングとダウンロード**
+   - 最終的なスライドが承認されると、エージェントは次の 4 つのエクスポート方法を提示します：
+     - **Google スライド**：エージェントが PPTX を Google ドライブの `slide-gen-agent` フォルダにアップロードし、Google スライド形式に変換したうえで、編集者としてユーザーと共有します。すぐに Google スライドで開いて編集・共有できます。*（GCP で Google Drive API を有効化し、Google Workspace 管理コンソールでドメイン全体の委任を設定する必要があります。）*
+     - **PPTX（スピーカーノート付き PowerPoint）**：すべてのスライド画像を含むワイドスクリーンの PowerPoint ファイルで、各スライドの PowerPoint ノート欄にスピーカーノートが完全に埋め込まれています。ファイル名はプレゼンテーションのトピック名が使われます（例：`ai-trends-2025.pptx`）。
+     - **PDF：スライド**：すべてのスライド画像から作成された PDF（そのままプレゼンテーションに利用可能）。ファイル名はプレゼンテーションのトピック名が使われます（例：`ai-trends-2025.pdf`）。
+     - **PDF：スピーカーノート**：`preview.html` のリンクを開き、**「Save as PDF」** ボタンをクリックします。ブラウザが各スライドとそのノートをきれいにページ分割された PDF としてレンダリングし、ローカルのシステムフォントを使用します——これにより、CJK や東南アジアの文字を含むあらゆる言語を、サーバー側のフォント依存なしに正しく扱うことができます。
 
 ---
 
-## 🛠️ ディレクトリ構造
+## 🛠️ ディレクトリ構成
 
 ```text
 slide-gen-agent/
-├── README.md                # プロジェクトの概要とセットアップ（本ファイル）
+├── README.md                # プロジェクト概要とセットアップ手順（このファイル）
 ├── skills/
-│   └── slide-gen-agent/     # 🌟 スタンドアロンのエージェントスキル（Antigravity/Codex用）
-│       ├── SKILL.md         # ガイドライン（YAML フロントマター + 指示書）
-│       ├── assets/          # スキルで使用する静的テンプレート
-│       │   ├── design.md    # ブランドシステムテンプレート（色、フォント、ビジュアルスタイル）
-│       │   ├── outlines.md  # スライド構成案テンプレート
-│       │   └── slide_xx.md  # スライドごとのテンプレート（タイトル、レイアウト、原稿）
-│       └── scripts/         # スキルにバンドルされたカスタムツール
-│           ├── pdf_exporter.py # ワイドスクリーンスライド PDF コンパイラ
+│   └── slide-gen-agent/     # 🌟 標準の自己完結型エージェントスキル（Antigravity/Codex 向け）
+│       ├── SKILL.md         # プレイブック／ガイドライン（YAML フロントマター + 実行手順）
+│       ├── assets/          # スキルに同梱された静的テンプレート
+│       │   ├── design.md    # ブランドシステムのテンプレート（配色、タイポグラフィ、ビジュアルスタイル）
+│       │   ├── outlines.md  # デックのアウトラインテンプレート
+│       │   └── slide_xx.md  # 各スライドのテンプレート（タイトル、任意のレイアウト、原稿）
+│       └── scripts/         # スキルに同梱されたカスタムツール
+│           ├── pdf_exporter.py # ワイドスクリーンのプレゼンテーション PDF コンパイラ
 │           ├── pptx_exporter.py # スピーカーノート付きワイドスクリーン PPTX コンパイラ
-│           └── preview_generator.py # HTMLプレビューページコンパイラ（PDF保存機能付き）
-└── adk_agent/               # プログラマティックホストエージェント（Python ADK 2.0 実装）
-    ├── requirements.txt     # Python 依存関係の設定（python-pptx および reportlab を含む）
-    ├── agent.py             # エージェントのメインエントリポイント
+│           └── preview_generator.py # HTML プレビューページのコンパイラ（Save as PDF 機能を含む）
+└── adk_agent/               # プログラム実装のホストエージェント（Python ADK 2.0 実装）
+    ├── requirements.txt     # Python の依存関係設定（python-pptx・reportlab を含む）
+    ├── agent.py             # エージェントのメインエントリーポイント
     └── tools/               # エージェントツール
         ├── __init__.py
         ├── file_manager.py  # セッション初期化およびファイル書き込みツール
-        ├── imagen.py        # Gemini スライド画像生成ツール
-        ├── pdf_exporter.py  # Pillow ベースのワイドスクリーン PDF エクスポーター
-        ├── pptx_exporter.py # スピーカーノート付き PowerPoint ワイドスクリーン (PPTX) エクスポーター
-        ├── drive_exporter.py # Google ドライブアップロード → Google スライド変換・共有ツール
-        └── preview_generator.py # HTMLスライドプレビューおよびノートコンパイラ（PDF保存機能付き）
+        ├── imagen.py        # Gemini によるスライド画像生成ツール
+        ├── pdf_exporter.py  # Pillow ベースのワイドスクリーン PDF エクスポートツール
+        ├── pptx_exporter.py # スピーカーノート付き PowerPoint ワイドスクリーン（PPTX）エクスポートツール
+        ├── drive_exporter.py # Google ドライブへのアップロード → Google スライド変換・共有ツール
+        └── preview_generator.py # HTML スライドプレビューおよびノートのコンパイラ（Save as PDF 機能を含む）
 ```
 
 ---
 
 ## 🚀 インストールとデプロイ方法
 
-対象の環境に合わせてインストール方法を選択してください：
+ご利用の環境に合った導入方法を選択してください：
 
-### 🔹 方法 1: ユニバーサルスキル (`SKILL.md`) — プラットフォーム非依存
-これはガイドラインベースのインストールであり、コードのホスティングは不要です。
-* **ユースケース**: 一般的な LLM システム（Antigravity、Codex、または画像生成機能を持つ一般的なチャットアシスタント）。
-* **インストール方法**:
-  1. [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) の内容を、お使いの LLM アシスタントのカスタム指示書またはシステムプロンプトにインポートまたはコピーします。
-  2. `skills/slide-gen-agent/templates/` ディレクトリ内の Markdown ファイルを、アシスタントが従うべきテンプレートの例として参照させます。
-
----
-
-### 🔹 方法 2: ADK Web を使用したローカル検証（テストに推奨）
-ビジュアルな Web UI を備えたフル機能の Python エージェントをローカルコンピュータで実行します。標準のコマンドラインインターフェースよりも簡単にテストや検証を行えます。
-
-#### 1. 前提条件
-- **Python 3.10** (v3.11 推奨)
-- コンピュータに **Google Cloud SDK (gcloud)** がインストールされ、認証されていること。
-- **Vertex AI API** が有効化された **Google Cloud プロジェクト (GCP)**。
-- ローカルの IAM 認証情報が設定されていること (`gcloud auth application-default login`)。
-
-#### 2. プロジェクトのインストール
-**ルート**の `slide-gen-agent` ディレクトリに仮想環境を作成し（デプロイ時に仮想環境がアップロードされないようにするため、`adk_agent` ではなくルートディレクトリで作成します）、有効化して依存関係をインストールします：
-```bash
-# slide-gen-agent ルートディレクトリに移動:
-python3 -m venv venv
-source venv/bin/activate
-
-# adk_agent ディレクトリに移動して依存関係をインストール:
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
-```
-
-#### 3. 環境変数の設定
-ローカルで実行する前に、Google Cloud プロジェクト ID を環境変数として設定する必要があります：
-```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-```
-または、`adk_agent` フォルダー内に `.env` ファイルを作成して GCP プロジェクト ID を指定することもできます（ロケーションはデフォルトの `'global'`、成果物ディレクトリは `./artifacts` に自動設定されます）：
-```text
-GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-```
-
-#### 4. Web UI モードでの実行
-`adk_agent` ディレクトリからローカル Web インターフェースを起動します（`--allow_origins="*"` フラグを含めることで、ローカルマシンと Google Cloud Shell の両方でシームレスに動作します）：
-```bash
-# adk_agent ディレクトリにいて、仮想環境が有効であることを確認してください:
-adk web --allow_origins="*" .
-```
-これによりローカルサーバーが立ち上がります。表示された URL をブラウザで開き、エージェントと対話的に操作してください！
+### 🔹 方法 1：汎用スキル（`SKILL.md`）— プラットフォームを問わない方式
+コードのホスティングを必要としない、純粋にプロンプト／ガイドラインベースのインストール方法です。
+* **想定用途**：Agent Skills に対応し、サンドボックス化されたコード実行環境を備え、テキストから画像を生成する機能を持つ LLM システム（例：Antigravity、Codex）。
+* **インストール手順**：
+  1. [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) の内容を、利用している LLM アシスタントのカスタムシステム指示やシステムプロンプトにインポートまたはコピーしてください。
+  2. `skills/slide-gen-agent/templates/` ディレクトリ内の Markdown ファイルを参考例として、アシスタントに参照させてください。
 
 ---
 
-### 🔹 方法 3: Agent Engine (Gemini Enterprise) への本番デプロイ
-Python エージェントを Vertex AI の Reasoning Engine (Agent Engine) インスタンスとしてデプロイし、**Gemini Enterprise** に直接接続します。
+### 🔹 方法 2：Agent Engine（Gemini Enterprise）への本番デプロイ
+この Python エージェントを Vertex AI 上の Reasoning Engine（Agent Engine）インスタンスとしてデプロイし、**Gemini Enterprise** に直接組み込みます。
 
-#### 1. セットアップと前提条件
-`requirements.txt` に `a2a-sdk` が記載されていることを確認します（このリポジトリではすでに設定済みです）。これは、ADK 2.0 デプロイヤーが Reasoning Engine 起動時に `--a2a` フラグをハードコードするため、コンテナ内に `a2a-sdk` がインストールされていないと `ModuleNotFoundError` でクラッシュするのを防ぐために必要です。
+---
 
-まだ仮想環境をセットアップしていない場合は、`slide-gen-agent` ルートディレクトリから以下のコマンドを実行します：
-```bash
-python3 -m venv venv
-source venv/bin/activate
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
-```
+#### パート A — 一度きりのプロジェクトセットアップ
+GCP プロジェクトごとに一度だけ実施します。今後の再インストールや再デプロイの際にこれらの手順を繰り返す必要はありません。
 
-#### 2. 環境変数の設定
-デプロイする前に、Google Cloud プロジェクト ID とプロジェクト番号を環境変数として設定する必要があります：
+##### 1. GCP API の有効化
+GCP プロジェクトで以下の API を有効にしてください：
+- [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
+- [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
+
+##### 2. IAM 権限の設定
+
+Agent Engine は **Vertex AI Reasoning Engine サービスエージェント**（`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`）としてコードを実行します。この Google 管理のサービスアカウントは Vertex AI と GCS へのアクセスを処理しますが、ドメイン全体の委任（DWD）に直接登録することは**できません**。Google ドライブへのエクスポートを行うには、別途ユーザー管理のサービスアカウント（`slide-gen-drive`）を作成し、ランタイムのサービスアカウントがそれをなりすませるようにします。
+
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-export GOOGLE_CLOUD_PROJECT_NUMBER="your-actual-gcp-project-number"
-```
 
-#### 3. ワンコマンドでのデプロイ
-環境変数が設定され、依存関係がインストールされ、仮想環境が有効になっている状態で、`adk_agent` ディレクトリから ADK デプロイコマンドを実行します：
-```bash
-adk deploy agent_engine \
-  --project=$GOOGLE_CLOUD_PROJECT \
-  --region=us-central1 \
-  --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://your-runtime-bucket" \
-  .
-```
-*バックグラウンドで、ADK CLI がコンテナ化、デプロイ用ステージング、Reasoning Engine への登録を処理します。完了すると、**Reasoning Engine リソース ID**（例: `projects/${GOOGLE_CLOUD_PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`）が出力されます。*
+PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
 
-#### 4. IAM 権限の設定
+# ランタイムサービスアカウント：エージェントのコードを実行する Google 管理の ID
+RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
 
-##### A. ビルドとデプロイの権限（初回のみ）
-デプロイコマンドが「Build failed」エラーで失敗する場合、プロジェクトのデフォルトの compute サービスアカウント (`${GOOGLE_CLOUD_PROJECT_NUMBER}-compute@developer.gserviceaccount.com`) に、ビルドログの書き込みやビルド済みイメージのプッシュ権限が不足している可能性があります。
-**IAM と管理 > IAM** で、サービスアカウントに以下のロールを付与します：
-- **ログ書き込みプロセッサ (Logs Writer)** (`roles/logging.logWriter`)
-- **Artifact Registry 書き込みプロセッサ (Artifact Registry Writer)** (`roles/artifactregistry.writer`)
+# ビルドサービスアカウント：`adk deploy` 実行時のコンテナイメージのプッシュとビルドログにのみ使用
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-##### B. ランタイム権限（必須）
-デプロイされた Agent Engine (Reasoning Engine) インスタンスとそのオーケストレータには、Vertex AI モデルの呼び出しと GCS バケットへの読み書き権限が必要です。
+# Drive サービスアカウント：あなたが作成・所有し、DWD 用に登録するユーザー管理のサービスアカウント
+gcloud iam service-accounts create slide-gen-drive \
+  --display-name="Slide Gen Drive Exporter" \
+  --project=$GOOGLE_CLOUD_PROJECT
+DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 
-1. **Google Cloud コンソール**を開きます。
-2. **IAM と管理 > IAM** に移動します。
-3. **エージェントのランタイムサービスアカウントに権限を付与**します：
-   - プロジェクトのランタイム ID（通常は **Compute Engine デフォルトサービスアカウント**：`${GOOGLE_CLOUD_PROJECT_NUMBER}-compute@developer.gserviceaccount.com`）を探します。
-   - 以下のロールを付与します：
-     - **Vertex AI ユーザー (Agent Platform User)** (`roles/aiplatform.user`)（Vertex AI モデルの呼び出しと Gemini 画像生成に必要）
-     - **ストレージオブジェクトユーザー (Storage Object User)** (`roles/storage.objectUser`)（スライド、プレビュー、PDF ファイルの GCS バケットへの読み書きに必要）
+# 必須：Vertex AI モデルおよび Gemini の画像生成機能を呼び出すため
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/aiplatform.user"
 
-4. **Vertex AI サービスエージェントに権限を付与**します：
-   - **[アクセス権を付与]**をクリックして新しいプリンシパルを追加します。
-   - Vertex AI Reasoning Engine サービスエージェントのアドレスを入力します：
-     `service-${GOOGLE_CLOUD_PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`
-   - 以下のロールを付与します：
-     - **ストレージオブジェクトユーザー (Storage Object User)** (`roles/storage.objectUser`)（プラットフォームがエージェントに代わって GCS に成果物を同期・保存するために必要）
-*生の API キーや秘密ファイルを管理する必要はありません。ホストされた推論エンジンは、安全な IAM/ADC 認証情報を自動的に使用します。*
+# 必須：スライド・プレビュー・エクスポートファイルを GCS バケットに読み書きするため
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/storage.objectUser"
 
-#### 5. Gemini Enterprise コンソールへの接続
-エージェントを企業のユーザーに公開するには：
-1. **Gemini Enterprise 管理コンソール**にログインします。
-2. 左サイドバーから **[エージェント]** ページに移動します。
-3. **[+ エージェントの追加]** をクリックします。
-4. **[Agent Engine 経由のカスタムエージェント]** を選択し、**[Agent Engine 推論エンジン]** 入力フィールドにデプロイ時に取得した **Reasoning Engine リソース ID** を入力します。
-5. Gemini Enterprise と Reasoning Engine エージェント間の接続を保護するため、IAM 認証を構成します。
-
-#### 6. (オプション) Google スライド書き出しの有効化
-
-これにより、「Google スライドで開く」書き出しオプションが有効になります。生成されたスライドを、各ユーザーの Google ドライブに直接 Google スライドファイルとしてアップロードします。
-
-**ステップ 1 — Google Drive API の有効化**
-
-GCP プロジェクトで [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) を有効にします。
-
-**ステップ 2 — ドメイン全体の委任の設定**
-
-1. [Google Workspace 管理コンソール](https://admin.google.com)で、**[セキュリティ] → [API コントロール] → [ドメイン全体の委任]** に移動します。
-2. **[新しく追加]** をクリックし、以下を入力します：
-   - **クライアント ID**: Agent Engine サービスアカウントのクライアント ID（[IAM サービスアカウントページ](https://console.cloud.google.com/iam-admin/serviceaccounts) → 対象のアカウントを選択 → **[詳細]** タブで確認できます）
-   - **OAuth スコープ**: `https://www.googleapis.com/auth/drive.file`
-3. **[承認]** をクリックします。
-
-**ステップ 3 — サービスアカウントキーの Secret Manager への保存**
-
-```bash
-# Agent Engine サービスアカウントの JSON キーを作成してダウンロード
-gcloud iam service-accounts keys create /tmp/drive-sa-key.json \
-  --iam-account=${GOOGLE_CLOUD_PROJECT_NUMBER}-compute@developer.gserviceaccount.com
-
-# Secret Manager に保存
-gcloud secrets create drive-sa-key \
-  --data-file=/tmp/drive-sa-key.json \
+# 必須：ランタイムサービスアカウントが Drive サービスアカウントとして JWT に署名できるようにする（DWD 用）。
+# ここでの方向は、上下にあるプロジェクトレベルのバインディングとは「逆」になっている点に注意してください：
+# Drive サービスアカウントがリソースそのものであり（`service-accounts add-iam-policy-binding $DRIVE_SA`）、
+# ランタイムサービスアカウントはそのリソース上でロールを付与される `--member` 側です——順序を逆にしないでください。
+# これを逆にすると、Drive サービスアカウントがプロジェクト内の「あらゆる」サービスアカウントに
+# なりすませる権限を持つことになってしまいます（誤った設定であり、signJwt の 404 エラーも解決しません）。
+gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
 
-# ローカルコピーを削除
-rm /tmp/drive-sa-key.json
+# adk deploy に必要：ビルドログの書き込みとコンテナイメージのプッシュ
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/artifactregistry.writer"
 ```
 
-**ステップ 4 — デプロイ時のキー挿入**
+> **注**：同じロール＋メンバーの組み合わせのバインディングがすでに存在する場合——条件付きかどうかにかかわらず（例えば Cloud Build などの別のセットアップから残っているもの）——`gcloud` は新しいバインディングをどう適用するか選択を求めてきます：
+> ```
+>  [1] EXPRESSION=request.time < timestamp(...), TITLE=cloudbuild-connection-setup
+>  [2] None
+>  [3] Specify a new condition
+> ```
+> **`[2] None`** を選択してください——上記のバインディングは無条件である必要があり、そうしないとエージェントが常にこれらの権限を持てなくなります。
 
-デプロイ時に、シークレットを環境変数 `DRIVE_SERVICE_ACCOUNT_KEY` として渡します：
+> **注**：Drive サービスアカウントへのバインディングコマンド（`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA ...`）は、このスクリプトの中で**唯一、方向が逆になっている**バインディングです。他のすべてのコマンドは、あるサービスアカウントに対して「プロジェクト」レベルでロールを付与するものです（`gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member="serviceAccount:<SA>" ...`）。これに対してこのコマンドは、「Drive サービスアカウント自身」というリソースに対して、ランタイムサービスアカウントにロールを付与します（`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA --member="serviceAccount:$RUNTIME_SA" ...`）。もし誤ってプロジェクトレベルのパターンをここに適用してしまうと——つまりプロジェクトレベルで `roles/iam.serviceAccountTokenCreator` を `$DRIVE_SA` に付与してしまうと——Drive サービスアカウントはプロジェクト内の「あらゆる」サービスアカウントになりすませるようになってしまい（はるかに広範囲かつ誤った権限付与）、それでもランタイムサービスアカウントには Drive サービスアカウントへのなりすまし権限がないままなので、Google ドライブへのエクスポートは引き続き `[step:signJwt] HTTP 404` エラーで失敗し続けます。`gcloud iam service-accounts get-iam-policy $DRIVE_SA` を実行して、バインディングが実際に Drive サービスアカウントというリソース上に設定されているか確認してください（`roles/iam.serviceAccountTokenCreator` がメンバー `$RUNTIME_SA` に対して設定されているはずです）。
 
+
+##### 3. ドメイン全体の委任の設定（Google Workspace 管理コンソール）
+これにより、エージェントは生成したデックを各ユーザー自身の Google ドライブへ直接アップロードできるようになります。
+
+1. [Google Workspace 管理コンソール](https://admin.google.com) にアクセスし、**セキュリティ → API の管理 → ドメイン全体の委任** に進みます。
+2. **新規追加** をクリックし、以下を入力します：
+   - **クライアント ID**：**Drive サービスアカウント**（`slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com`）の OAuth 2 クライアント ID。[IAM サービスアカウントページ](https://console.cloud.google.com/iam-admin/serviceaccounts) で `slide-gen-drive` を選択し、**詳細** タブから確認できます。
+   - **OAuth スコープ**：`https://www.googleapis.com/auth/drive.file`
+3. **承認** をクリックします。
+
+---
+
+#### パート B — インストールとデプロイ
+新規インストールや再デプロイのたびに、以下の手順を繰り返します。
+
+##### 1. 依存関係のインストール
+ルートの `slide-gen-agent` ディレクトリから仮想環境をセットアップします：
+```bash
+python3 -m venv venv
+source venv/bin/activate
+cd adk_agent
+pip install "google-adk[gcp]" google-genai Pillow python-dotenv
+```
+
+##### 2. 環境変数の設定
+`adk_agent` ディレクトリ内に `.env` ファイルを作成してください。これによりデプロイ用コンテナに同梱され、起動時に読み込まれます。**これは必須です**——デプロイ後のランタイムは、プロジェクト ID を確実に自動検出することができません（ホスティング環境によって解決される値が異なり、数値のプロジェクト番号や無関係なテナントプロジェクトが返ってくることがあります）。誤った値が設定されると、モデル呼び出しとエクスポートで使用される Drive サービスアカウントのメールアドレスの両方が壊れてしまいます：
+```bash
+export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+
+cat > .env <<EOF
+GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
+EOF
+```
+
+##### 3. デプロイ
+`adk_agent` ディレクトリから ADK のデプロイツールを実行します。エージェントは `.env` の `GOOGLE_CLOUD_PROJECT` を使って、Drive サービスアカウントを `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com` として解決します：
 ```bash
 adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
   --artifact_service_uri="gs://your-runtime-bucket" \
-  --env_vars="DRIVE_SERVICE_ACCOUNT_KEY=$(gcloud secrets versions access latest --secret=drive-sa-key --project=$GOOGLE_CLOUD_PROJECT)" \
   .
 ```
+*ADK の CLI がコンテナ化、デプロイのステージング、Reasoning Engine への登録までを処理します。完了すると **Reasoning Engine リソース ID**（例：`projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`）が出力されます。*
 
-設定が完了すると、エージェントは各ユーザーの「マイドライブ」に `slide-gen-agent` フォルダーを作成し、生成されたプレゼンテーションをユーザーが所有する Google スライドファイルとしてそこに保存します。
+##### 4. Gemini Enterprise コンソールへの接続
+1. **Gemini Enterprise 管理コンソール** にログインします。
+2. 左側のサイドバーから **Agents** に移動します。
+3. **+ エージェントを追加** をクリックします。
+4. **Agent Engine 経由のカスタムエージェント（Custom agent via Agent Engine）** を選択し、**Reasoning Engine リソース ID** を入力します。
+5. 接続を保護するため、IAM 認証権限を設定します。
