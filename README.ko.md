@@ -133,7 +133,7 @@ slide-gen-agent/
 
 ---
 
-### 🔹 방법 2: Agent Engine(Gemini Enterprise)에 운영 배포
+### 🔹 방법 2: Gemini Enterprise에 운영 배포
 이 Python 에이전트를 Vertex AI의 Reasoning Engine(Agent Engine) 인스턴스로 배포하고, **Gemini Enterprise**에 직접 연동합니다.
 
 ---

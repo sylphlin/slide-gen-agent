@@ -133,7 +133,7 @@ This is a pure prompt/guideline-based installation, requiring no code hosting.
 
 ---
 
-### 🔹 Method 2: Deploy to Gemini Enterprise
+### 🔹 Method 2: Production Deployment to Gemini Enterprise
 Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
 
 ---

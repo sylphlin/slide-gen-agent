@@ -133,7 +133,7 @@ slide-gen-agent/
 
 ---
 
-### 🔹 方式二：部署至 Agent Engine（Gemini Enterprise）正式環境
+### 🔹 方式二：部署至 Gemini Enterprise 正式環境
 將此 Python 代理人部署為 Vertex AI 上的 Reasoning Engine（Agent Engine）執行個體，並直接串接至 **Gemini Enterprise**。
 
 ---

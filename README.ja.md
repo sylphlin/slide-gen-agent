@@ -133,7 +133,7 @@ slide-gen-agent/
 
 ---
 
-### 🔹 方法 2：Agent Engine（Gemini Enterprise）への本番デプロイ
+### 🔹 方法 2：Gemini Enterprise への本番デプロイ
 この Python エージェントを Vertex AI 上の Reasoning Engine（Agent Engine）インスタンスとしてデプロイし、**Gemini Enterprise** に直接組み込みます。
 
 ---
