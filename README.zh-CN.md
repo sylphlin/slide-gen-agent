@@ -1,6 +1,6 @@
 # Slide Gen Agent
 
-[English](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
+[English (en)](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
 
 `slide-gen-agent` 是一个对话式幻灯片生成器——只需与代理对话，就能将任何素材（文章、报告、大纲、原始笔记）转化为一份完整、视觉精美的演示文稿。描述你的需求、查看生成结果，并通过自然对话不断调整，直到演示文稿完全符合你的预期。
 

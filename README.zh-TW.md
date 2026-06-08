@@ -1,6 +1,6 @@
 # Slide Gen Agent
 
-[English](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
+[English (en)](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
 
 `slide-gen-agent` 是一個對話式投影片簡報產生器——只要與代理人對話，就能將任何來源素材（文章、報告、大綱、原始筆記）轉換成完整、視覺精緻的簡報。描述你想要的內容、檢視產出結果，並透過自然對話反覆調整，直到簡報完全符合你的需求。
 

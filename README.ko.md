@@ -1,6 +1,6 @@
 # Slide Gen Agent
 
-[English](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
+[English (en)](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
 
 `slide-gen-agent`는 대화형 슬라이드 덱 생성 에이전트입니다 — 에이전트와 대화하는 것만으로 어떤 원본 자료(기사, 보고서, 개요, 메모 등)든 완성도 높고 시각적으로 세련된 프레젠테이션으로 변환할 수 있습니다. 원하는 바를 설명하고, 결과물을 검토하고, 자연스러운 대화를 통해 완벽하게 만족스러울 때까지 다듬어 나가세요.
 

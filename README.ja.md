@@ -1,6 +1,6 @@
 # Slide Gen Agent
 
-[English](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
+[English (en)](README.md) | [繁體中文 (zh-TW)](README.zh-TW.md) | [简体中文 (zh-CN)](README.zh-CN.md) | [日本語 (ja)](README.ja.md) | [한국어 (ko)](README.ko.md)
 
 `slide-gen-agent` は対話型のスライドデック生成エージェントです——エージェントとチャットするだけで、あらゆる素材（記事、レポート、アウトライン、メモなど）を完成度の高い、視覚的に洗練されたプレゼンテーションへと変換できます。要望を伝え、生成結果を確認し、自然な対話を通じて納得のいく仕上がりになるまで何度でも調整できます。
 
