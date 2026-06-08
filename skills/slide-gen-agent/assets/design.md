@@ -15,6 +15,7 @@
 ## Style Profile
 
 - **Theme Name**: Google Material Light
+- **Mode**: Light (default) — switch to Dark only as a deliberate, deck-wide choice. If Dark is chosen, redefine Background / Surface / Text Primary / Text Secondary together as one cohesive dark palette in the Color Palette table below — not just darkening the background in isolation. Text contrast, surface tones, and accent colors all need to shift together for the result to look intentional rather than broken.
 - **Content Type**: `[e.g. Technology / Lifestyle / Business / Education / Data-Driven]`
 - **Tone**: `[e.g. Professional / Casual / Inspiring / Analytical]`
 - **Target Audience**: `[e.g. General public / Engineers / Executives / Students]`
@@ -36,7 +37,7 @@
 | Text Secondary | Dark Grey        | `#5F6368` |
 
 > **How to adapt by content type:**
-> - **Technology**: Keep Blue as primary; darken background to `#1A1A2E` for a dark-mode variant.
+> - **Technology**: Keep Blue as primary; consider a Dark mode (see Style Profile → Mode) — if so, redefine the full palette as a cohesive dark set, e.g. Background `#1A1A2E`, Surface `#26263A`, Text Primary `#F5F5F7`, Text Secondary `#B0B0C0`.
 > - **Lifestyle / Wellness**: Swap primary to warm tones (`#FF6D00`, `#FFB300`); use soft off-white backgrounds.
 > - **Business / Finance**: Prefer navy (`#1A237E`) + gold (`#F9A825`); high contrast, minimal decoration.
 > - **Education**: Bright primaries, high contrast; ensure WCAG AA accessibility.
@@ -48,11 +49,14 @@
 
 These are structural properties of the canvas itself — they are decided **once per deck** and must then appear (or not appear) identically on every single slide. They are not creative choices to be re-made slide by slide.
 
-- **Canvas / Border**: No decorative border or frame on any slide — full-bleed canvas filled with the Background color; content is bounded only by the Safe Margin defined in Layout Rules.
+- **Background Treatment**: Flat solid fill using the Background color — no gradients, no decorative shapes, no background imagery or texture. *(If a decorative treatment is desired instead — e.g. a subtle gradient, geometric accent shapes, a soft pattern — define its exact form, color(s), opacity, and placement here, and that single definition then governs every slide of the same type.)*
+- **Canvas / Border**: No decorative border or frame on any slide — full-bleed canvas filled per the Background Treatment above; content is bounded only by the Safe Margin defined in Layout Rules.
 - **Page Number**: Shown on every slide by default — small and unobtrusive, placed in the bottom-right corner inside the safe margin, in Text Secondary color, plain digit format (e.g. "1", "12"). *(If the user asks to hide page numbers, remove them from EVERY slide — never mix slides with and without.)*
 - **Logo / Watermark**: None by default.
 
-> **Consistency Lock**: Whatever this section decides for Border / Page Number / Logo is binding for the entire deck. The same element must appear in the same position, size, and style on every slide — or not appear at all. Mixing (e.g. some slides framed and some not, some numbered and some not) is the most common cause of a deck looking disjointed.
+> **Consistency Lock**: Whatever this section decides for Background Treatment / Border / Page Number / Logo is binding for the entire deck. The same element must appear in the same position, size, and style on every slide — or not appear at all. Mixing (e.g. some slides with a gradient background and others flat, some framed and some not, some numbered and some not) is the most common cause of a deck looking disjointed.
+>
+> Note: the Layout Catalog already defines intentional, type-based background variation — e.g. Cover slides use a full-bleed Primary color block, Section Header slides use the Surface color. That is a deliberate visual rhythm, not inconsistency. The rule here is narrower: every slide *of the same type* must render its background identically.
 
 > **How to adapt by content type**: A framed/bordered treatment (e.g. a thin rule border, a certificate-style inset) can suit formal, editorial, or luxury content. If you choose this route, replace "No decorative border" above with one exact, concrete spec (line weight, color, inset) — and that single spec then governs all slides equally.
 
