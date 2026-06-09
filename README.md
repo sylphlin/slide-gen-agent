@@ -133,129 +133,57 @@ This is a pure prompt/guideline-based installation, requiring no code hosting.
 
 ---
 
-### 🔹 Method 2: Production Deployment to Gemini Enterprise
-Deploy the Python agent as a Reasoning Engine (Agent Engine) instance on Vertex AI and hook it directly into **Gemini Enterprise**.
+### 🔹 Method 2: Automated One-Click Deployment (Recommended)
+
+We provide an automated, production-ready deployment suite using **Terraform** and a companion **orchestration script** (`deploy.sh`). This completely automates enabling APIs, creating Google Drive delegation Service Accounts, provisioning GCS session buckets, configuring complex IAM role bindings, setting up the Python virtual environment, and registering the agent in Vertex AI.
 
 ---
 
-#### Part A — One-Time Project Setup
-Do this once per GCP project. You won't need to repeat these steps for future installs or redeploys.
+#### 1. Prerequisites
+Ensure you have the following installed on your local machine:
+- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
+- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
 
-##### 1. Enable GCP APIs
-Enable the following APIs in your GCP project:
-- [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
-- [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
-
-##### 2. Configure IAM Permissions
-
-Agent Engine runs your code under the **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). This Google-managed SA handles Vertex AI and GCS access, but **cannot** be directly registered for Domain-Wide Delegation (DWD). For Google Drive export, you create a separate user-managed SA (`slide-gen-drive`) that the runtime SA is allowed to impersonate.
-
+Ensure you are authenticated with Google Cloud:
 ```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-
-PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
-
-# Runtime SA: Google-managed identity that runs your agent code
-RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
-
-# Build SA: used only during `adk deploy` for container image push and build logs
-BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-
-# Drive SA: user-managed SA registered for DWD — created and owned by you
-gcloud iam service-accounts create slide-gen-drive \
-  --display-name="Slide Gen Drive Exporter" \
-  --project=$GOOGLE_CLOUD_PROJECT
-DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
-
-# Required: call Vertex AI models and Gemini image generation
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$RUNTIME_SA" \
-  --role="roles/aiplatform.user"
-
-# Required: read/write slides, previews, and exports to your GCS bucket
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$RUNTIME_SA" \
-  --role="roles/storage.objectUser"
-
-# Required: allow runtime SA to sign JWTs as the Drive SA (for DWD).
-# NOTE the direction here is the OPPOSITE of the project-level bindings above/below:
-# the Drive SA is the resource (`service-accounts add-iam-policy-binding $DRIVE_SA`)
-# and the runtime SA is the `--member` being granted a role ON it — not the other
-# way around. Reversing this grants the Drive SA permission to impersonate ANY SA
-# in the project (wrong, and will not fix a signJwt 404).
-gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
-  --member="serviceAccount:${RUNTIME_SA}" \
-  --role="roles/iam.serviceAccountTokenCreator" \
-  --project=$GOOGLE_CLOUD_PROJECT
-
-# Required for adk deploy: build logs and container image push
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$BUILD_SA" \
-  --role="roles/logging.logWriter"
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$BUILD_SA" \
-  --role="roles/artifactregistry.writer"
+gcloud auth login
+gcloud auth application-default login
 ```
 
-> **Note**: If a binding for the same role + member already exists — regardless of whether it has a condition (e.g. left over from another setup like Cloud Build) — `gcloud` will prompt you to choose how to apply the new one:
-> ```
->  [1] EXPRESSION=request.time < timestamp(...), TITLE=cloudbuild-connection-setup
->  [2] None
->  [3] Specify a new condition
-> ```
-> Select **`[2] None`** — the bindings above must be unconditional so the agent always has these permissions.
+---
 
-> **Note**: The Drive SA binding (`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA ...`) is the **one binding in this script with a reversed direction** compared to the rest. Every other command grants a role *on the project* to some SA (`gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member="serviceAccount:<SA>" ...`). This one instead grants a role *on the Drive SA itself* to the runtime SA (`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA --member="serviceAccount:$RUNTIME_SA" ...`). If you accidentally copy the project-level pattern here — granting `roles/iam.serviceAccountTokenCreator` to `$DRIVE_SA` at the project level — the Drive SA ends up able to impersonate *any* SA in the project (a much broader, incorrect grant), while the runtime SA still lacks permission to impersonate the Drive SA, and Google Drive export keeps failing with `[step:signJwt] HTTP 404`. Run `gcloud iam service-accounts get-iam-policy $DRIVE_SA` to verify the binding actually landed on the Drive SA resource (you should see `roles/iam.serviceAccountTokenCreator` with `$RUNTIME_SA` as the member).
+#### 2. Run the Deployment
+From the root of the repository, execute the orchestrator script:
+```bash
+./deploy.sh
+```
 
+The script will guide you through:
+1. **Interactive Configuration**: Confirms your target GCP Project ID and Region.
+2. **Infrastructure Provisioning**: Executes Terraform to configure APIs, IAM permissions, GCS buckets, and Service Accounts.
+3. **Environment Setup**: Generates `adk_agent/.env` with your project configurations.
+4. **Agent Packaging & Deployment**: Installs python dependencies and uses the ADK CLI to package and register the agent as a Vertex AI Reasoning Engine.
 
-##### 3. Configure Domain-Wide Delegation (Google Workspace Admin)
-This allows the agent to upload generated decks directly to each user's own Google Drive.
+When finished, the script will output your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/{REGION}/reasoningEngines/{ENGINE_ID}`).
 
-1. In the [Google Workspace Admin Console](https://admin.google.com), go to **Security → API controls → Domain-wide delegation**.
-2. Click **Add new** and enter:
-   - **Client ID**: the OAuth 2 Client ID of the **Drive SA** (`slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com`). Find it on the [IAM Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) → select `slide-gen-drive` → **Details** tab.
+---
+
+#### 3. Post-Deployment Configuration
+To complete the integration, perform these two manual steps:
+
+##### A. Configure Google Workspace Domain-Wide Delegation
+This allows the agent to upload slides directly to your users' Google Drives:
+1. Go to the [Google Workspace Admin Console](https://admin.google.com).
+2. Navigate to **Security → API controls → Domain-wide delegation**.
+3. Click **Add new** and enter:
+   - **Client ID**: The OAuth2 Client ID of the Drive SA (this will be printed at the end of the `deploy.sh` script, or can be found in the Terraform outputs).
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
-3. Click **Authorise**.
+4. Click **Authorise**.
 
----
-
-#### Part B — Install & Deploy
-Repeat these steps for every fresh install or redeploy.
-
-##### 1. Install Dependencies
-Set up the virtual environment from the root `slide-gen-agent` directory:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
-```
-
-##### 2. Configure Environment Variables
-Create a `.env` file inside the `adk_agent` directory so it gets bundled into the deployed container and loaded at startup. **This is required** — the deployed runtime cannot reliably auto-detect your project ID (different hosting contexts resolve it to the wrong value, e.g. a numeric project number or an unrelated tenant project), and a wrong value breaks both model calls and the Drive SA email used for export:
-```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-
-cat > .env <<EOF
-GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
-EOF
-```
-
-##### 3. Deploy
-Run the ADK deployer from the `adk_agent` directory. The agent resolves the Drive SA as `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com` using the `GOOGLE_CLOUD_PROJECT` from your `.env`:
-```bash
-adk deploy agent_engine \
-  --project=$GOOGLE_CLOUD_PROJECT \
-  --region=us-central1 \
-  --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://your-runtime-bucket" \
-  .
-```
-*The ADK CLI handles containerization, deployment staging, and Reasoning Engine registration. When complete, it outputs your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`).*
-
-##### 4. Connect to Gemini Enterprise Console
+##### B. Connect to Gemini Enterprise
 1. Log in to the **Gemini Enterprise Admin Console**.
 2. Navigate to **Agents** in the left sidebar.
 3. Click **+ Add Agent**.
-4. Select **Custom agent via Agent Engine** and enter your **Reasoning Engine Resource ID**.
+4. Select **Custom agent via Agent Engine** and paste the **Reasoning Engine Resource ID** printed by the script.
 5. Configure IAM authentication permissions to secure the connection.
+

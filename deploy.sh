@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+echo "================================================================="
+echo "🚀 Slide Gen Agent: One-Click Deploy to Gemini Enterprise"
+echo "================================================================="
+
+# Prerequisite Checks
+if ! command -v terraform &> /dev/null; then
+    echo "❌ Error: terraform is not installed or not in PATH."
+    echo "Please install Terraform (https://developer.hashicorp.com/terraform/downloads) and try again."
+    exit 1
+fi
+
+if ! command -v gcloud &> /dev/null; then
+    echo "❌ Error: gcloud CLI is not installed or not in PATH."
+    echo "Please install the Google Cloud SDK (https://cloud.google.com/sdk/docs/install) and try again."
+    exit 1
+fi
+
+# Verify gcloud authentication
+ACTIVE_ACCOUNT=$(gcloud config get-value account 2>/dev/null || echo "")
+if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "❌ Error: No active Google Cloud account found."
+    echo "Please run 'gcloud auth login' and 'gcloud auth application-default login' first."
+    exit 1
+fi
+
+# Detect Default Project
+DEFAULT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "")
+
+# Prompt for Project ID
+if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
+    if [ -n "$DEFAULT_PROJECT" ]; then
+        read -p "Enter GCP Project ID [default: $DEFAULT_PROJECT]: " GOOGLE_CLOUD_PROJECT
+        GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-$DEFAULT_PROJECT}
+    else
+        read -p "Enter GCP Project ID: " GOOGLE_CLOUD_PROJECT
+    fi
+fi
+
+if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
+    echo "❌ Error: GCP Project ID is required."
+    exit 1
+fi
+
+# Prompt for Region
+read -p "Enter GCP Region [default: us-central1]: " REGION
+REGION=${REGION:-us-central1}
+
+echo ""
+echo "Configuration Summary:"
+echo "----------------------"
+echo "Project ID: $GOOGLE_CLOUD_PROJECT"
+echo "Region:     $REGION"
+echo ""
+read -p "Do you want to proceed with this configuration? (y/N): " CONFIRM
+if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+    echo "Deployment cancelled."
+    exit 0
+fi
+
+# Step 1: Provision Infrastructure with Terraform
+echo ""
+echo "================================================================="
+echo "Step 1: Provisioning GCP Infrastructure with Terraform..."
+echo "================================================================="
+cd deploy/terraform
+terraform init
+terraform apply \
+  -var="project_id=$GOOGLE_CLOUD_PROJECT" \
+  -var="region=$REGION" \
+  -auto-approve
+
+# Extract Terraform Outputs
+BUCKET_NAME=$(terraform output -raw gcs_bucket_name)
+DRIVE_SA_EMAIL=$(terraform output -raw drive_sa_email)
+DRIVE_SA_CLIENT_ID=$(terraform output -raw drive_sa_client_id)
+cd ../..
+
+# Step 2: Generate .env Configuration File
+echo ""
+echo "================================================================="
+echo "Step 2: Generating adk_agent/.env configuration..."
+echo "================================================================="
+cat > adk_agent/.env <<EOF
+# Generated automatically by deploy.sh on $(date)
+GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
+DRIVE_SA_EMAIL="$DRIVE_SA_EMAIL"
+EOF
+echo "✅ adk_agent/.env generated successfully!"
+
+# Step 3: Set up Python Virtual Environment & Install Dependencies
+echo ""
+echo "================================================================="
+echo "Step 3: Setting up Python virtual environment & dependencies..."
+echo "================================================================="
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment 'venv'..."
+    python3 -m venv venv
+fi
+
+echo "Activating virtual environment..."
+source venv/bin/activate
+
+echo "Upgrading pip..."
+pip install --upgrade pip -q
+
+echo "Installing ADK and agent requirements..."
+pip install "google-adk[gcp]" -q
+pip install -r adk_agent/requirements.txt -q
+echo "✅ Dependencies installed successfully!"
+
+# Step 4: Deploy the Agent using ADK
+echo ""
+echo "================================================================="
+echo "Step 4: Deploying Slide Gen Agent to Vertex AI Agent Engine..."
+echo "================================================================="
+cd adk_agent
+adk deploy agent_engine \
+  --project="$GOOGLE_CLOUD_PROJECT" \
+  --region="$REGION" \
+  --display_name="slide-gen-agent" \
+  --artifact_service_uri="gs://$BUCKET_NAME" \
+  .
+
+# Print Post-Deployment Walkthrough
+echo ""
+echo "================================================================="
+echo "🎉 Slide Gen Agent Deployed Successfully!"
+echo "================================================================="
+echo ""
+echo "Please complete the following two manual steps to activate:"
+echo ""
+echo "1. Enable Google Workspace Domain-Wide Delegation:"
+echo "   -----------------------------------------------"
+echo "   This allows the agent to upload slides directly to your users' Google Drives."
+echo "   "
+echo "   - Log in to Google Workspace Admin Console (https://admin.google.com)"
+echo "   - Go to Security -> API controls -> Domain-wide delegation."
+echo "   - Click 'Add new' and enter:"
+echo "     * Client ID: $DRIVE_SA_CLIENT_ID"
+echo "     * OAuth scopes: https://www.googleapis.com/auth/drive.file"
+echo "   - Click 'Authorise'."
+echo ""
+echo "2. Connect to Gemini Enterprise Admin Console:"
+echo "   -------------------------------------------"
+echo "   - Log in to your Gemini Enterprise Admin Console."
+echo "   - Navigate to 'Agents' in the left sidebar."
+echo "   - Click '+ Add Agent' and select 'Custom agent via Agent Engine'."
+echo "   - Enter the Reasoning Engine Resource ID printed by the ADK deploy command above"
+echo "     (e.g., projects/$GOOGLE_CLOUD_PROJECT/locations/$REGION/reasoningEngines/...)"
+echo "   - Complete the IAM permission configuration to secure the connection."
+echo "================================================================="
