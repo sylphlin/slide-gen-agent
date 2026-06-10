@@ -264,6 +264,9 @@ if [ $ADK_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy_output.log || grep
     exit 1
 fi
 
+# Extract the Reasoning Engine Resource ID from the logs
+REASONING_ENGINE_ID=$(grep -oE "projects/[^/]+/locations/[^/]+/reasoningEngines/[0-9]+" deploy_output.log | head -n 1)
+
 # Clean up temporary log file on success
 rm -f deploy_output.log
 
@@ -272,7 +275,6 @@ echo ""
 echo "================================================================="
 echo "🎉 Slide Gen Agent Deployed Successfully!"
 echo "================================================================="
-
 echo ""
 echo "Please complete the following two manual steps to activate:"
 echo ""
@@ -292,7 +294,9 @@ echo "   -------------------------------------------"
 echo "   - Log in to your Gemini Enterprise Admin Console."
 echo "   - Navigate to 'Agents' in the left sidebar."
 echo "   - Click '+ Add Agent' and select 'Custom agent via Agent Engine'."
-echo "   - Enter the Reasoning Engine Resource ID printed by the ADK deploy command above"
-echo "     (e.g., projects/$GOOGLE_CLOUD_PROJECT/locations/$REGION/reasoningEngines/...)"
+echo "   - Enter the following Reasoning Engine Resource ID (Copy & Paste):"
+echo "     👉 ${REASONING_ENGINE_ID:-projects/$GOOGLE_CLOUD_PROJECT/locations/$REGION/reasoningEngines/...}"
+echo ""
 echo "   - Complete the IAM permission configuration to secure the connection."
 echo "================================================================="
+
