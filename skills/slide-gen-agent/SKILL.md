@@ -38,31 +38,21 @@ If any of these details are missing from the initial request, **pause and explic
 
 ## Stage 1: Content Analysis & Proposal
 
-Read the user's source material carefully. Your goal is to understand not just
-the facts, but the *feel* of the content — its topic domain, emotional tone, and
-the context defined in Stage 0. These factors will drive every design decision later.
+Read the user's source material carefully. Your goal is to understand not just the facts, but the *feel* of the content — its topic domain, emotional tone, and the context defined in Stage 0. You must extract the content's **Visual DNA** (tone, brand colors, aesthetic style) to drive the visual design system.
 
-Once you have a clear picture, present the following to the user and **wait for
-their confirmation or edits before continuing**:
+Once you have a clear picture, present the following to the user and **wait for their confirmation or edits before continuing**:
 
 1. **Target audience & Expected goals** — reiterate the target audience and presentation goals confirmed in Stage 0. Suggest refinements or extensions if necessary.
 2. **Recommended slide count** — suggest a specific slide count. If the user provided a duration in Stage 0, automatically convert it to a recommended slide count based on a standard delivery rate of **1.5 to 2 minutes per slide** (e.g., a 15-minute presentation translates to 8–10 slides).
-3. **Design style** — propose a theme that fits the content type. Examples:
-   - *Technology*: Clean dark or light tech aesthetic, data-forward
-   - *Business/Finance*: Authoritative, high contrast, minimal decoration
-   - *Lifestyle/Wellness*: Warm tones, organic feel, generous white space
-   - *Education*: Bright, accessible, clear hierarchy
-   - *Data-Driven*: Chart-centric, neutral backgrounds, emphasis on numbers
-   The default style is **Google Material Light** (see `assets/design.md`).
-4. **Color palette** — suggest a primary color, secondary color, and background
-   color. Provide hex codes. Explain briefly why these suit the content.
+3. **Visual Theme Proposal** — Propose a visual style that matches the content. You must either select one of the **4 Predefined Visual Themes** or **dynamically derive a custom theme** based on the extracted Visual DNA:
+   - **Theme A: Minimalist Line Art (极简线条风)**: Best for hard tech, developer docs, data-heavy, or academic decks. (Cold, precise, abstract outlines, strokes only, no solid fills).
+   - **Theme B: Modern Flat Geometric (几何扁平风)**: Best for SaaS products, corporate pitch decks, consulting reports, or marketing plans. (Professional, structured, bold flat colors, solid fills only, no outlines).
+   - **Theme C: Premium Photography (高质感摄影风)**: Best for product launches, emotional keynotes, storytelling, or human-centric brands. (High-impact studio photography, minimalist layouts).
+   - **Theme D: Warm Hand-Drawn (温暖手绘风)**: Best for wellness, lifestyle, organic products, creative agencies, or education. (Cozy, human, organic sketchy lines, soft pastels, wobbly textures).
+   - **Custom Coordinated Theme**: If the content requires a highly specific style (e.g., "Cyberpunk", "Retro Pixel"), propose a custom theme and explain how you will dynamically align the icons and illustrations to this style using the coordination protocol.
+4. **Color palette** — suggest a primary color, secondary color, and background color. Provide hex codes. Explain briefly why these suit the content and visual theme.
 
-Keep the proposal concise — a short paragraph or a 4-item list is enough. The
-user may accept as-is, tweak individual items, or ask for alternatives. If the
-user requests any modifications, you must update the proposal accordingly and
-present the revised version for their approval. Repeat this verification loop
-until the user explicitly gives full confirmation. Do not proceed to Stage 2
-until the proposal is fully confirmed.
+Keep the proposal concise — a short paragraph or a 4-item list is enough. The user may accept as-is, tweak individual items, or ask for alternatives. If the user requests any modifications, you must update the proposal accordingly and present the revised version for their approval. Repeat this verification loop until the user explicitly gives full confirmation. Do not proceed to Stage 2 until the proposal is fully confirmed.
 
 ---
 
@@ -73,9 +63,12 @@ Once the user confirms the Stage 1 proposal, you must initialize a new session w
 Then, generate all three types of Markdown files in the following order — each step depends on the previous one, so do not generate them simultaneously. Use the templates in the `assets/` folder as your structural guide.
 
 ### Step 1 — `design.md` (Brand System)
-Read `assets/design.md` first, then generate following that exact structure — adapt every field to the agreed style and palette, keep all section headings and the Color Palette table intact. This file does **not** include per-slide layout definitions.
+Read `assets/design.md` first, then generate following that exact structure — adapt every field to the agreed style and palette, keeping all section headings and the Color Palette table intact. This file does **not** include per-slide layout definitions.
 
-Pay special attention to the **Slide Frame & Persistent Elements** and **Icon System** sections — these define structural elements (border/frame, page numbers, logo, icon stroke/fill/size) that the image model must render *identically* on every single slide, since each slide image is generated independently with no shared visual memory. Fill them with concrete, unambiguous values, exactly as rigorously as the Color Palette table — a vague description here (e.g. "outlined icons" without specifying stroke width, fill rule, and size) is the most common cause of a deck where some slides have a frame and others don't, or icons look different from page to page.
+**Visual Alignment & SSoT Lock**:
+You must write the exact visual specifications of the agreed theme (Theme A, B, C, D, or your dynamically coordinated custom theme) into `design.md`:
+* **Icon System & Color Layout Rules**: Define the icon style, stroke weight, and size. You must write the **Icon Color Layout Rules** (Category Contrast, Sequence Progression, Focus & Accentuation) into the file, instructing downstream tools on how to distribute colors across slide elements professionally.
+* **Visual Style & Themes**: Copy the exact description and the **Imagen Keyphrase** for the selected theme (or write your derived custom coordinate prompts). This ensures the image generation model has a clear, highly reliable Single Source of Truth (SSoT) to generate perfectly matched icons and illustrations across all slides, preventing style drift.
 - **Progress**: Output a status line before starting, e.g. **"🎨 Designing the overall visual style and color palette..."**, and a brief confirmation after saving, e.g. **"✅ Visual style & color palette defined."** Full file contents do not need to be pasted into the chat.
 - **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).
 - This file is the Single Source of Truth (SSoT) for colors, typography, and visual style in Stage 3.

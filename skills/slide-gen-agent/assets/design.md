@@ -75,20 +75,54 @@ These are structural properties of the canvas itself — they are decided **once
 
 ## Icon System
 
-- **Style**: Minimal mono-line icons — single-color outline only; no fill, no gradient, no drop shadow, no enclosing shape or container
-- **Stroke Width**: 2 px, constant across every icon in the deck
-- **Color**: Primarily drawn from the four Google brand colors (`#4285F4` / `#34A853` / `#FBBC05` / `#EA4335`), varying the choice contextually across slides/sections to keep things visually interesting — not strictly limited to these four; supplementary harmonious colors may be introduced when more variety is needed, as long as they stay consistent with the overall brand tone
+- **Style**: Single-color outline or solid fill (depending on the selected Theme under Visual Style).
+  - *Definition of Single-Color*: Each individual icon must be rendered in exactly one solid, uniform color (no multi-colored lines or fills inside a single icon).
+- **Stroke Width & Treatment**: Constant across every icon in the deck (e.g., exactly 2 px for outline styles, or completely borderless for flat solid styles). Never mix outlined and filled icons in the same deck.
 - **Size**: 48×48 px
+- **Icon Color Layout Rules (Aesthetics & Hierarchy)**:
+  Instead of rendering all icons in the exact same color, apply the following rules slide-by-slide to establish visual structure and information hierarchy:
+  - **Category/Column Contrast**: In multi-column or grid layouts, icons on different cards/columns can use distinct brand colors (e.g. Column 1: Google Blue, Column 2: Google Green) to visually categorize the information.
+  - **Sequence/Flow Progression**: In step-by-step processes or horizontal timeline layouts, icons should follow a logical color progression or gradient (e.g. Step 1: Yellow, Step 2: Red, Step 3: Blue) to guide the reader's eye and represent progression.
+  - **Focus & Accentuation**: In layouts where one card is highlighted (e.g., a "Recommended" pricing tier or a primary key metric), the primary card's icon should use a vibrant accent color, while the secondary cards' icons use a neutral, muted color (e.g., gray `#5F6368` or `#9AA0A6`).
 
-> **Consistency Lock**: Every icon in the deck must share the same line style, stroke width, fill/outline treatment, and size — never mix outlined and filled icons, and never vary the stroke weight from slide to slide. Color may vary (see above), but the *treatment* must not.
-
-> **How to adapt by content type**: Lifestyle/Wellness or Education content may call for a duotone or filled icon style instead. If so, replace the spec above with an equally precise alternative (exact fill rules, exact colors) — precision is what keeps it consistent, not which style you pick.
+> **Consistency Lock**: While icon colors may vary across columns or steps on a slide according to the layout rules above, the *graphic treatment* (stroke weight, fill style, size, and wobbly vs. geometric lines) must remain 100% identical across the entire deck.
 
 ---
 
-## Visual Style
+## Visual Style & Themes
 
-- **Illustrations**: Flat design; use Google's illustration palette
-- **Photography**: Bright, high-contrast; avoid dark or moody stock photos (unless Lifestyle/dark variant)
-- **Charts & Graphs**: Clean axes, no gridline clutter; label data points directly
-- **Dividers**: Use color blocks or thin `#E8EAED` lines — no drop shadows on content cards
+To ensure that the icons and other graphic elements (illustrations, backgrounds, characters) feel like they were designed together by a single professional artist, the deck must adhere strictly to one of the four **Visual Themes** below. The choice is made once per deck in Stage 1 and must be enforced globally.
+
+### 🎨 Theme A: Minimalist Line Art (极简线条风) — Best for Tech, Academic, Data
+* **Aesthetic**: Pure outline, extremely light, airy, and precise. High technical/rational feel.
+* **Icons**: Mono-line outlines, exactly 2 px stroke, no fill, transparent background, single color.
+* **Illustrations**: Minimalist line-art illustrations sharing the same 2 px stroke weight. No large solid color fills; shapes are mostly transparent, using tiny solid shapes (like a small circle or line) only as subtle accents.
+* **Imagen Keyphrase**: `Minimalist 2px mono-line outline illustration, wendy-vector style, transparent shapes, hollow design, light airy aesthetic, no solid fills, transparent background`
+
+### 🎨 Theme B: Modern Flat Geometric (几何扁平风) — Best for SaaS, Business, Marketing
+* **Aesthetic**: Solid geometric shapes, bold colors, professional, and structured. No outlines.
+* **Icons**: Flat-filled geometric shapes, borderless, single color or simple duotone.
+* **Illustrations**: Flat-style vector illustrations constructed from solid color blocks and geometric shapes. There are absolutely no stroke lines or outlines.
+* **Imagen Keyphrase**: `Modern flat vector illustration, geometric shapes, solid color blocks, no outlines, no border lines, bold corporate flat design, transparent background`
+
+### 🎨 Theme C: Premium Photography (高质感摄影风) — Best for Keynotes, Storytelling, Hardware
+* **Aesthetic**: Real-life, high-impact, authentic, and emotionally engaging.
+* **Icons**: Thin, elegant line-art icons (matching Theme A) or glassy semi-transparent shapes.
+* **Illustrations/Imagery**: High-contrast, clean studio photography with solid or extremely minimal backgrounds. Avoid cluttered stock photos. Focus on human emotion, physical products, or clean metaphors.
+* **Imagen Keyphrase**: `High-end professional studio photography, clean minimalist background, bright high-contrast lighting, premium corporate editorial style, sharp focus`
+
+### 🎨 Theme D: Warm Hand-Drawn (温暖手绘风) — Best for Education, Lifestyle, Wellness, Creative
+* **Aesthetic**: Cozy, organic, sketchy, human, and inviting. Wobbly lines and soft textures.
+* **Icons**: Hand-drawn sketchy outline icons with organic, wobbly lines, subtle pencil/crayon textures, and soft colors.
+* **Illustrations**: Organic hand-drawn sketchy illustrations with wobbly outlines, soft pastel color palettes, loose color fills (sometimes slightly overflowing the borders for a handmade feel), and cozy textures.
+* **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, transparent background`
+
+---
+
+## Dynamic Style Coordination Protocol
+
+If the user requests a custom style not covered by the four themes above (e.g., "Cyberpunk Neon" or "Retro 8-Bit Pixel"), the Agent must not force them into a preset. Instead, dynamically derive a coordinated visual spec using the following rules:
+1. **Analyze Style DNA**: Extract the core visual attributes of the requested style (e.g., Cyberpunk -> dark background, neon glow, cyan/magenta colors, futuristic shapes).
+2. **Co-Design Icons & Illustrations**: Write matching prompt templates for both. If the illustrations use a neon glow, the icons *must* also be described as having a matching neon glow. If the illustrations are pixelated, the icons *must* be pixelated.
+3. **Write to SSoT**: Document this derived theme in `design.md` before generating slides, locking the stroke, texture, and color parameters for both icons and images globally.
+

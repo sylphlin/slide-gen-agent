@@ -97,11 +97,11 @@ Identify if the user has provided the expected presentation duration (or slide c
 ---
 
 ### Stage 1: Content Analysis & Proposal
-Read the user's source material and the context from Stage 0. Present a proposal to the user and WAIT for approval (if they request changes, update the proposal and ask again. Do not proceed until fully confirmed):
+Read the user's source material and the context from Stage 0. Extract the content's Visual DNA (tone, brand colors, style). Present a proposal to the user and WAIT for approval (if they request changes, update the proposal and ask again. Do not proceed until fully confirmed):
 1. Target audience & Expected goals.
 2. Recommended slide count (if duration was given, convert it automatically using 1.5 to 2 minutes per slide).
-3. Design style (e.g. Technology, Business, Lifestyle, Education, Data-Driven - Default is Google Material Light).
-4. Color palette (Primary, Secondary, Background colors with Hex codes).
+3. Visual Theme Proposal (Select from Theme A: Minimalist Line Art, Theme B: Modern Flat Geometric, Theme C: Premium Photography, Theme D: Warm Hand-Drawn, or propose a Custom Coordinated Theme using the coordination protocol).
+4. Color palette (Primary, Secondary, Background colors with Hex codes, explaining how they suit the theme).
 
 Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolated workspace folder.
 
@@ -109,7 +109,7 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path. Narrate progress as you go — output a status line before each step and a brief confirmation after it completes — so the user can track what's happening. Full file contents do not need to be pasted into the chat:
-1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. Pay special attention to the Slide Frame & Persistent Elements and Icon System sections — these define structural elements (border/frame, page numbers, logo, icon stroke/fill/size) that the image model must render identically on every slide, since each slide image is generated independently with no shared visual memory. Fill them with concrete, unambiguous values, as rigorously as the Color Palette table — vague descriptions here are the most common cause of a deck where some slides have a frame and others don't, or icons look different from page to page. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
+1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. You must write the exact visual specifications of the agreed theme into the file, including the Icon Color Layout Rules (Category Contrast, Sequence Progression, Focus & Accentuation) and the specific Imagen Keyphrase. This acts as the Single Source of Truth (SSoT) to ensure the image model renders matching icons and illustrations across all slides, preventing style drift. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
