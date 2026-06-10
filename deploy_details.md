@@ -76,11 +76,14 @@ DRIVE_SA_EMAIL="slide-gen-drive@<your-gcp-project-id>.iam.gserviceaccount.com"
 This ensures the Python ADK runtime knows which GCP project to target and which Service Account it needs to impersonate when uploading presentations to Google Drive.
 
 ### 5. Step 3: Python Environment & Dependencies
-The script prepares the local Python environment required to package and deploy the agent code:
-1. **Virtual Environment**: Checks for a local `venv` directory. If it doesn't exist, it creates a new one using `python3 -m venv venv`.
-2. **Activation**: Activates the virtual environment.
-3. **Pip Upgrade**: Upgrades `pip` to the latest version silently.
-4. **Dependency Installation**: Installs the Google Agent Development Kit with GCP support (`google-adk[gcp]`) and the application requirements from [adk_agent/requirements.txt](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk_agent/requirements.txt).
+The script prepares the local Python environment required to package and deploy the agent code, taking into account Vertex AI's runtime compatibility:
+1. **Python Version Detection**: Vertex AI Reasoning Engine only supports **Python 3.10** and **Python 3.11**. The script automatically scans your system for `python3.11` or `python3.10` and uses it to build the environment. If your default `python3` is incompatible (e.g., Python 3.13) and no compatible version is found, it will warn you and prompt to abort, preventing cloud deployment failures (Error Code 13).
+2. **Virtual Environment Creation**: Creates a local virtual environment `venv` using the detected compatible Python binary. If an incompatible `venv` already exists from a previous run, the script automatically deletes and recreates it with the correct version.
+3. **Activation**: Activates the virtual environment.
+4. **Pip Upgrade**: Upgrades `pip` to the latest version silently.
+5. **Dependency Installation**: Installs the Google Agent Development Kit with GCP support (`google-adk[gcp]`) and the application requirements from [adk_agent/requirements.txt](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk_agent/requirements.txt) **in a single, unified `pip install` command**. This is a critical design choice that forces `pip` to perform a joint dependency resolution, preventing subtle package version conflicts that would otherwise lead to container build failures on the Vertex AI platform (Error Code 13).
+
+
 
 ### 6. Step 4: Deploying to Vertex AI Agent Engine
 Using the ADK CLI, the script packages the local agent code and deploys it as a Vertex AI Reasoning Engine:

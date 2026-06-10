@@ -181,10 +181,54 @@ echo ""
 echo "================================================================="
 echo "Step 3: Setting up Python virtual environment & dependencies..."
 echo "================================================================="
-if [ ! -d "venv" ]; then
-    echo "Creating virtual environment 'venv'..."
-    python3 -m venv venv
+
+# Detect compatible Python version (3.10 or 3.11)
+PYTHON_BIN=""
+if command -v python3.11 &>/dev/null; then
+    PYTHON_BIN="python3.11"
+elif command -v python3.10 &>/dev/null; then
+    PYTHON_BIN="python3.10"
+elif command -v python3 &>/dev/null; then
+    # Check if the default python3 is 3.10 or 3.11
+    PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    if [ "$PY_VERSION" = "3.10" ] || [ "$PY_VERSION" = "3.11" ]; then
+        PYTHON_BIN="python3"
+    fi
 fi
+
+if [ -z "$PYTHON_BIN" ]; then
+    echo "⚠️  Warning: Vertex AI Reasoning Engine only supports Python 3.10 or 3.11."
+    echo "Your default python3 is running an incompatible version: $(python3 -c 'import sys; print(sys.version.split()[0])')"
+    echo "Deploying with this version will cause deployment failures in Vertex AI (Error Code 13)."
+    echo ""
+    echo "Recommended: Install Python 3.11 (e.g., 'brew install python@3.11' on macOS) and try again."
+    echo ""
+    read -p "Do you want to force deployment using your default python3 anyway? (y/N): " FORCE_PY
+    if [[ ! "$FORCE_PY" =~ ^[Yy]$ ]]; then
+        echo "Deployment aborted. Please install Python 3.11 or 3.10 and re-run this script."
+        exit 1
+    fi
+    PYTHON_BIN="python3"
+else
+    echo "✅ Found compatible Python runtime: $PYTHON_BIN"
+fi
+
+# Clean up old incompatible venv if it exists
+if [ -d "venv" ] && [ -z "$FORCE_PY" ]; then
+    # Verify if the existing venv matches our target python version
+    VENV_PY_VER=$(venv/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "")
+    TARGET_PY_VER=$($PYTHON_BIN -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    if [ "$VENV_PY_VER" != "$TARGET_PY_VER" ]; then
+        echo "Recreating virtual environment because Python version changed ($VENV_PY_VER -> $TARGET_PY_VER)..."
+        rm -rf venv
+    fi
+fi
+
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment 'venv' using $PYTHON_BIN..."
+    $PYTHON_BIN -m venv venv
+fi
+
 
 echo "Activating virtual environment..."
 source venv/bin/activate
@@ -193,9 +237,10 @@ echo "Upgrading pip..."
 pip install --upgrade pip -q
 
 echo "Installing ADK and agent requirements..."
-pip install "google-adk[gcp]" -q
-pip install -r adk_agent/requirements.txt -q
+# Combine into a single command to ensure pip resolves dependencies consistently for both
+pip install "google-adk[gcp]" -r adk_agent/requirements.txt -q
 echo "✅ Dependencies installed successfully!"
+
 
 # Step 4: Deploy the Agent using ADK
 echo ""
