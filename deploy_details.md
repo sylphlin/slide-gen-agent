@@ -77,7 +77,8 @@ This ensures the Python ADK runtime knows which GCP project to target and which 
 
 ### 5. Step 3: Python Environment & Dependencies
 The script prepares the local Python environment required to package and deploy the agent code, taking into account Vertex AI's runtime compatibility:
-1. **Python Version Detection**: Vertex AI Reasoning Engine only supports **Python 3.10** and **Python 3.11**. The script automatically scans your system for `python3.11` or `python3.10` and uses it to build the environment. If your default `python3` is incompatible (e.g., Python 3.13) and no compatible version is found, it will warn you and prompt to abort, preventing cloud deployment failures (Error Code 13).
+1. **Python Version Detection**: Vertex AI Reasoning Engine officially supports **Python 3.10** and **Python 3.11**. The script automatically scans your system for `python3.11` or `python3.10` and uses it if available (best practice). If your default `python3` is running an unsupported version (e.g., Python 3.12 or 3.13) and no compatible version is found, it will print a gentle, non-blocking note and automatically proceed using your default `python3`, ensuring a smooth and uninterrupted deployment flow.
+
 2. **Virtual Environment Creation**: Creates a local virtual environment `venv` using the detected compatible Python binary. If an incompatible `venv` already exists from a previous run, the script automatically deletes and recreates it with the correct version.
 3. **Activation**: Activates the virtual environment.
 4. **Pip Upgrade**: Upgrades `pip` to the latest version silently.

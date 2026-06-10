@@ -197,21 +197,17 @@ elif command -v python3 &>/dev/null; then
 fi
 
 if [ -z "$PYTHON_BIN" ]; then
-    echo "⚠️  Warning: Vertex AI Reasoning Engine only supports Python 3.10 or 3.11."
-    echo "Your default python3 is running an incompatible version: $(python3 -c 'import sys; print(sys.version.split()[0])')"
-    echo "Deploying with this version will cause deployment failures in Vertex AI (Error Code 13)."
-    echo ""
-    echo "Recommended: Install Python 3.11 (e.g., 'brew install python@3.11' on macOS) and try again."
-    echo ""
-    read -p "Do you want to force deployment using your default python3 anyway? (y/N): " FORCE_PY
-    if [[ ! "$FORCE_PY" =~ ^[Yy]$ ]]; then
-        echo "Deployment aborted. Please install Python 3.11 or 3.10 and re-run this script."
-        exit 1
-    fi
+    # Fallback to default python3 with a gentle non-blocking note
     PYTHON_BIN="python3"
+    PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    echo "⚠️  Note: Vertex AI Reasoning Engine officially supports Python 3.10 or 3.11."
+    echo "Your system is running Python $PY_VERSION. We will proceed using it, but if you encounter"
+    echo "deployment failures (Error Code 13), we recommend installing Python 3.11 and re-running."
+    echo ""
 else
     echo "✅ Found compatible Python runtime: $PYTHON_BIN"
 fi
+
 
 # Clean up old incompatible venv if it exists
 if [ -d "venv" ] && [ -z "$FORCE_PY" ]; then
