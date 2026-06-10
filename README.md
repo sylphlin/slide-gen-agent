@@ -135,17 +135,17 @@ Select the installation method that fits your target environment:
 
 ### 🔹 Method 1: Universal Agent Skill (`SKILL.md`)
 This is a pure prompt/guideline-based installation, requiring no code hosting.
-* **Use Case**: LLM systems that support Agent Skills, provide a sandboxed code-execution environment, and have text-to-image generation capabilities (e.g., Antigravity, Codex).
+* **Use Case**: Agent Platforms that support Agent Skills, provide a sandboxed code-execution environment, and have text-to-image generation capabilities (e.g., Antigravity, Codex).
 * **How to Install**:
-  1. Import or copy the contents of [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) into your LLM assistant's custom system instructions or system prompts.
-  2. Reference the Markdown files in the `skills/slide-gen-agent/templates/` directory as examples for the assistant to follow.
+  1. Copy the entire `skills/slide-gen-agent/` directory into your Agent Platform's skills folder. This ensures the platform has access to the core playbook (`SKILL.md`), the static templates in `assets/`, and the custom execution scripts in `scripts/` (e.g., PPTX and PDF compilers).
+  2. Register and enable the skill in your Agent Platform.
 
 ---
 
 ### 🔹 Method 2: Gemini Enterprise
 This method deploys the agent as a Vertex AI Reasoning Engine and connects it to Gemini Enterprise.
 
-#### Option 1: One-Click Installation
+#### Option 1: One-Click Installation (Recommended)
 We provide an automated, production-ready deployment suite using **Terraform** and a companion **orchestration script** (`deploy.sh`). This completely automates enabling APIs, creating Google Drive delegation Service Accounts, provisioning GCS session buckets, configuring complex IAM role bindings, setting up the Python virtual environment, and registering the agent in Vertex AI.
 
 > [!NOTE]
@@ -153,19 +153,28 @@ We provide an automated, production-ready deployment suite using **Terraform** a
 
 
 ##### 1. Prerequisites
-Ensure you have the following installed on your local machine:
-- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
-- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+We **highly recommend** deploying directly from **[Google Cloud Shell](https://shell.cloud.google.com)**. It is a free, pre-configured browser-based terminal with all necessary tools pre-installed.
 
-Ensure you are authenticated with Google Cloud:
-```bash
-gcloud auth login
-gcloud auth application-default login
-```
+* **If using Google Cloud Shell (Recommended)**:
+  - All tools (`gcloud` and `terraform`) are pre-installed.
+  - You only need to authorize Application Default Credentials (ADC) in the shell:
+    ```bash
+    gcloud auth application-default login
+    ```
+
+* **If using your Local Machine**:
+  - You must install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and the [Terraform CLI](https://developer.hashicorp.com/terraform/downloads).
+  - You must authenticate both your gcloud CLI and Application Default Credentials (ADC):
+    ```bash
+    gcloud auth login
+    gcloud auth application-default login
+    ```
 
 ##### 2. Run the Deployment
-From the root of the repository, execute the orchestrator script:
+Open your terminal (or Google Cloud Shell) and run the following commands to clone the repository and launch the interactive deployment script:
 ```bash
+git clone https://github.com/sylphlin/slide-gen-agent
+cd slide-gen-agent
 ./deploy.sh
 ```
 
@@ -199,6 +208,9 @@ This allows the agent to upload slides directly to your users' Google Drives:
 ---
 
 #### Option 2: Manual Installation
+
+> [!IMPORTANT]
+> If you have already deployed the agent using **Option 1: One-Click Installation (Recommended)**, you can completely skip this manual installation section.
 If your organization's policies restrict the use of Terraform, or if you prefer to provision GCP resources manually using the `gcloud` CLI, you can follow these step-by-step instructions.
 
 ##### Part A — One-Time Project Setup
@@ -314,5 +326,3 @@ adk deploy agent_engine \
 2. Navigate to **Agents** -> **+ Add Agent**.
 3. Select **Custom agent via Agent Engine** and paste the **Reasoning Engine Resource ID**.
 4. Configure IAM authentication permissions to secure the connection.
-
-

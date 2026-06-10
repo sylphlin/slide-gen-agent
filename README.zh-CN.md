@@ -135,36 +135,45 @@ slide-gen-agent/
 
 ### 🔹 方法一：通用 Agent Skill (`SKILL.md`) — 平台无关
 这是一个纯提示词／指引型的安装，不需要任何代码托管。
-* **使用场景**：支持 Agent Skill、提供沙盒代码执行环境、且具备文本生成图像能力的 LLM 系统（例如 Antigravity、Codex）。
+* **使用场景**：支持 Agent Skill、提供沙盒代码执行环境、且具备文本生成图像能力的 Agent Platform（例如 Antigravity、Codex）。
 * **如何安装**：
-  1. 将 [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) 的内容复制并导入您的 LLM 助理的自定义系统指令或系统提示词中。
-  2. 参考 `skills/slide-gen-agent/templates/` 目录中的 Markdown 文件，作为助理遵循的示例。
+  1. 将整个 `skills/slide-gen-agent/` 目录复制到您的 Agent Platform 的 skills 文件夹中。这能确保平台可以访问核心指南（`SKILL.md`）、`assets/` 中的静态模板以及 `scripts/` 中的自定义执行脚本（例如 PPTX 与 PDF 编译器）。
+  2. 在您的 Agent Platform 中注册并启用该 skill。
 
 ---
 
 ### 🔹 方法二：Gemini Enterprise
 此方法将代理部署为 Vertex AI Reasoning Engine 并连接至 Gemini Enterprise 控制台。
 
-#### Option 1：一键安装 (One-Click Installation)
+#### Option 1：一键安装 (One-Click Installation) (推荐)
 
 > [!NOTE]
 > 关于该脚本的前提条件、交互式配置与执行阶段的详细逐步说明，请参阅 [Deployment Script Details (英文)](deploy_details.md) 说明文档。
 我们提供使用 **Terraform** 与配套 **协调脚本**（`deploy.sh`）的自动化生产级部署套件。这能完全自动化启用 API、创建 Google 云端硬盘委派服务账号、创建 GCS 会话存储桶、设置复杂的 IAM role 绑定、设置 Python 虚拟环境，以及在 Vertex AI 中注册代理。
 
 ##### 1. 前提条件
-请确保您的本地计算机上已安装以下工具：
-- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
-- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+我们**强烈推荐**直接在 **[Google Cloud Shell](https://shell.cloud.google.com)** 中进行部署。它是浏览器中免费且已预先配置好的环境，所有必需的工具均已预装。
 
-请确保您已登录 Google Cloud 并设置好凭证：
-```bash
-gcloud auth login
-gcloud auth application-default login
-```
+* **如果使用 Google Cloud Shell (推荐)**：
+  - 所有工具（`gcloud` 与 `terraform`）均已预装。
+  - 您只需要启用应用默认凭据 (ADC) 验证：
+    ```bash
+    gcloud auth application-default login
+    ```
+
+* **如果使用您的本地计算机**：
+  - 您必须手动安装 [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) 与 [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)。
+  - 您必须启用 gcloud CLI 与应用默认凭据 (ADC) 双重验证：
+    ```bash
+    gcloud auth login
+    gcloud auth application-default login
+    ```
 
 ##### 2. 执行部署
-在项目根目录下执行协调脚本：
+打开您的终端（或 Google Cloud Shell）并运行以下命令来克隆项目并启动交互式部署脚本：
 ```bash
+git clone https://github.com/sylphlin/slide-gen-agent
+cd slide-gen-agent
 ./deploy.sh
 ```
 
@@ -198,6 +207,9 @@ gcloud auth application-default login
 ---
 
 #### Option 2：手动安装 (Manual Installation)
+
+> [!IMPORTANT]
+> 如果您已经通过 **Option 1：一键安装 (One-Click Installation) (推荐)** 完成部署，可以完全跳过此手动安装章节。
 如果您的组织政策限制使用 Terraform，或者您 prefer 使用 `gcloud` CLI 手动部署 GCP 资源，可以按照以下步骤进行。
 
 ##### Part A — 一次性项目设置

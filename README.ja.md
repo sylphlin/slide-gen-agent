@@ -145,19 +145,28 @@ slide-gen-agent/
 > このスクリプトの前提条件、対話型設定、および実行ステージの詳細な手順については、[Deployment Script Details (英語)](deploy_details.md) のガイドを参照してください。
 
 ##### 1. 前提条件
-ローカルマシンに以下がインストールされていることを確認してください：
-- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
-- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+**[Google Cloud Shell](https://shell.cloud.google.com)** から直接デプロイすることを**強く推奨**します。これはブラウザ上で動作する無料の事前構成済み環境であり、必要なすべてのツールがプリインストールされています。
 
-Google Cloud に認証されていることを確認してください：
-```bash
-gcloud auth login
-gcloud auth application-default login
-```
+* **Google Cloud Shell を使用する場合 (推奨)**:
+  - すべてのツール（`gcloud` および `terraform`）はプリインストールされています。
+  - アプリケーションのデフォルト認証情報 (ADC) を認証するだけで済みます:
+    ```bash
+    gcloud auth application-default login
+    ```
+
+* **ローカルマシンを使用する場合**:
+  - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) および [Terraform CLI](https://developer.hashicorp.com/terraform/downloads) を手動でインストールする必要があります。
+  - gcloud CLI とアプリケーションのデフォルト認証情報 (ADC) の両方を認証する必要があります:
+    ```bash
+    gcloud auth login
+    gcloud auth application-default login
+    ```
 
 ##### 2. デプロイの実行
-リポジトリのルートからオーケストレータースクリプトを実行します：
+ターミナル（または Google Cloud Shell）を開き、以下のコマンドを実行してリポジトリをクローンし、対話型デプロイスクリプトを起動します:
 ```bash
+git clone https://github.com/sylphlin/slide-gen-agent
+cd slide-gen-agent
 ./deploy.sh
 ```
 

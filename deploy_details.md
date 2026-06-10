@@ -36,9 +36,10 @@ graph TD
 ## 🔍 Step-by-Step Breakdown
 
 ### 1. Prerequisite & Environment Checks
-Before running any deployment steps, the script performs validation on the local environment to prevent half-provisioned failures:
-* **Tool Verification**: Checks if `terraform` and `gcloud` CLI are installed and in the user's `PATH`. If missing, the script aborts with installation links.
-* **Authentication Verification**: Runs `gcloud config get-value account` to check if a Google Cloud account is actively authenticated. If not, it prompts the user to run `gcloud auth login` and `gcloud auth application-default login`.
+Before running any deployment steps, the script performs validation on the active environment to prevent half-provisioned failures:
+* **Tool Verification**: Checks if `terraform` and `gcloud` CLI are installed and in the environment's `PATH`. *(Note: If you are deploying from **Google Cloud Shell**, these tools are pre-installed and this check will automatically pass!)*
+* **Authentication Verification**: Runs `gcloud config get-value account` to check if a Google Cloud account is actively authenticated. If not, it prompts the user to authenticate. *(Note: If using **Google Cloud Shell**, your user identity is already authenticated, but you still need to run `gcloud auth application-default login` in the shell beforehand to authorize Application Default Credentials (ADC) for Terraform).*
+
 
 ### 2. Interactive Configuration
 To provide a smooth user experience, the script prompts for configuration details while offering sensible defaults:
@@ -104,7 +105,8 @@ adk deploy agent_engine \
   - **Stage 1**: Checks the pipeline's command exit code using `${PIPESTATUS[0]}`.
   - **Stage 2**: Scans the captured log for failure keywords (e.g., `"Deploy failed"`, `"Failed to deploy"`) and verifies the presence of the required `"reasoningEngines"` resource ID.
   If any check fails, the script aborts immediately with exit code 1, preventing the success message from displaying.
-* **Outputs**: Upon successful deployment, the agent is registered as a Reasoning Engine in the specified region, outputting its unique **Reasoning Engine Resource ID** (e.g., `projects/<PROJECT_NUMBER>/locations/<REGION>/reasoningEngines/<ENGINE_ID>`).
+* **Outputs & UX Integration**: Upon successful deployment, the agent is registered as a Reasoning Engine. The script automatically parses the captured `deploy_output.log` file using `grep` to extract the unique **Reasoning Engine Resource ID** (e.g., `projects/<PROJECT_NUMBER>/locations/<REGION>/reasoningEngines/<ENGINE_ID>`). It then prints this ID directly in the final success walkthrough, allowing you to easily Copy & Paste it into the Gemini Enterprise Admin Console without scrolling up to search for it.
+
 
 
 ---

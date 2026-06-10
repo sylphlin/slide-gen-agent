@@ -126,10 +126,10 @@ slide-gen-agent/
 
 ### 🔹 방법 1: 범용 스킬 (`SKILL.md`) — 플랫폼 독립적
 코드 호스팅이 필요 없는, 순전히 프롬프트/가이드라인 기반의 설치 방법입니다.
-* **사용 사례**: Agent Skills를 지원하고, 샌드박스화된 코드 실행 환경을 제공하며, 텍스트-이미지 생성 기능을 갖춘 LLM 시스템(예: Antigravity, Codex).
+* **사용 사례**: Agent Skills를 지원하고, 샌드박스화된 코드 실행 환경을 제공하며, 텍스트-이미지 생성 기능을 갖춘 Agent Platform(예: Antigravity, Codex).
 * **설치 방법**:
-  1. [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md)의 내용을 사용 중인 LLM 어시스턴트의 사용자 지정 시스템 지침이나 시스템 프롬프트로 가져오거나 복사하세요.
-  2. `skills/slide-gen-agent/templates/` 디렉터리에 있는 Markdown 파일들을 어시스턴트가 참고할 예시로 활용하세요.
+  1. `skills/slide-gen-agent/` 디렉터리 전체를 사용 중인 Agent Platform의 skills 폴더로 복사하십시오. 이렇게 하면 플랫폼이 핵심 플레이북(`SKILL.md`), `assets/` 안의 정적 템플릿, 그리고 `scripts/` 안의 커스텀 실행 스크립트(예: PPTX 및 PDF 컴파일러)에 접근할 수 있게 됩니다.
+  2. 사용 중인 Agent Platform에서 skill을 등록하고 활성화하십시오.
 
 ---
 
@@ -138,26 +138,35 @@ slide-gen-agent/
 
 ---
 
-#### 옵션 1: 원클릭 설치 (One-Click Installation)
+#### 옵션 1: 원클릭 설치 (One-Click Installation) (권장)
 **Terraform**과 이와 동반되는 **오케스트레이션 스크립트** (`deploy.sh`)를 사용하는 자동화된 프로덕션급 배포 도구를 제공합니다. 이 스크립트는 API 활성화, Google Drive 위임 서비스 계정 생성, GCS 세션 버킷 프로비저닝, 복잡한 IAM 역할 바인딩 설정, Python 가상 환경 구성, Vertex AI 에이전트 등록 등을 완전히 자동화합니다.
 
 > [!NOTE]
 > 이 스크립트의 사전 요구 사항, 대화형 구성 및 실행 단계에 대한 자세한 단계별 설명은 [Deployment Script Details (영어)](deploy_details.md) 가이드를 참조하세요.
 
 ##### 1. 사전 요구 사항
-로컬 컴퓨터에 다음이 설치되어 있는지 확인하세요:
-- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
-- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+**[Google Cloud Shell](https://shell.cloud.google.com)**에서 직접 배포하는 것을 **강력히 권장**합니다. 브라우저에서 실행되는 무료 사전 구성 환경으로, 필요한 모든 도구가 사전 설치되어 있습니다.
 
-Google Cloud에 인증되어 있는지 확인하세요:
-```bash
-gcloud auth login
-gcloud auth application-default login
-```
+* **Google Cloud Shell을 사용하는 경우 (권장)**:
+  - 모든 도구(`gcloud` 및 `terraform`)가 사전 설치되어 있습니다.
+  - 애플리케이션 기본 자격 증명(ADC)만 인증하면 됩니다:
+    ```bash
+    gcloud auth application-default login
+    ```
+
+* **로컬 컴퓨터를 사용하는 경우**:
+  - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) 및 [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)를 수동으로 설치해야 합니다.
+  - gcloud CLI와 애플리케이션 기본 자격 증명(ADC)을 모두 인증해야 합니다:
+    ```bash
+    gcloud auth login
+    gcloud auth application-default login
+    ```
 
 ##### 2. 배포 실행
-리포지토리 루트에서 오케스트레이터 스크립트를 실행합니다:
+터미널(또는 Google Cloud Shell)을 열고 다음 명령어를 실행하여 리포지토리를 복제하고 대화형 배포 스크립트를 실행합니다:
 ```bash
+git clone https://github.com/sylphlin/slide-gen-agent
+cd slide-gen-agent
 ./deploy.sh
 ```
 
@@ -191,6 +200,9 @@ gcloud auth application-default login
 ---
 
 #### 옵션 2: 수동 설치 (Manual Installation)
+
+> [!IMPORTANT]
+> 이미 **옵션 1: 원클릭 설치 (One-Click Installation) (권장)**을 사용하여 배포를 완료한 경우, 이 수동 설치 섹션은 완전히 건너뛰어도 됩니다.
 
 ##### 파트 A — 일회성 프로젝트 설정
 GCP 프로젝트마다 한 번만 수행하면 됩니다. 이후 재설치나 재배포 시에는 이 단계들을 반복할 필요가 없습니다.
