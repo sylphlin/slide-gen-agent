@@ -71,6 +71,66 @@ try:
 except Exception as e:
     print(f"Failed to monkey-patch VertexAiSessionService: {e}")
 
+# Monkey-patch GoogleLlm to handle 429 ResourceExhaustedError resiliently
+try:
+    import inspect
+    import asyncio
+    import time
+    from google.adk.models.google_llm import GoogleLlm
+    
+    orig_async = GoogleLlm.generate_content_async
+    
+    async def patched_async(*args, **kwargs):
+        max_retries = 5
+        base_delay = 2.0
+        for attempt in range(max_retries):
+            try:
+                res = orig_async(*args, **kwargs)
+                if inspect.isasyncgen(res) or hasattr(res, '__anext__'):
+                    async for chunk in res:
+                        yield chunk
+                    return
+                else:
+                    yield await res
+                    return
+            except Exception as e:
+                err_msg = str(e).lower()
+                is_429 = "429" in err_msg or "resource_exhausted" in err_msg or "resource exhausted" in err_msg
+                
+                if is_429 and attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    print(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    await asyncio.sleep(delay)
+                else:
+                    raise e
+                    
+    GoogleLlm.generate_content_async = patched_async
+    
+    orig_sync = GoogleLlm.generate_content
+    
+    def patched_sync(*args, **kwargs):
+        max_retries = 5
+        base_delay = 2.0
+        for attempt in range(max_retries):
+            try:
+                return orig_sync(*args, **kwargs)
+            except Exception as e:
+                err_msg = str(e).lower()
+                is_429 = "429" in err_msg or "resource_exhausted" in err_msg or "resource exhausted" in err_msg
+                
+                if is_429 and attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    print(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    time.sleep(delay)
+                else:
+                    raise e
+                    
+    GoogleLlm.generate_content = patched_sync
+    print("Successfully monkey-patched GoogleLlm with automatic 429 retry logic.")
+except Exception as e:
+    print(f"Failed to monkey-patch GoogleLlm: {e}")
+
+
 
 def _load_asset(name: str) -> str:
     """Load a template file from the assets/ directory next to this file."""
