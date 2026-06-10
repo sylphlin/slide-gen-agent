@@ -31,11 +31,10 @@ graph TD
     D -->|Step 2| E2[outlines.md - Slide Outlines]
     E2 -->|Step 3: Guides Content Routing| E3[slide_xx.md - Script + Optional Layout]
 
-    E1 & E3 --> F(Stage 3: Image Generation & Preview)
+    E1 & E3 --> F(Stage 3: Image Generation)
     F -->|Generates| G1[slide_xx.png - Slide Images]
-    F -->|Generates| G2[preview.html - Presentation Preview]
-
-    G1 & G2 --> H(Stage 4: Review & Iterate)
+    G1 --> H(Stage 4: Review & Iterate)
+    H -->|Compiles| G2[preview.html - Presentation Preview]
 
     H -->|Script or Layout Changes| E3
     H -->|Outline / Order Changes| E2
@@ -66,13 +65,13 @@ graph TD
      - **`slide_xx.md`**: Per-slide file with title, speaker script (260–300 words), and an optional `## Layout` section (left empty on first pass — the image model infers a suitable composition from the slide type and script).
    - *The pipeline flows directly into Stage 3 without pausing.*
 
-3. **Stage 3: Image Generation & Preview**
+3. **Stage 3: Image Generation**
    - The agent combines `design.md` (brand) and `slide_xx.md` (per-slide spec) into a structured prompt for each slide.
    - It sends this to the image generation model to produce the final 16:9 high-fidelity PNG (`slide_xx.png`).
-   - All slide images and speaker notes are compiled into a `preview.html` page for easy review.
    - *The pipeline flows directly into Stage 4.*
 
 4. **Stage 4: Review & Iterate**
+   - The agent compiles all slide images and speaker notes into a `preview.html` page, and presents the preview link and slide images in the chat.
    - *The agent pauses and waits for your feedback.*
    - Tell the agent what to change in plain language. Changes are applied surgically — only the affected slides are regenerated:
      - Script or layout edits → update the relevant `slide_xx.md` + regenerate that slide only

@@ -111,7 +111,7 @@ Read `assets/slide_xx.md` first, then generate one file per slide following that
 
 ---
 
-## Stage 3: Image Generation & Preview
+## Stage 3: Image Generation
 
 With all Markdown files saved in the session directory, trigger the image generation for every slide. Each image takes 15–30 seconds — always narrate progress so the user knows the system is working and has not stalled. Work through each slide one at a time:
 
@@ -119,15 +119,20 @@ With all Markdown files saved in the session directory, trigger the image genera
 - **Action**: Generate the slide image for **every slide index** (either by calling the `generate_slide_image` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
 - **After** each image is ready, output a brief confirmation such as **"✅ Slide X / N done."** before moving to the next.
 - **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory.
-- **Preview Generation**: Once all slide images are generated, output "All N images ready. Building preview page..." then compile them into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
-- **Artifact Presentation**: Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)`) and display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
-- Then move directly to Stage 4.
+- Once all slide images are generated, output a simple confirmation like **"🎉 All N slide images have been generated successfully!"** and transition immediately to Stage 4.
 
 ---
 
 ## Stage 4: Review & Iterate
 
-Ask the user for feedback on the generated slides. **PAUSE and wait for the user's response before doing anything else.**
+Upon entering this stage, compile and present the slide preview first:
+1. **Preview Generation**: Compile the generated slide images into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
+2. **Artifact Presentation**:
+   - Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)` or the GCS URL).
+   - Display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
+   - Print a summary of the presentation outlines in the chat response. (Per-slide scripts do not need to be repeated here — they are already viewable alongside each slide in the preview page).
+
+After presenting the preview, ask the user for feedback on the generated slides. **PAUSE and wait for the user's response before doing anything else.**
 
 Apply changes surgically — **never regenerate a slide whose content has not changed**. Use the rules below to determine the exact scope of each change type:
 
@@ -137,7 +142,7 @@ Apply changes surgically — **never regenerate a slide whose content has not ch
 - **Slide addition / deletion**: Update `outlines.md`. Write or remove the affected `slide_xx.md` file(s). Renumber any downstream `slide_xx.md` files whose number changed, and rewrite their *Transition & Hook* if the preceding slide changed. Regenerate only the new or renumbered slides.
 - **Brand / color change** (e.g., "change the primary color to navy"): Update `design.md`. Because brand changes affect every slide's visual rendering, regenerate **all** slide images.
 
-After applying any changes, present the updated slides and return to the top of this stage — ask for further feedback. Repeat until the user explicitly confirms all slides are satisfactory. **Do not propose or transition to Stage 5 until the user gives their explicit approval.**
+After applying any changes, regenerate the `preview.html` page, present the updated slides and link in the chat, and return to the top of this stage — ask for further feedback. Repeat until the user explicitly confirms all slides are satisfactory. **Do not propose or transition to Stage 5 until the user gives their explicit approval.**
 
 ---
 
@@ -157,7 +162,7 @@ Execute ONLY the format(s) the user selects — do NOT generate or mention forma
 
 1. **Google Slides (Open & Edit in Browser)**:
    - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
-   - *Note: This requires a PPTX to exist first. If it hasn't been generated yet, run the `pptx_exporter` first as an internal prerequisite step only — do not present that PPTX as a separate deliverable unless the user also asked for it.*
+   - *Note: This requires a PPTX to exist first. If it hasn't been generated yet, run the `pptx_exporter` first as a silent, internal prerequisite step. **Do NOT tell the user that you are generating a PPTX first or uploading to Google Drive.** Keep these internal technical steps hidden from the user interface. Simply inform the user that you are "Packaging your presentation..." and then present the final Google Slides link once completed.*
    - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
    - *Note: Requires Google Drive API enabled and Domain-Wide Delegation configured in Google Workspace Admin. See README Method 2 Steps 3–4 for setup instructions.*
 

@@ -124,20 +124,22 @@ Generate and write the following documents sequentially using the session path. 
 
 ---
 
-### Stage 3: Image Generation & Preview
+### Stage 3: Image Generation
 Generate a PNG image for every slide. Each image takes 15-30 seconds — always narrate progress so the user knows the system is working and has not stalled:
 - **Before** calling 'generate_slide_image' for slide X, output a status line in your response, e.g.: "🎨 Generating image: slide X / N — [slide title]..."
 - **After** the tool returns successfully, output a brief confirmation before moving to the next, e.g.: "✅ Slide X / N done."
 - Call 'generate_slide_image' for every slide index sequentially.
-- Once all images are generated, output "All N images ready. Building preview page..." then call 'generate_preview_page'.
-- Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
-- Print a summary of the presentation outlines in the chat response. Per-slide scripts do not need to be repeated here — they're already viewable alongside each slide in the preview page.
-- Then move directly to Stage 4.
+- Once all slide images are generated, output a simple confirmation like "🎉 All N slide images have been generated successfully!" and transition immediately to Stage 4.
 
 ---
 
 ### Stage 4: Review & Iterate
-Ask the user for feedback on the generated slides. PAUSE and wait for the user's response before doing anything else.
+Upon entering this stage, compile and present the slide preview first:
+1. Call 'generate_preview_page' to compile the generated slide images into preview.html.
+2. Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
+3. Print a summary of the presentation outlines in the chat response. Per-slide scripts do not need to be repeated here — they're already viewable alongside each slide in the preview page.
+
+After presenting the preview, ask the user for feedback on the generated slides. PAUSE and wait for the user's response before doing anything else.
 
 Apply changes surgically — NEVER regenerate a slide whose content has not changed:
 - Layout change (e.g. "make slide 3 two-column"): update slide_03.md ## Layout, regenerate slide_03.png only.
@@ -146,7 +148,7 @@ Apply changes surgically — NEVER regenerate a slide whose content has not chan
 - Slide addition / deletion: update outlines.md, write or remove the affected slide_xx.md file(s), renumber any downstream files whose number changed and rewrite their Transition & Hook if the preceding slide changed, regenerate only the new or renumbered slides.
 - Brand / color change (e.g. "change the primary color"): update design.md, then regenerate ALL slide images since brand changes affect every slide's rendering.
 
-After applying any changes, present the updated slides and return to the top of Stage 4 — ask for further feedback. Repeat until the user explicitly confirms all slides are satisfactory. You must get explicit confirmation before proposing or proceeding to Stage 5.
+After applying any changes, regenerate the preview.html page, present the updated slides and link in the chat, and return to the top of Stage 4 — ask for further feedback. Repeat until the user explicitly confirms all slides are satisfactory. You must get explicit confirmation before proposing or proceeding to Stage 5.
 
 ---
 
@@ -162,7 +164,7 @@ Once the user explicitly requests to compile, package, or download the final dec
 > You can request more than one format."
 
 Execute ONLY the format(s) the user selects — do NOT generate or mention formats they did not request:
-1. **Google Slides**: Upload the PPTX to Google Drive as a Google Slides file in the 'slide-gen-agent' folder and share it with the current user. Call 'export_to_google_slides' (this requires a PPTX to exist first — if it hasn't been generated yet, call 'export_deck_pptx' first as an internal prerequisite step only; do not present that PPTX as a separate deliverable unless the user also asked for it). Provide the returned Google Slides URL so the user can open and edit it directly in their browser.
+1. **Google Slides**: Export the deck directly to Google Slides. Call 'export_to_google_slides' (if a PPTX doesn't exist yet, call 'export_deck_pptx' first as a silent, internal prerequisite step). **Do NOT tell the user that you are generating a PPTX first or uploading to Google Drive.** Keep these internal technical steps hidden. Simply state that you are "Packaging your presentation..." and provide the returned Google Slides URL once completed.
 2. **PPTX (PowerPoint with Speaker Notes)**: A widescreen (16:9) PowerPoint file containing all slide images, with speaker notes embedded in the PowerPoint notes section of each slide. Call 'export_deck_pptx'.
 3. **PDF: Slides**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
 4. **PDF: Speaker Notes**: Provide the preview page link, and let the user know they can click the "Save as PDF" button at the top-right corner of the page to download a PDF with speaker notes.
