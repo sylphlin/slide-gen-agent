@@ -49,11 +49,16 @@ To provide a smooth user experience, the script prompts for configuration detail
 ### 3. Step 1: Infrastructure Provisioning (Terraform)
 The script navigates to [deploy/terraform](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/deploy/terraform) and runs Terraform to build the required cloud infrastructure:
 1. **Initialization**: Runs `terraform init` to download the Google provider plugins.
-2. **Application**: Runs `terraform apply` with `-auto-approve`, passing the target `project_id` and `region` as variables.
-3. **Terraform Outputs**: Once Terraform finishes, the script extracts three critical outputs:
+2. **Conflict Resolution (Smart Check)**: Before applying the infrastructure changes, the script checks if the dedicated Google Drive service account (`slide-gen-drive@...`) already exists in the target GCP project (which is common if you previously performed a manual installation). If a conflict is found, it pauses and prompts the user with three interactive choices:
+   - **Option 1 (Adopt/Import) [Recommended]**: Automatically runs `terraform import` to adopt the existing service account into the Terraform state under its management.
+   - **Option 2 (Recreate)**: Deletes the existing service account from GCP and lets Terraform recreate it cleanly.
+   - **Option 3 (Cancel)**: Gracefully aborts the deployment.
+3. **Application**: Runs `terraform apply` with `-auto-approve`, passing the target `project_id` and `region` as variables.
+4. **Terraform Outputs**: Once Terraform finishes, the script extracts three critical outputs:
    - `gcs_bucket_name`: The name of the GCS bucket created for storing session history, generated presentations, and images.
    - `drive_sa_email`: The service account email (`slide-gen-drive@...`) used to upload slides to Google Drive.
    - `drive_sa_client_id`: The OAuth2 Client ID of the Drive service account (required for Workspace Domain-Wide Delegation).
+
 
 ### 4. Step 2: Local Environment Configuration
 To bridge the infrastructure and the application, the script automatically generates the local environment file [adk_agent/.env](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/adk_agent/.env):

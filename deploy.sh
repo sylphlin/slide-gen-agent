@@ -69,10 +69,51 @@ echo "Step 1: Provisioning GCP Infrastructure with Terraform..."
 echo "================================================================="
 cd deploy/terraform
 terraform init
+
+# Smart Check: Detect if the service account already exists in GCP
+DRIVE_SA_EMAIL="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+echo "Checking if Service Account $DRIVE_SA_EMAIL already exists..."
+
+if gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
+    echo ""
+    echo "⚠️  Notice: Service Account '$DRIVE_SA_EMAIL' already exists in your GCP project."
+    echo "This usually happens if you previously configured a manual deployment."
+    echo ""
+    echo "How would you like to resolve this conflict?"
+    echo "1) [Recommended] Automatically import (adopt) the existing Service Account into Terraform"
+    echo "2) Automatically delete the existing Service Account from GCP and let Terraform recreate it"
+    echo "3) Cancel deployment"
+    echo ""
+    read -p "Enter your choice (1/2/3): " SA_CHOICE
+    
+    case "$SA_CHOICE" in
+        1)
+            echo "Importing existing Service Account into Terraform state..."
+            # Run terraform import. We use || true to prevent script crash if it's already imported
+            terraform import \
+              -var="project_id=$GOOGLE_CLOUD_PROJECT" \
+              -var="region=$REGION" \
+              google_service_account.drive_exporter \
+              "projects/${GOOGLE_CLOUD_PROJECT}/serviceAccounts/${DRIVE_SA_EMAIL}" || echo "Note: Proceeding with existing state."
+            ;;
+        2)
+            echo "Deleting existing Service Account from GCP..."
+            gcloud iam service-accounts delete "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLOUD_PROJECT" --quiet
+            echo "✅ Service Account deleted successfully."
+            ;;
+        *)
+            echo "Deployment cancelled."
+            exit 0
+            ;;
+    esac
+fi
+
+echo "Applying Terraform configuration..."
 terraform apply \
   -var="project_id=$GOOGLE_CLOUD_PROJECT" \
   -var="region=$REGION" \
   -auto-approve
+
 
 # Extract Terraform Outputs
 BUCKET_NAME=$(terraform output -raw gcs_bucket_name)
