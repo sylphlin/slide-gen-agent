@@ -108,7 +108,50 @@ if gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLO
     esac
 fi
 
+# Smart Check 2: Detect if the GCS Bucket already exists in GCP
+RESOLVED_BUCKET_NAME="slide-gen-sessions-${GOOGLE_CLOUD_PROJECT}"
+echo "Checking if GCS Bucket gs://$RESOLVED_BUCKET_NAME already exists..."
+
+if gcloud storage buckets describe "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
+    echo ""
+    echo "⚠️  Notice: GCS Bucket 'gs://$RESOLVED_BUCKET_NAME' already exists in your GCP project."
+    echo "This usually happens if you previously performed a manual installation."
+    echo ""
+    echo "How would you like to resolve this conflict?"
+    echo "1) [Recommended] Automatically import (adopt) the existing Bucket into Terraform"
+    echo "   (This preserves all your existing slide sessions and generated files!)"
+    echo "2) Automatically delete the existing Bucket from GCP and let Terraform recreate it"
+    echo "   ⚠️  WARNING: Option 2 will permanently delete all files and history inside the bucket!"
+    echo "3) Cancel deployment"
+    echo ""
+    read -p "Enter your choice (1/2/3): " BUCKET_CHOICE
+    
+    case "$BUCKET_CHOICE" in
+        1)
+            echo "Importing existing GCS Bucket into Terraform state..."
+            terraform import \
+              -var="project_id=$GOOGLE_CLOUD_PROJECT" \
+              -var="region=$REGION" \
+              google_storage_bucket.sessions \
+              "$RESOLVED_BUCKET_NAME" || echo "Note: Proceeding with existing bucket state."
+            ;;
+        2)
+            echo "Deleting existing GCS Bucket from GCP..."
+            # Delete objects first to ensure non-empty bucket deletion succeeds
+            gcloud storage rm -r "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" || true
+            # Delete the bucket
+            gcloud storage buckets delete "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" --quiet
+            echo "✅ GCS Bucket deleted successfully."
+            ;;
+        *)
+            echo "Deployment cancelled."
+            exit 0
+            ;;
+    esac
+fi
+
 echo "Applying Terraform configuration..."
+
 terraform apply \
   -var="project_id=$GOOGLE_CLOUD_PROJECT" \
   -var="region=$REGION" \
