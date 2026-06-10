@@ -98,7 +98,13 @@ adk deploy agent_engine \
 ```
 * **Packaging**: The ADK packages the Python code inside `adk_agent/`.
 * **Artifact Storage**: The GCS bucket (extracted from Terraform) is passed as the `--artifact_service_uri` to store session-specific metadata and output files.
-* **Deployment**: The agent is registered as a Reasoning Engine in the specified region. This outputs a unique **Reasoning Engine Resource ID** (e.g., `projects/<PROJECT_NUMBER>/locations/<REGION>/reasoningEngines/<ENGINE_ID>`).
+* **Deployment & Log-Streaming**: The script streams the deployment logs in real-time while capturing them to a temporary log file (`deploy_output.log`).
+* **Double-Check Error Handling**: To prevent false success reports due to CLI tools returning exit code 0 on internal cloud failures, the script performs a strict two-stage validation:
+  - **Stage 1**: Checks the pipeline's command exit code using `${PIPESTATUS[0]}`.
+  - **Stage 2**: Scans the captured log for failure keywords (e.g., `"Deploy failed"`, `"Failed to deploy"`) and verifies the presence of the required `"reasoningEngines"` resource ID.
+  If any check fails, the script aborts immediately with exit code 1, preventing the success message from displaying.
+* **Outputs**: Upon successful deployment, the agent is registered as a Reasoning Engine in the specified region, outputting its unique **Reasoning Engine Resource ID** (e.g., `projects/<PROJECT_NUMBER>/locations/<REGION>/reasoningEngines/<ENGINE_ID>`).
+
 
 ---
 

@@ -248,18 +248,35 @@ echo "================================================================="
 echo "Step 4: Deploying Slide Gen Agent to Vertex AI Agent Engine..."
 echo "================================================================="
 cd adk_agent
+# Stream the deployment logs in real-time while capturing them to a temp file
 adk deploy agent_engine \
   --project="$GOOGLE_CLOUD_PROJECT" \
   --region="$REGION" \
   --display_name="slide-gen-agent" \
   --artifact_service_uri="gs://$BUCKET_NAME" \
-  .
+  . 2>&1 | tee deploy_output.log
+
+# Capture the exit code of the adk deploy command (not the tee command)
+ADK_EXIT_CODE=${PIPESTATUS[0]}
+
+# Double-Check: Verify if the deployment was TRULY successful by scanning the logs
+if [ $ADK_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy_output.log || grep -q "Failed to deploy" deploy_output.log || ! grep -q "reasoningEngines" deploy_output.log; then
+    echo ""
+    echo "❌ Error: Slide Gen Agent deployment failed!"
+    echo "Please review the deployment logs printed above or check Cloud Build for more details."
+    rm -f deploy_output.log
+    exit 1
+fi
+
+# Clean up temporary log file on success
+rm -f deploy_output.log
 
 # Print Post-Deployment Walkthrough
 echo ""
 echo "================================================================="
 echo "🎉 Slide Gen Agent Deployed Successfully!"
 echo "================================================================="
+
 echo ""
 echo "Please complete the following two manual steps to activate:"
 echo ""
