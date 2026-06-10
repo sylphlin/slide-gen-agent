@@ -44,12 +44,14 @@ Once you have a clear picture, present the following to the user and **wait for 
 
 1. **Target audience & Expected goals** — reiterate the target audience and presentation goals confirmed in Stage 0. Suggest refinements or extensions if necessary.
 2. **Recommended slide count** — suggest a specific slide count. If the user provided a duration in Stage 0, automatically convert it to a recommended slide count based on a standard delivery rate of **1.5 to 2 minutes per slide** (e.g., a 15-minute presentation translates to 8–10 slides).
-3. **Visual Theme Proposal** — Propose a visual style that matches the content. You must either select one of the **4 Predefined Visual Themes** or **dynamically derive a custom theme** based on the extracted Visual DNA:
-   - **Theme A: Minimalist Line Art (极简线条风)**: Best for hard tech, developer docs, data-heavy, or academic decks. (Cold, precise, abstract outlines, strokes only, no solid fills).
-   - **Theme B: Modern Flat Geometric (几何扁平风)**: Best for SaaS products, corporate pitch decks, consulting reports, or marketing plans. (Professional, structured, bold flat colors, solid fills only, no outlines).
-   - **Theme C: Premium Photography (高质感摄影风)**: Best for product launches, emotional keynotes, storytelling, or human-centric brands. (High-impact studio photography, minimalist layouts).
-   - **Theme D: Warm Hand-Drawn (温暖手绘风)**: Best for wellness, lifestyle, organic products, creative agencies, or education. (Cozy, human, organic sketchy lines, soft pastels, wobbly textures).
-   - **Custom Coordinated Theme**: If the content requires a highly specific style (e.g., "Cyberpunk", "Retro Pixel"), propose a custom theme and explain how you will dynamically align the icons and illustrations to this style using the coordination protocol.
+3. **Visual Theme Proposal** — Propose the most suitable visual style that matches the content. **You must also present a clear menu of all four available predefined styles and the custom option** so the user knows exactly what they can switch to:
+   - **Recommended Theme**: [Name of proposed theme] — [1-sentence explanation of why it suits the content's Visual DNA].
+   - **Alternative Themes Available**:
+     - **Google Material Design** (Theme A): Clean, friendly card-based layouts with official Material Symbols (Light Mode default — best for general business/education).
+     - **3D Glassmorphism & Metallic** (Theme B): Premium, futuristic 3D renders using polished titanium and frosted glass. Uses 3D spatial and volumetric structures (like 3D pyramids and pipelines) to represent complex information relationships (Dark Mode default — best for tech/fintech).
+     - **Realistic Keynote** (Theme C): Cinematic, ultra-minimalist launch style using highly realistic 2D imagery, skeuomorphic textures, or studio macro photography on a flat plane (Dark Mode default — best for product launches/keynotes).
+     - **Warm Hand-Drawn** (Theme D): Cozy, organic pencil/crayon sketches with warm paper textures (Light Mode default — best for wellness/lifestyle/creative).
+     *Or request a **Custom Coordinated Theme** (e.g., Cyberpunk, Retro Pixel).*
 4. **Color palette** — suggest a primary color, secondary color, and background color. Provide hex codes. Explain briefly why these suit the content and visual theme.
 
 Keep the proposal concise — a short paragraph or a 4-item list is enough. The user may accept as-is, tweak individual items, or ask for alternatives. If the user requests any modifications, you must update the proposal accordingly and present the revised version for their approval. Repeat this verification loop until the user explicitly gives full confirmation. Do not proceed to Stage 2 until the proposal is fully confirmed.
@@ -67,7 +69,8 @@ Read `assets/design.md` first, then generate following that exact structure — 
 
 **Visual Alignment & SSoT Lock**:
 You must write the exact visual specifications of the agreed theme (Theme A, B, C, D, or your dynamically coordinated custom theme) into `design.md`:
-* **Icon System & Color Layout Rules**: Define the icon style, stroke weight, and size. You must write the **Icon Color Layout Rules** (Category Contrast, Sequence Progression, Focus & Accentuation) into the file, instructing downstream tools on how to distribute colors across slide elements professionally.
+* **Semantic Alignment Rule (語意對齊與真實隱喻原則)**: Instruct that every generated illustration or image must serve as a direct, meaningful representation of the slide's core message (e.g. a 3D glass lock for security, a real photo of a key for access). **Strictly forbid meaningless abstract shapes or placeholders.**
+* **Icon System & CSS Containers**: Define the icon style and size. For Theme B (3D Glassmorphism), you must write the **Glassmorphic Circle Container** CSS rules (15% white opacity, 1px white border, backdrop blur) to seamlessly embed flat icons into 3D space. You must also write the **Icon Color Layout Rules** (Category Contrast, Sequence Progression, Focus & Accentuation) into the file, instructing downstream tools on how to distribute colors across slide elements professionally.
 * **Visual Style & Themes**: Copy the exact description and the **Imagen Keyphrase** for the selected theme (or write your derived custom coordinate prompts). This ensures the image generation model has a clear, highly reliable Single Source of Truth (SSoT) to generate perfectly matched icons and illustrations across all slides, preventing style drift.
 - **Progress**: Output a status line before starting, e.g. **"🎨 Designing the overall visual style and color palette..."**, and a brief confirmation after saving, e.g. **"✅ Visual style & color palette defined."** Full file contents do not need to be pasted into the chat.
 - **Action**: Save the brand system to `design.md` (by calling the `save_design_spec` tool with the `sessionPath`, or writing `design.md` directly in the session workspace folder).

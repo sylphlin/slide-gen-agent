@@ -93,28 +93,31 @@ These are structural properties of the canvas itself — they are decided **once
 
 To ensure that the icons and other graphic elements (illustrations, backgrounds, characters) feel like they were designed together by a single professional artist, the deck must adhere strictly to one of the four **Visual Themes** below. The choice is made once per deck in Stage 1 and must be enforced globally.
 
-### 🎨 Theme A: Minimalist Line Art (极简线条风) — Best for Tech, Academic, Data
-* **Aesthetic**: Pure outline, extremely light, airy, and precise. High technical/rational feel.
-* **Icons**: Mono-line outlines, exactly 2 px stroke, no fill, transparent background, single color.
-* **Illustrations**: Minimalist line-art illustrations sharing the same 2 px stroke weight. No large solid color fills; shapes are mostly transparent, using tiny solid shapes (like a small circle or line) only as subtle accents.
-* **Imagen Keyphrase**: `Minimalist 2px mono-line outline illustration, wendy-vector style, transparent shapes, hollow design, light airy aesthetic, no solid fills, transparent background`
+### 🎨 Theme A: Google Material Design (現代谷歌物性風) — Best for General Business, SaaS, Corporate, Education
+* **Aesthetic**: Clean, friendly, highly structured card-based layouts. Features generous white space, thin `#E8EAED` divider lines, and card containers with a **large rounded corner (`border-radius: 24px`)** and a very subtle shadow.
+* **Icons**: Official **Material Symbols (Outlined)** style — clean, geometric, friendly outline icons with rounded line caps and joins, exactly 2 px stroke, no fill.
+* **Illustrations & Imagery**: Friendly flat vector character art and organic conceptual illustrations (reminiscent of Google Doodles), primarily using the Google brand 4-color palette. 
+* **Semantic Metaphor Rule**: All illustrations must depict concrete, recognizable metaphors representing the slide's core message (e.g. a rocket for growth, people collaborating for teamwork). No generic decorations.
+* **Imagen Keyphrase**: `Official Google Material 3 illustration, friendly flat vector character art, Google brand 4-color palette, smooth organic curves, clean geometric shapes, corporate vector art, soft drop shadows, premium high-end tech corporate style, transparent background`
 
-### 🎨 Theme B: Modern Flat Geometric (几何扁平风) — Best for SaaS, Business, Marketing
-* **Aesthetic**: Solid geometric shapes, bold colors, professional, and structured. No outlines.
-* **Icons**: Flat-filled geometric shapes, borderless, single color or simple duotone.
-* **Illustrations**: Flat-style vector illustrations constructed from solid color blocks and geometric shapes. There are absolutely no stroke lines or outlines.
-* **Imagen Keyphrase**: `Modern flat vector illustration, geometric shapes, solid color blocks, no outlines, no border lines, bold corporate flat design, transparent background`
+### 🎨 Theme B: 3D Glassmorphism & Metallic (3D 玻璃金屬微光風) — Best for Tech Startups, Cloud Infrastructure, Fintech, Serious Business
+* **Aesthetic**: Ultra-premium, futuristic 3D rendering with polished titanium/chrome metals, highly refractive frosted glass (glassmorphism), precise geometric bevels, dramatic studio side-lighting, and deep obsidian backgrounds with a soft radial spotlight glow. **Its primary purpose is to use 3D spatial and volumetric structures (e.g. 3D pyramids, layered stacks, 3D pipelines) to visualize complex information relationships.**
+* **Icons (Glassmorphic CSS Containers)**: To prevent visual clash with the 3D main illustrations, flat 2D icons must be enclosed in a **Glassmorphic Circle Container**: a circular white container with 15% opacity, 1px white border, `backdrop-filter: blur(8px)` (frosted glass blur), and a soft drop shadow. This embeds flat icons into the 3D space seamlessly.
+* **Illustrations & Imagery**: Exquisitely rendered 3D volumetric structures and dimensional diagrams of concrete, recognizable concepts (e.g. a 3D pyramid for hierarchy, a 3D pipeline for data flow, or a polished chrome lock with a glowing core for security). **Strictly forbid meaningless abstract geometric shapes (like floating cubes/spheres with no semantic meaning).**
+* **Imagen Keyphrase**: `High-end 3D render, minimalist geometric abstraction, premium corporate tech style, polished titanium and highly refractive frosted glass materials, sharp mathematical edges, precise studio lighting, dramatic metallic reflections, clean deep charcoal background, professional enterprise IT aesthetic, soft drop shadows, sharp focus on exquisite textures`
 
-### 🎨 Theme C: Premium Photography (高质感摄影风) — Best for Keynotes, Storytelling, Hardware
-* **Aesthetic**: Real-life, high-impact, authentic, and emotionally engaging.
-* **Icons**: Thin, elegant line-art icons (matching Theme A) or glassy semi-transparent shapes.
-* **Illustrations/Imagery**: High-contrast, clean studio photography with solid or extremely minimal backgrounds. Avoid cluttered stock photos. Focus on human emotion, physical products, or clean metaphors.
-* **Imagen Keyphrase**: `High-end professional studio photography, clean minimalist background, bright high-contrast lighting, premium corporate editorial style, sharp focus`
+### 🎨 Theme C: Realistic Keynote (發表會寫實風) — Best for Product Launches, Keynotes, Executive Pitches
+* **Aesthetic**: Ultra-minimalist Apple Keynote style. Absolute black (`#000000`) or charcoal background with a very soft, large-scale radial spotlight glow in the center. Giant, bold, clean Sans-Serif headers in pure white (`#FFFFFF`) with small gray (`#8E8E93`) subtitles, maximizing empty space and cinematic impact. No card containers, no lines. **Its primary purpose is to use highly realistic 2D imagery (hyper-realistic 2D illustrations, skeuomorphic graphics with physical textures, or studio macro photography) on a flat plane.**
+* **Icons**: Elegant, ultra-thin outline icons (exactly 1.5 px stroke weight) in Pure White, or glassy translucent shapes.
+* **Illustrations & Imagery**: High-contrast, flat but hyper-realistic 2D imagery (skeuomorphic 2D graphics with rich physical textures, or high-end studio macro photography). Focuses on a single, high-impact photo of a physical product or a clean, premium visual metaphor with shallow depth of field, sharp focus, and dramatic side-lighting.
+* **Semantic Metaphor Rule**: The photo must serve as a direct, high-impact representation of the slide's core subject (e.g. an exquisite metallic key for access, a real book for knowledge). No generic stock photography.
+* **Imagen Keyphrase**: `Premium studio product photography in Apple Keynote style, hyper-realistic macro shot, dramatic cinematic side lighting, deep black background with a subtle colorful center radial glow, metallic and glass reflections, shallow depth of field, sharp focus on exquisite details, professional editorial keynote slide visual`
 
-### 🎨 Theme D: Warm Hand-Drawn (温暖手绘风) — Best for Education, Lifestyle, Wellness, Creative
-* **Aesthetic**: Cozy, organic, sketchy, human, and inviting. Wobbly lines and soft textures.
-* **Icons**: Hand-drawn sketchy outline icons with organic, wobbly lines, subtle pencil/crayon textures, and soft colors.
-* **Illustrations**: Organic hand-drawn sketchy illustrations with wobbly outlines, soft pastel color palettes, loose color fills (sometimes slightly overflowing the borders for a handmade feel), and cozy textures.
+### 🎨 Theme D: Warm Hand-Drawn (溫溫暖手繪風) — Best for Education, Lifestyle, Wellness, Creative Branding
+* **Aesthetic**: Cozy, organic, sketching-paper texture (warm cream `#FDFBF7`), human-centered, and inviting. Uses soft, wobbly lines and gentle pastel colors. **Never use pure black for text; use Deep Navy Slate (`#3D405B`) for a gentle pencil/sketch feel.**
+* **Icons**: Hand-drawn sketchy outline icons with wobbly lines, subtle pencil/crayon textures, and soft color fills.
+* **Illustrations & Imagery**: Charming hand-drawn sketchy illustrations with wobbly outlines, soft pastel color palettes, and loose color fills (sometimes slightly overflowing the borders for an authentic handmade feel).
+* **Semantic Metaphor Rule**: Illustrations must represent the slide's topic with cozy, recognizable sketches (e.g., a hand-drawn plant growing for development, a cozy sketched coffee cup for workplace culture).
 * **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, transparent background`
 
 ---
@@ -124,5 +127,6 @@ To ensure that the icons and other graphic elements (illustrations, backgrounds,
 If the user requests a custom style not covered by the four themes above (e.g., "Cyberpunk Neon" or "Retro 8-Bit Pixel"), the Agent must not force them into a preset. Instead, dynamically derive a coordinated visual spec using the following rules:
 1. **Analyze Style DNA**: Extract the core visual attributes of the requested style (e.g., Cyberpunk -> dark background, neon glow, cyan/magenta colors, futuristic shapes).
 2. **Co-Design Icons & Illustrations**: Write matching prompt templates for both. If the illustrations use a neon glow, the icons *must* also be described as having a matching neon glow. If the illustrations are pixelated, the icons *must* be pixelated.
-3. **Write to SSoT**: Document this derived theme in `design.md` before generating slides, locking the stroke, texture, and color parameters for both icons and images globally.
+3. **Enforce Semantic Alignment**: Apply the **Semantic Alignment Rule** to the custom style — every generated illustration/image must represent a concrete, meaningful metaphor of the slide's topic.
+4. **Write to SSoT**: Document this derived theme in `design.md` before generating slides, locking the stroke, texture, and color parameters for both icons and images globally.
 

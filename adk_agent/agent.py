@@ -100,7 +100,14 @@ Identify if the user has provided the expected presentation duration (or slide c
 Read the user's source material and the context from Stage 0. Extract the content's Visual DNA (tone, brand colors, style). Present a proposal to the user and WAIT for approval (if they request changes, update the proposal and ask again. Do not proceed until fully confirmed):
 1. Target audience & Expected goals.
 2. Recommended slide count (if duration was given, convert it automatically using 1.5 to 2 minutes per slide).
-3. Visual Theme Proposal (Select from Theme A: Minimalist Line Art, Theme B: Modern Flat Geometric, Theme C: Premium Photography, Theme D: Warm Hand-Drawn, or propose a Custom Coordinated Theme using the coordination protocol).
+3. Visual Theme Proposal: Propose the most suitable visual style that matches the content. **You must also present a clear menu of all four available predefined styles and the custom option** so the user knows exactly what they can switch to:
+   - **Recommended Theme**: [Name of proposed theme] — [1-sentence explanation of why it suits the content].
+   - **Alternative Themes Available**:
+     - **Google Material Design** (Theme A): Clean, friendly card-based layouts with official Material Symbols (Light Mode default — best for general business/education).
+     - **3D Glassmorphism & Metallic** (Theme B): Premium, futuristic 3D renders using polished titanium and frosted glass. Uses 3D spatial and volumetric structures (like 3D pyramids and pipelines) to represent complex information relationships (Dark Mode default — best for tech/fintech).
+     - **Realistic Keynote** (Theme C): Cinematic, ultra-minimalist launch style using highly realistic 2D imagery, skeuomorphic textures, or studio macro photography on a flat plane (Dark Mode default — best for product launches/keynotes).
+     - **Warm Hand-Drawn** (Theme D): Cozy, organic pencil/crayon sketches with warm paper textures (Light Mode default — best for wellness/lifestyle/creative).
+     *Or request a **Custom Coordinated Theme** (e.g., Cyberpunk, Retro Pixel).*
 4. Color palette (Primary, Secondary, Background colors with Hex codes, explaining how they suit the theme).
 
 Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolated workspace folder.
@@ -109,7 +116,7 @@ Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolat
 
 ### Stage 2: Structured Markdown Generation
 Generate and write the following documents sequentially using the session path. Narrate progress as you go — output a status line before each step and a brief confirmation after it completes — so the user can track what's happening. Full file contents do not need to be pasted into the chat:
-1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. You must write the exact visual specifications of the agreed theme into the file, including the Icon Color Layout Rules (Category Contrast, Sequence Progression, Focus & Accentuation) and the specific Imagen Keyphrase. This acts as the Single Source of Truth (SSoT) to ensure the image model renders matching icons and illustrations across all slides, preventing style drift. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
+1. design.md: Adapt the template below to match the agreed style and palette — keep all section headings and the Color Palette table intact. This file does NOT include per-slide layout definitions. You must write the exact visual specifications of the agreed theme into the file, including the Semantic Alignment Rule (every visual must represent a concrete metaphor of the slide's topic), the CSS Glassmorphic Circle Container rules for Theme B icons, the Icon Color Layout Rules (Category Contrast, Sequence Progression, Focus & Accentuation), and the specific Imagen Keyphrase. This acts as the Single Source of Truth (SSoT) to ensure the image model renders matching icons and illustrations across all slides, preventing style drift. Output a status line before starting, e.g. "🎨 Designing the overall visual style and color palette...", and a confirmation after saving, e.g. "✅ Visual style & color palette defined." Call 'save_design_spec'.
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
