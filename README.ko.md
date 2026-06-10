@@ -138,7 +138,61 @@ slide-gen-agent/
 
 ---
 
-#### 파트 A — 일회성 프로젝트 설정
+#### 옵션 1: 원클릭 설치 (One-Click Installation)
+**Terraform**과 이와 동반되는 **오케스트레이션 스크립트** (`deploy.sh`)를 사용하는 자동화된 프로덕션급 배포 도구를 제공합니다. 이 스크립트는 API 활성화, Google Drive 위임 서비스 계정 생성, GCS 세션 버킷 프로비저닝, 복잡한 IAM 역할 바인딩 설정, Python 가상 환경 구성, Vertex AI 에이전트 등록 등을 완전히 자동화합니다.
+
+> [!NOTE]
+> 이 스크립트의 사전 요구 사항, 대화형 구성 및 실행 단계에 대한 자세한 단계별 설명은 [Deployment Script Details (영어)](deploy_details.md) 가이드를 참조하세요.
+
+##### 1. 사전 요구 사항
+로컬 컴퓨터에 다음이 설치되어 있는지 확인하세요:
+- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
+- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+
+Google Cloud에 인증되어 있는지 확인하세요:
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+##### 2. 배포 실행
+리포지토리 루트에서 오케스트레이터 스크립트를 실행합니다:
+```bash
+./deploy.sh
+```
+
+스크립트가 다음 단계를 안내합니다:
+1. **대화형 구성**: 대상 GCP 프로젝트 ID 및 리전을 확인합니다.
+2. **인프라 프로비저닝**: Terraform을 실행하여 API, IAM 권한, GCS 버킷 및 서비스 계정을 구성합니다.
+3. **환경 설정**: 프로젝트 구성이 포함된 `adk_agent/.env` 파일을 생성합니다.
+4. **에이전트 패키징 및 배포**: Python 의존성을 설치하고 ADK CLI를 사용하여 에이전트를 Vertex AI Reasoning Engine으로 패키징 및 등록합니다.
+
+완료되면 스크립트가 **Reasoning Engine 리소스 ID**를 출력합니다 (예: `projects/{PROJECT_NUMBER}/locations/{REGION}/reasoningEngines/{ENGINE_ID}`).
+
+##### 3. 배포 후 설정
+통합을 완료하려면 다음 두 가지 수동 단계를 수행하세요:
+
+###### A. Google Workspace 도메인 전체 위임 구성
+에이전트가 사용자의 Google Drive에 슬라이드를 직접 업로드할 수 있도록 허용합니다:
+1. [Google Workspace 관리 콘솔](https://admin.google.com)에 로그인합니다.
+2. **보안 → 액세스 및 데이터 제어 → API 제어 → 도메인 전체 위임**으로 이동합니다.
+3. **새로 추가**를 클릭하고 다음을 입력합니다:
+   - **클라이언트 ID**: Drive 서비스 계정의 OAuth2 클라이언트 ID (이 ID는 `deploy.sh` 스크립트 끝에 출력되거나 Terraform 출력에서 찾을 수 있습니다).
+   - **OAuth 범위**: `https://www.googleapis.com/auth/drive.file`
+4. **승인**을 클릭합니다.
+
+###### B. Gemini Enterprise 연결
+1. **Gemini Enterprise 관리 콘솔**에 로그인합니다.
+2. 왼쪽 사이드바에서 **에이전트**로 이동합니다.
+3. **+ 에이전트 추가**를 클릭합니다.
+4. **Agent Engine을 통한 커스텀 에이전트**를 선택하고 스크립트에서 출력된 **Reasoning Engine 리소스 ID**를 붙여넣습니다.
+5. 연결을 보호하기 위해 IAM 인증 권한을 구성합니다.
+
+---
+
+#### 옵션 2: 수동 설치 (Manual Installation)
+
+##### 파트 A — 일회성 프로젝트 설정
 GCP 프로젝트마다 한 번만 수행하면 됩니다. 이후 재설치나 재배포 시에는 이 단계들을 반복할 필요가 없습니다.
 
 ##### 1. GCP API 활성화
@@ -219,7 +273,7 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
 
 ---
 
-#### 파트 B — 설치 및 배포
+##### 파트 B — 설치 및 배포
 새로 설치하거나 재배포할 때마다 다음 단계를 반복합니다.
 
 ##### 1. 의존성 설치

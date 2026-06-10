@@ -94,6 +94,12 @@ graph TD
 ```text
 slide-gen-agent/
 ├── README.md                # Project overview and setup (this file)
+├── deploy.sh                # Interactive orchestration script for automated deployment
+├── deploy/
+│   └── terraform/           # Terraform configurations for provisioning GCP resources
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
 ├── skills/
 │   └── slide-gen-agent/     # 🌟 Standard self-contained Agent Skill (for Antigravity/Codex)
 │       ├── SKILL.md         # Playbook/guidelines (YAML frontmatter + instructions)
@@ -104,27 +110,30 @@ slide-gen-agent/
 │       └── scripts/         # Custom tools bundled with the skill
 │           ├── pdf_exporter.py # Widescreen presentation PDF compiler
 │           ├── pptx_exporter.py # Widescreen PPTX compiler with speaker notes
+│           ├── notes_pdf_exporter.py # Renders a PDF combining slide images and speaker notes
 │           └── preview_generator.py # HTML preview page compiler (includes Save as PDF)
 └── adk_agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
     ├── requirements.txt     # Python dependency configuration (includes python-pptx & reportlab)
     ├── agent.py             # Main agent entry point
+    ├── config.py            # Environment and agent configuration manager
     └── tools/               # Agent tools
         ├── __init__.py
         ├── file_manager.py  # Session initialization and file writer tools
         ├── imagen.py        # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
+        ├── notes_pdf_exporter.py # Renders a PDF combining slide images and speaker notes
         ├── drive_exporter.py # Google Drive upload → Google Slides converter & sharer
         └── preview_generator.py # HTML slide preview and notes compiler (includes Save as PDF)
 ```
 
 ---
 
-## 🚀 Installation & Deployment Methods
+## 🚀 Installation & Deployment Guide
 
 Select the installation method that fits your target environment:
 
-### 🔹 Method 1: Universal Skill (`SKILL.md`) — Platform-Agnostic
+### 🔹 Method 1: Universal Agent Skill (`SKILL.md`)
 This is a pure prompt/guideline-based installation, requiring no code hosting.
 * **Use Case**: LLM systems that support Agent Skills, provide a sandboxed code-execution environment, and have text-to-image generation capabilities (e.g., Antigravity, Codex).
 * **How to Install**:
@@ -133,13 +142,17 @@ This is a pure prompt/guideline-based installation, requiring no code hosting.
 
 ---
 
-### 🔹 Method 2: Automated One-Click Deployment (Recommended)
+### 🔹 Method 2: Gemini Enterprise
+This method deploys the agent as a Vertex AI Reasoning Engine and connects it to Gemini Enterprise.
 
+#### Option 1: One-Click Installation
 We provide an automated, production-ready deployment suite using **Terraform** and a companion **orchestration script** (`deploy.sh`). This completely automates enabling APIs, creating Google Drive delegation Service Accounts, provisioning GCS session buckets, configuring complex IAM role bindings, setting up the Python virtual environment, and registering the agent in Vertex AI.
 
----
+> [!NOTE]
+> For a detailed, step-by-step breakdown of the prerequisites, interactive configurations, and execution stages performed by the script, see the [Deployment Script Details](deploy_details.md) guide.
 
-#### 1. Prerequisites
+
+##### 1. Prerequisites
 Ensure you have the following installed on your local machine:
 - [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
 - [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
@@ -150,9 +163,7 @@ gcloud auth login
 gcloud auth application-default login
 ```
 
----
-
-#### 2. Run the Deployment
+##### 2. Run the Deployment
 From the root of the repository, execute the orchestrator script:
 ```bash
 ./deploy.sh
@@ -166,24 +177,142 @@ The script will guide you through:
 
 When finished, the script will output your **Reasoning Engine Resource ID** (e.g., `projects/{PROJECT_NUMBER}/locations/{REGION}/reasoningEngines/{ENGINE_ID}`).
 
----
-
-#### 3. Post-Deployment Configuration
+##### 3. Post-Deployment Configuration
 To complete the integration, perform these two manual steps:
 
-##### A. Configure Google Workspace Domain-Wide Delegation
+###### A. Configure Google Workspace Domain-Wide Delegation
 This allows the agent to upload slides directly to your users' Google Drives:
 1. Go to the [Google Workspace Admin Console](https://admin.google.com).
-2. Navigate to **Security → API controls → Domain-wide delegation**.
+2. Navigate to **Security → Access and data Control → API Control → Domain-wide delegation**.
 3. Click **Add new** and enter:
    - **Client ID**: The OAuth2 Client ID of the Drive SA (this will be printed at the end of the `deploy.sh` script, or can be found in the Terraform outputs).
    - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
 4. Click **Authorise**.
 
-##### B. Connect to Gemini Enterprise
+###### B. Connect to Gemini Enterprise
 1. Log in to the **Gemini Enterprise Admin Console**.
 2. Navigate to **Agents** in the left sidebar.
 3. Click **+ Add Agent**.
 4. Select **Custom agent via Agent Engine** and paste the **Reasoning Engine Resource ID** printed by the script.
 5. Configure IAM authentication permissions to secure the connection.
+
+---
+
+#### Option 2: Manual Installation
+If your organization's policies restrict the use of Terraform, or if you prefer to provision GCP resources manually using the `gcloud` CLI, you can follow these step-by-step instructions.
+
+##### Part A — One-Time Project Setup
+Do this once per GCP project. You won't need to repeat these steps for future updates.
+
+###### 1. Enable GCP APIs
+Enable the following required APIs in your GCP project:
+- [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
+- [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
+- [Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com)
+- [Artifact Registry API](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com)
+
+###### 2. Configure IAM Permissions
+
+Reasoning Engine runs your code under the Google-managed **Vertex AI Reasoning Engine service agent** (`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`). This SA handles model calls but cannot be directly registered for Google Workspace Domain-Wide Delegation. For Google Drive export, you must create a separate user-managed SA (`slide-gen-drive`) that the runtime SA is authorized to impersonate.
+
+Run the following commands in your terminal (replace `your-actual-gcp-project-id` with your project ID):
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+
+PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
+
+# Runtime SA: Google-managed identity that runs your agent code
+RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
+
+# Build SA: Used during 'adk deploy' for container image building and logs
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# 1. Create the Drive Service Account
+gcloud iam service-accounts create slide-gen-drive \
+  --display-name="Slide Gen Drive Exporter" \
+  --project=$GOOGLE_CLOUD_PROJECT
+
+DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+
+# 2. Grant Vertex AI access to the Runtime SA
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/aiplatform.user"
+
+# 3. Grant GCS bucket access to the Runtime SA
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/storage.objectUser"
+
+# 4. Grant Build SA logging and container registry access
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/logging.logWriter"
+
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/artifactregistry.writer"
+
+# 5. Allow Runtime SA to impersonate the Drive SA (sign JWTs)
+# Note: The direction is critical. The role is bound ON the Drive SA resource.
+gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --project=$GOOGLE_CLOUD_PROJECT
+```
+
+###### 3. Create a Cloud Storage Bucket
+Create a private GCS bucket in your target region to store session artifacts:
+```bash
+gcloud storage buckets create gs://slide-gen-sessions-your-actual-gcp-project-id --location=us-central1
+```
+
+###### 4. Configure Domain-Wide Delegation (Google Workspace Admin)
+1. Go to the [Google Workspace Admin Console](https://admin.google.com).
+2. Navigate to **Security → Access and data Control → API Control → Domain-wide delegation**.
+3. Click **Add new** and enter:
+   - **Client ID**: The OAuth2 Client ID of the `slide-gen-drive` SA. You can find it on the IAM Service Accounts page in the GCP Console under the **Details** tab.
+   - **OAuth scopes**: `https://www.googleapis.com/auth/drive.file`
+4. Click **Authorise**.
+
+##### Part B — Install & Deploy
+Repeat these steps whenever you want to update the agent code.
+
+###### 1. Prepare Local Environment & Dependencies
+From the root `slide-gen-agent` directory:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install "google-adk[gcp]" -r adk_agent/requirements.txt
+```
+
+###### 2. Configure Environment Variables
+Create a `.env` file inside the `adk_agent` directory to store the target project ID:
+```bash
+cat > adk_agent/.env <<EOF
+GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+DRIVE_SA_EMAIL="slide-gen-drive@your-actual-gcp-project-id.iam.gserviceaccount.com"
+EOF
+```
+
+###### 3. Deploy to Vertex AI
+Run the ADK deployer from the `adk_agent` directory:
+```bash
+cd adk_agent
+adk deploy agent_engine \
+  --project=your-actual-gcp-project-id \
+  --region=us-central1 \
+  --display_name="slide-gen-agent" \
+  --artifact_service_uri="gs://slide-gen-sessions-your-actual-gcp-project-id" \
+  .
+```
+*Take note of the resulting **Reasoning Engine Resource ID**.*
+
+###### 4. Connect to Gemini Enterprise
+1. Log in to the **Gemini Enterprise Admin Console**.
+2. Navigate to **Agents** -> **+ Add Agent**.
+3. Select **Custom agent via Agent Engine** and paste the **Reasoning Engine Resource ID**.
+4. Configure IAM authentication permissions to secure the connection.
+
 

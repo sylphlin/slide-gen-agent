@@ -29,17 +29,17 @@ graph TD
 
     D -->|步驟 1| E1[design.md - 品牌系統]
     D -->|步驟 2| E2[outlines.md - 投影片大綱]
-    E2 -->|步驟 3：引導內容路由| E3[slide_xx.md - 逐字稿 + 選用版面配置]
+    E2 -->|步驟 3：引導內容路由| E3[slide_xx.md - 演講稿 + 選用版面]
 
     E1 & E3 --> F(階段 3：圖片產生與預覽)
     F -->|產生| G1[slide_xx.png - 投影片圖片]
     F -->|產生| G2[preview.html - 簡報預覽]
 
-    G1 & G2 --> H(階段 4：審閱與反覆修改)
+    G1 & G2 --> H(階段 4：審閱與迭代)
 
-    H -->|逐字稿或版面配置變更| E3
+    H -->|演講稿或版面變更| E3
     H -->|大綱／順序變更| E2
-    H -->|品牌／顏色變更| E1
+    H -->|品牌／配色變更| E1
 
     H -->|使用者核准| I(階段 5：打包與下載)
     I -->|選項 1| J[topic.pptx - 含演講備忘稿的寬螢幕 PPTX]
@@ -67,195 +67,248 @@ graph TD
    - *流程會直接進入階段 3，不會暫停。*
 
 3. **階段 3：圖片產生與預覽**
-   - 代理人會將 `design.md`（品牌規範）與 `slide_xx.md`（單張投影片規格）合併成結構化提示詞，供每張投影片使用。
-   - 接著將其送至影像產生模型，產出最終的 16:9 高保真 PNG 圖片（`slide_xx.png`）。
-   - 所有投影片圖片與演講備忘稿會被彙整成一份 `preview.html` 頁面，方便檢視。
+   - 代理人會將 `design.md`（品牌規範）與 `slide_xx.md`（單張投影片規格）合併為每張投影片的結構化提示詞。
+   - 將此提示詞發送至影像產生模型，產生最終的 16:9 高保真 PNG 圖片（`slide_xx.png`）。
+   - 所有投影片圖片與講稿備忘錄將被編譯成一個 `preview.html` 頁面，便於輕鬆預覽與審閱。
    - *流程會直接進入階段 4。*
 
-4. **階段 4：審閱與反覆修改**
-   - *代理人會暫停並等待你的回饋。*
-   - 用自然語言告訴代理人要修改什麼。變更會被精準套用——只有受影響的投影片會被重新產生：
-     - 逐字稿或版面配置調整 → 更新對應的 `slide_xx.md` 並只重新產生該張投影片
-     - 投影片重新排序／新增／刪除 → 更新 `outlines.md` 與受影響的 `slide_xx.md` 檔案（包含改寫銜接與引導段落），並只重新產生有變動的投影片
-     - 品牌／顏色變更 → 更新 `design.md` 並重新產生所有投影片
-   - 此循環會持續進行，直到你明確核准所有投影片為止。
+4. **階段 4：審閱與迭代**
+   - *代理人會暫停並等待您的回饋。*
+   - 使用純文字告訴代理人需要修改什麼。修改會被精確地套用——只有受影響的投影片會被重新產生：
+     - 講稿或版面調整 → 更新相關的 `slide_xx.md` + 僅重新生成該張投影片。
+     - 投影片順序調整 / 新增 / 刪除 → 更新 `outlines.md` + 受影響的 `slide_xx.md` 檔案（包括轉場與 Hook 重寫）+ 僅重新生成已變更的投影片。
+     - 品牌 / 配色變更 → 更新 `design.md` + 重新生成所有投影片。
+   - 此循環會持續重複，直到您明確批准所有投影片。
 
 5. **階段 5：簡報打包與下載**
-   - 一旦你核准最終的投影片，代理人會提供四種匯出選項：
-     - **Google 簡報**：代理人會將 PPTX 上傳到 Google 雲端硬碟中的 `slide-gen-agent` 資料夾，轉換成 Google 簡報檔案，並以編輯者身分與你分享。會直接以 Google 簡報開啟，方便立即編輯與分享。*（需要在 GCP 中啟用 Google Drive API，並在 Google Workspace 管理控制台中設定網域範圍委派。）*
-     - **PPTX（含演講備忘稿的 PowerPoint）**：寬螢幕 PowerPoint 檔案，內含投影片圖片，演講備忘稿完整內嵌於每張投影片的 PowerPoint 備忘稿區段中。檔名會使用簡報主題（例如 `ai-trends-2025.pptx`）。
-     - **PDF：投影片**：由所有投影片圖片彙整而成的 PDF（適合直接用於簡報）。檔名會使用簡報主題（例如 `ai-trends-2025.pdf`）。
-     - **PDF：演講備忘稿**：開啟 `preview.html` 連結，並點擊 **「Save as PDF」** 按鈕。瀏覽器會將每張投影片及其備忘稿渲染成乾淨、分頁排版的 PDF，並使用你本機的系統字型——這能正確處理包含 CJK 與東南亞文字在內的所有語言，且不需要任何伺服器端字型相依性。
+   - 一旦您批准最終的投影片，代理人會提供四種匯出選項：
+     - **Google 簡報**：代理人會將 PPTX 上傳至 Google 雲端硬碟，在 `slide-gen-agent` 資料夾中轉換為 Google 簡報檔案，並與您分享編輯權限。可直接在瀏覽器中開啟、編輯與分享。*(需要在 GCP 中啟用 Google Drive API，並在 Google Workspace 管理員控制台中配置全網域授權。)*
+     - **PPTX（含演講備忘錄的 PowerPoint）**：寬螢幕 PowerPoint 檔案，包含投影片圖片，且講稿已完全嵌入每張投影片的備忘錄區域。檔名會使用簡報主題（例如 `ai-trends-2025.pptx`）。
+     - **PDF：投影片**：由所有投影片圖片編譯而成的 PDF（適合直接進行簡報）。檔名會使用簡報主題（例如 `ai-trends-2025.pdf`）。
+     - **PDF：演講備忘錄**：開啟 `preview.html` 連結並點擊 **"Save as PDF"** 按鈕。瀏覽器會使用您的本機系統字型，將每張投影片及其備忘錄轉譯為乾淨、分頁明確的 PDF——這能完美處理包括中日韓（CJK）與東南亞語系在內的所有語言，且完全不依賴伺服器端的字型設定。
 
 ---
 
-## 🛠️ 目錄結構
+## 🛠️ 專案目錄結構
 
 ```text
 slide-gen-agent/
-├── README.md                # 專案概覽與安裝說明（本檔案）
+├── README.md                # 專案概覽與設定（本檔案）
+├── deploy.sh                # 互動式自動化部署協調腳本
+├── deploy/
+│   └── terraform/           # 用於佈署 GCP 資源的 Terraform 設定檔
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
 ├── skills/
-│   └── slide-gen-agent/     # 🌟 標準獨立式代理技能（適用於 Antigravity/Codex）
-│       ├── SKILL.md         # 操作手冊／準則（YAML 前置資料 + 操作指引）
-│       ├── assets/          # 技能所附帶的靜態範本
-│       │   ├── design.md    # 品牌系統範本（顏色、字體排印、視覺風格）
-│       │   ├── outlines.md  # 簡報大綱範本
-│       │   └── slide_xx.md  # 單張投影片範本（標題、選用版面配置、逐字稿）
-│       └── scripts/         # 隨技能附帶的自訂工具
-│           ├── pdf_exporter.py # 寬螢幕簡報 PDF 編譯工具
-│           ├── pptx_exporter.py # 含演講備忘稿的寬螢幕 PPTX 編譯工具
-│           └── preview_generator.py # HTML 預覽頁面編譯工具（含 Save as PDF 功能）
-└── adk_agent/               # 程式化主代理人（Python ADK 2.0 實作）
-    ├── requirements.txt     # Python 相依套件設定（包含 python-pptx 與 reportlab）
-    ├── agent.py             # 代理人主要進入點
-    └── tools/               # 代理人工具
+│   └── slide-gen-agent/     # 🌟 標準獨立 Agent Skill（適用於 Antigravity/Codex）
+│       ├── SKILL.md         # Playbook/指引（YAML frontmatter + 說明）
+│       ├── assets/          # Skill 使用的靜態範本
+│       │   ├── design.md    # 品牌系統範本（配色、字型、視覺風格）
+│       │   ├── outlines.md  # 投影片大綱範本
+│       │   └── slide_xx.md  # 單張投影片範本（標題、選用版面、講稿）
+│       └── scripts/         # 隨 Skill 打包的自訂工具
+│           ├── pdf_exporter.py # 寬螢幕簡報 PDF 編譯器
+│           ├── pptx_exporter.py # 寬螢幕 PPTX 編譯器（含演講備忘錄）
+│           ├── notes_pdf_exporter.py # 結合投影片圖片與講稿的 PDF 產生器
+│           └── preview_generator.py # HTML 預覽頁面編譯器（包含儲存為 PDF）
+└── adk_agent/               # 程式化 Host Agent（Python ADK 2.0 實作）
+    ├── requirements.txt     # Python 依賴設定（包含 python-pptx 與 reportlab）
+    ├── agent.py             # 主 Agent 入口點
+    ├── config.py            # 環境變數與代理人組態管理器
+    └── tools/               # Agent 工具
         ├── __init__.py
-        ├── file_manager.py  # 會話初始化與檔案寫入工具
-        ├── imagen.py        # Gemini 投影片圖片產生工具
+        ├── file_manager.py  # 工作區工作階段初始化與檔案寫入工具
+        ├── imagen.py        # Gemini 投影片影像產生工具
         ├── pdf_exporter.py  # 基於 Pillow 的寬螢幕 PDF 匯出工具
-        ├── pptx_exporter.py # 含演講備忘稿的 PowerPoint 寬螢幕（PPTX）匯出工具
-        ├── drive_exporter.py # Google 雲端硬碟上傳 → Google 簡報轉換與分享工具
-        └── preview_generator.py # HTML 投影片預覽與備忘稿編譯工具（含 Save as PDF 功能）
+        ├── pptx_exporter.py # 寬螢幕 PowerPoint (PPTX) 匯出工具（含演講備忘錄）
+        ├── notes_pdf_exporter.py # 結合投影片圖片與講稿的 PDF 產生器
+        ├── drive_exporter.py # Google 雲端硬碟上傳 → 轉換為 Google 簡報並分享
+        └── preview_generator.py # HTML 投影片預覽與備忘錄編譯器（包含儲存為 PDF）
 ```
 
 ---
 
-## 🚀 安裝與部署方式
+## 🚀 安裝與部署指南
 
-請選擇符合你目標環境的安裝方式：
+請選擇適合您目標環境的安裝方法：
 
-### 🔹 方式一：通用技能（`SKILL.md`）— 跨平台通用
-這是純粹基於提示詞／準則的安裝方式，不需要代管任何程式碼。
-* **適用情境**：支援 Agent Skills、提供沙箱化程式碼執行環境，且具備文字轉圖片產生能力的 LLM 系統（例如 Antigravity、Codex）。
-* **安裝方式**：
-  1. 將 [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) 的內容匯入或複製到你的 LLM 助理的自訂系統指令或系統提示詞中。
-  2. 將 `skills/slide-gen-agent/templates/` 目錄中的 Markdown 檔案作為範例，供助理參考。
-
----
-
-### 🔹 方式二：部署至 Gemini Enterprise 正式環境
-將此 Python 代理人部署為 Vertex AI 上的 Reasoning Engine（Agent Engine）執行個體，並直接串接至 **Gemini Enterprise**。
+### 🔹 方法一：通用 Agent Skill (`SKILL.md`) — 平台無關
+這是一個純提示詞／指引型的安裝，不需要任何代碼託管。
+* **使用場景**：支援 Agent Skill、提供沙盒程式碼執行環境、且具備文字產生影像能力的 LLM 系統（例如 Antigravity、Codex）。
+* **如何安裝**：
+  1. 將 [SKILL.md](file:///Users/sylph/Documents/Antigravity/slide-gen-agent/skills/slide-gen-agent/SKILL.md) 的內容複製並匯入您的 LLM 助理的自訂系統指令或系統提示詞中。
+  2. 參考 `skills/slide-gen-agent/templates/` 目錄中的 Markdown 檔案，作為助理遵循的範例。
 
 ---
 
-#### 第 A 部分 — 一次性專案設定
-每個 GCP 專案只需執行一次。未來重新安裝或重新部署時不需要重複這些步驟。
+### 🔹 方法二：Gemini Enterprise
+此方法將代理人部署為 Vertex AI Reasoning Engine 並連接至 Gemini Enterprise 控制台。
 
-##### 1. 啟用 GCP API
-請在你的 GCP 專案中啟用以下 API：
+#### Option 1：一鍵安裝 (One-Click Installation)
+
+> [!NOTE]
+> 關於此腳本的前提條件、互動式設定與執行階段的詳細逐步說明，請參閱 [Deployment Script Details (英文)](deploy_details.md) 說明文件。
+我們提供使用 **Terraform** 與配套 **協調腳本**（`deploy.sh`）的自動化生產級部署套件。這能完全自動化啟用 API、建立 Google 雲端硬碟委派服務帳號、建立 GCS 工作階段儲存桶、設定複雜的 IAM 角色綁定、設定 Python 虛擬環境，以及在 Vertex AI 中註冊代理人。
+
+##### 1. 前提條件
+請確保您的本機電腦上已安裝以下工具：
+- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
+- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+
+請確保您已登入 Google Cloud 並設定好憑證：
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+##### 2. 執行部署
+在專案根目錄下執行協調腳本：
+```bash
+./deploy.sh
+```
+
+腳本將會引導您完成：
+1. **互動式設定**：確認您的目標 GCP 專案 ID（Project ID）與地區（Region）。
+2. **基礎設施部署**：執行 Terraform 來設定 API、IAM 權限、GCS 儲存桶與服務帳號。
+3. **環境變數設定**：自動在 `adk_agent/` 目錄下產生含有專案設定的 `.env` 檔案。
+4. **代理人打包與部署**：自動安裝 Python 相依套件，並使用 ADK CLI 打包且註冊代理人為 Vertex AI Reasoning Engine。
+
+完成後，腳本會輸出您的 **Reasoning Engine 資源 ID**（例如 `projects/{PROJECT_NUMBER}/locations/{REGION}/reasoningEngines/{ENGINE_ID}`）。
+
+##### 3. 部署後續設定
+要完成整合，請手動執行以下兩個步驟：
+
+###### A. 設定網域範圍委派（Google Workspace 管理控制台）
+這能讓代理人將產生的簡報直接上傳到每位使用者自己的 Google 雲端硬碟：
+1. 前往 [Google Workspace 管理控制台](https://admin.google.com)。
+2. 進入 **安全性 → 存取與資料控制 → API 控制項 → 網域範圍委派**。
+3. 點擊 **新增**，並輸入：
+   - **用戶端 ID**：雲端硬碟服務帳號（Drive SA）的 OAuth2 用戶端 ID。這會在 `deploy.sh` 腳本結束時顯示，也可以在 Terraform 的輸出中找到。
+   - **OAuth 範圍**：`https://www.googleapis.com/auth/drive.file`
+4. 點擊 **授權**。
+
+###### B. 連接至 Gemini Enterprise 控制台
+1. 登入 **Gemini Enterprise 管理控制台**。
+2. 在左側選單中選擇 **Agents**。
+3. 點擊 **+ 新增代理人**。
+4. 選擇 **透過 Agent Engine 的自訂代理人（Custom agent via Agent Engine）**，並貼上腳本輸出的 **Reasoning Engine 資源 ID**。
+5. 設定 IAM 驗證權限以保護連線安全。
+
+---
+
+#### Option 2：手動安裝 (Manual Installation)
+如果您的組織政策限制使用 Terraform，或者您偏好使用 `gcloud` CLI 手動部署 GCP 資源，可以按照以下步驟進行。
+
+##### Part A — 一次性專案設定
+每個 GCP 專案只需執行一次。未來更新代理人程式碼時不需要重複這些步驟。
+
+###### 1. 啟用 GCP API
+請在您的 GCP 專案中啟用以下必要 API：
 - [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
 - [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
+- [Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com)
+- [Artifact Registry API](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com)
 
-##### 2. 設定 IAM 權限
+###### 2. 設定 IAM 權限
+Reasoning Engine 會在 Google 管理的 **Vertex AI Reasoning Engine 服務代理**（`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`）下執行您的程式碼。此服務帳號負責處理模型呼叫，但無法直接被註冊為 Google Workspace 網域範圍委派。為了支援 Google 雲端硬碟匯出，您必須建立一個獨立的由您管理的服務帳號（`slide-gen-drive`），並授權執行階段服務帳號可以模擬扮演它。
 
-Agent Engine 會在 **Vertex AI Reasoning Engine 服務代理**（`service-{PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com`）下執行你的程式碼。這個由 Google 管理的服務帳號負責處理 Vertex AI 與 GCS 的存取，但**無法**直接被註冊為網域範圍委派（DWD）。為了支援 Google 雲端硬碟匯出，你需要建立另一個由你管理的服務帳號（`slide-gen-drive`），並讓執行階段服務帳號可以模擬扮演它。
+請在終端機中執行以下指令（將 `your-actual-gcp-project-id` 替換為您的實際專案 ID）：
 
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
 
 PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
 
-# 執行階段服務帳號：執行你代理人程式碼的 Google 管理身分
+# 執行階段服務帳號：執行您代理人程式碼的 Google 管理身分
 RUNTIME_SA="service-${PROJECT_NUMBER}@gcp-sa-aiplatform-re.iam.gserviceaccount.com"
 
-# 建置服務帳號：僅在 `adk deploy` 期間用於容器映像推送與建置紀錄
+# 建置服務帳號：在 'adk deploy' 期間用於容器映像建置與紀錄
 BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-# 雲端硬碟服務帳號：由你建立並擁有、註冊為 DWD 用的使用者管理服務帳號
+# 1. 建立雲端硬碟服務帳號
 gcloud iam service-accounts create slide-gen-drive \
   --display-name="Slide Gen Drive Exporter" \
   --project=$GOOGLE_CLOUD_PROJECT
+
 DRIVE_SA="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 
-# 必要：呼叫 Vertex AI 模型與 Gemini 圖片產生功能
+# 2. 授予執行階段服務帳號 Vertex AI 存取權限
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/aiplatform.user"
 
-# 必要：讀寫投影片、預覽檔與匯出檔至你的 GCS 儲存桶
+# 3. 授予執行階段服務帳號 GCS 儲存桶存取權限
 gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
   --member="serviceAccount:$RUNTIME_SA" \
   --role="roles/storage.objectUser"
 
-# 必要：允許執行階段服務帳號以雲端硬碟服務帳號的身分簽署 JWT（供 DWD 使用）。
-# 請注意，這裡的方向與上方／下方的專案層級綁定「相反」：
-# 雲端硬碟服務帳號是資源本身（`service-accounts add-iam-policy-binding $DRIVE_SA`），
-# 而執行階段服務帳號則是被授予該資源上角色的 `--member`——順序不能顛倒。
-# 顛倒過來會讓雲端硬碟服務帳號取得模擬扮演專案中「任何」服務帳號的權限
-# （這是錯誤的設定，且無法修正 signJwt 404 錯誤）。
+# 4. 授予建置服務帳號日誌記錄與容器登錄存取權限
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/logging.logWriter"
+
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+  --member="serviceAccount:$BUILD_SA" \
+  --role="roles/artifactregistry.writer"
+
+# 5. 允許執行階段服務帳號模擬扮演雲端硬碟服務帳號（簽署 JWT）
+# 請注意：方向至關重要。此角色是綁定在雲端硬碟服務帳號資源本身。
 gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA \
   --member="serviceAccount:${RUNTIME_SA}" \
   --role="roles/iam.serviceAccountTokenCreator" \
   --project=$GOOGLE_CLOUD_PROJECT
-
-# adk deploy 所需：建置紀錄與容器映像推送
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$BUILD_SA" \
-  --role="roles/logging.logWriter"
-gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-  --member="serviceAccount:$BUILD_SA" \
-  --role="roles/artifactregistry.writer"
 ```
 
-> **注意**：如果同一個角色 + 成員的綁定已經存在——無論它是否帶有條件（例如其他設定流程如 Cloud Build 留下的殘留綁定）——`gcloud` 會提示你選擇如何套用新的綁定：
-> ```
->  [1] EXPRESSION=request.time < timestamp(...), TITLE=cloudbuild-connection-setup
->  [2] None
->  [3] Specify a new condition
-> ```
-> 請選擇 **`[2] None`**——上述綁定必須是無條件的，這樣代理人才能始終擁有這些權限。
+###### 3. 建立 Cloud Storage 儲存桶
+In your target region to store session files:
+```bash
+gcloud storage buckets create gs://slide-gen-sessions-your-actual-gcp-project-id --location=us-central1
+```
 
-> **注意**：雲端硬碟服務帳號的綁定指令（`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA ...`）是這份腳本中**唯一方向相反**的綁定。其他每一道指令都是把某個服務帳號的角色授予在「專案」層級（`gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT --member="serviceAccount:<SA>" ...`）。而這一道指令則是把角色授予在「雲端硬碟服務帳號自身」這個資源上，給執行階段服務帳號（`gcloud iam service-accounts add-iam-policy-binding $DRIVE_SA --member="serviceAccount:$RUNTIME_SA" ...`）。如果你不小心把專案層級的模式套用在這裡——也就是在「專案」層級把 `roles/iam.serviceAccountTokenCreator` 授予給 `$DRIVE_SA`——雲端硬碟服務帳號最終會變成可以模擬扮演專案中「任何」服務帳號（範圍大很多且是錯誤的授權），而執行階段服務帳號仍然沒有權限去模擬扮演雲端硬碟服務帳號，導致 Google 雲端硬碟匯出持續出現 `[step:signJwt] HTTP 404` 錯誤。執行 `gcloud iam service-accounts get-iam-policy $DRIVE_SA` 來確認綁定是否確實落在雲端硬碟服務帳號這個資源上（你應該會看到 `roles/iam.serviceAccountTokenCreator`，且成員為 `$RUNTIME_SA`）。
-
-
-##### 3. 設定網域範圍委派（Google Workspace 管理控制台）
-這能讓代理人將產生的簡報直接上傳到每位使用者自己的 Google 雲端硬碟。
-
-1. 前往 [Google Workspace 管理控制台](https://admin.google.com)，進入 **安全性 → API 控制項 → 網域範圍委派**。
-2. 點擊 **新增**，並輸入：
-   - **用戶端 ID**：**雲端硬碟服務帳號**（`slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com`）的 OAuth 2 用戶端 ID。可在 [IAM 服務帳號頁面](https://console.cloud.google.com/iam-admin/serviceaccounts) 中選擇 `slide-gen-drive` → **詳細資料** 分頁找到。
+###### 4. 設定網域範圍委派（Google Workspace 管理控制台）
+1. 前往 [Google Workspace 管理控制台](https://admin.google.com)。
+2. 進入 **安全性 → 存取與資料控制 → API 控制項 → 網域範圍委派**。
+3. 點擊 **新增**，並輸入：
+   - **用戶端 ID**：`slide-gen-drive` 服務帳號的 OAuth2 用戶端 ID。可在 GCP 控制台的 IAM 服務帳號頁面中，該服務帳號的 **詳細資料** 分頁下找到。
    - **OAuth 範圍**：`https://www.googleapis.com/auth/drive.file`
-3. 點擊 **授權**。
+4. 點擊 **授權**。
 
----
+##### Part B — 安裝與部署
+每次您想更新代理人程式碼時重複這些步驟。
 
-#### 第 B 部分 — 安裝與部署
-每次全新安裝或重新部署時都需要重複以下步驟。
-
-##### 1. 安裝相依套件
-從根目錄 `slide-gen-agent` 設定虛擬環境：
+###### 1. 準備本地環境與相依套件
+在根目錄 `slide-gen-agent` 中執行：
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-cd adk_agent
-pip install "google-adk[gcp]" google-genai Pillow python-dotenv
+pip install "google-adk[gcp]" -r adk_agent/requirements.txt
 ```
 
-##### 2. 設定環境變數
-在 `adk_agent` 目錄內建立一個 `.env` 檔案，這樣它會被打包進部署容器中，並在啟動時載入。**這是必要的**——已部署的執行環境無法可靠地自動偵測你的專案 ID（不同的代管環境會解析出不同的錯誤值，例如數字格式的專案編號或不相關的承租戶專案），錯誤的值會同時導致模型呼叫失敗，以及匯出功能所使用的雲端硬碟服務帳號電子郵件地址出錯：
+###### 2. 設定環境變數
+在 `adk_agent` 目錄內建立一個 `.env` 檔案以儲存目標專案 ID 與服務帳號信箱：
 ```bash
-export GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
-
-cat > .env <<EOF
-GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
+cat > adk_agent/.env <<EOF
+GOOGLE_CLOUD_PROJECT="your-actual-gcp-project-id"
+DRIVE_SA_EMAIL="slide-gen-drive@your-actual-gcp-project-id.iam.gserviceaccount.com"
 EOF
 ```
 
-##### 3. 部署
-在 `adk_agent` 目錄中執行 ADK 部署工具。代理人會使用 `.env` 中的 `GOOGLE_CLOUD_PROJECT`，將雲端硬碟服務帳號解析為 `slide-gen-drive@{PROJECT_ID}.iam.gserviceaccount.com`：
+###### 3. 部署至 Vertex AI
+在 `adk_agent` 目錄中執行 ADK 部署工具：
 ```bash
+cd adk_agent
 adk deploy agent_engine \
-  --project=$GOOGLE_CLOUD_PROJECT \
+  --project=your-actual-gcp-project-id \
   --region=us-central1 \
   --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://your-runtime-bucket" \
+  --artifact_service_uri="gs://slide-gen-sessions-your-actual-gcp-project-id" \
   .
 ```
-*ADK CLI 會處理容器化、部署暫存與 Reasoning Engine 註冊。完成後，它會輸出你的 **Reasoning Engine 資源 ID**（例如 `projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{ENGINE_ID}`）。*
+*記下產生的 **Reasoning Engine 資源 ID**。*
 
-##### 4. 連接至 Gemini Enterprise 控制台
+###### 4. 連接至 Gemini Enterprise 控制台
 1. 登入 **Gemini Enterprise 管理控制台**。
-2. 在左側選單中選擇 **Agents**。
-3. 點擊 **+ 新增代理人**。
-4. 選擇 **透過 Agent Engine 的自訂代理人（Custom agent via Agent Engine）**，並輸入你的 **Reasoning Engine 資源 ID**。
-5. 設定 IAM 驗證權限以保護連線安全。
+2. 前往 **Agents** -> **+ 新增代理人**。
+3. 選擇 **透過 Agent Engine 的自訂代理人（Custom agent via Agent Engine）**，並貼上您的 **Reasoning Engine 資源 ID**。
+4. 設定 IAM 驗證權限以保護連線安全。

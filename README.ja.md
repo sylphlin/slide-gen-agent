@@ -138,7 +138,61 @@ slide-gen-agent/
 
 ---
 
-#### パート A — 一度きりのプロジェクトセットアップ
+#### オプション 1: ワンクリックインストール (One-Click Installation)
+**Terraform** と付随する**オーケストレーションスクリプト** (`deploy.sh`) を使用した、自動化された本番環境対応のデプロイ環境を提供しています。これにより、API の有効化、Google ドライブ委任サービスアカウントの作成、GCS セッションバケットのプロビジョニング、複雑な IAM ロールバインディングの設定、Python 仮想環境のセットアップ、Vertex AI へのエージェントの登録が完全に自動化されます。
+
+> [!NOTE]
+> このスクリプトの前提条件、対話型設定、および実行ステージの詳細な手順については、[Deployment Script Details (英語)](deploy_details.md) のガイドを参照してください。
+
+##### 1. 前提条件
+ローカルマシンに以下がインストールされていることを確認してください：
+- [Google Cloud SDK (gcloud CLI)](https://cloud.google.com/sdk/docs/install)
+- [Terraform CLI](https://developer.hashicorp.com/terraform/downloads)
+
+Google Cloud に認証されていることを確認してください：
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+##### 2. デプロイの実行
+リポジトリのルートからオーケストレータースクリプトを実行します：
+```bash
+./deploy.sh
+```
+
+スクリプトは以下のステップを案内します：
+1. **対話型設定**: 対象の GCP プロジェクト ID とリージョンを確認します。
+2. **インフラのプロビジョニング**: Terraform を実行して、API、IAM 権限、GCS バケット、およびサービスアカウントを構成します。
+3. **環境設定**: プロジェクト構成を含む `adk_agent/.env` ファイルを生成します。
+4. **エージェントのパッケージングとデプロイ**: Python の依存関係をインストールし、ADK CLI を使用してエージェントを Vertex AI Reasoning Engine にパッケージングおよび登録します。
+
+完了すると、スクリプトは **Reasoning Engine リソース ID** を出力します（例: `projects/{PROJECT_NUMBER}/locations/{REGION}/reasoningEngines/{ENGINE_ID}`）。
+
+##### 3. デプロイ後の設定
+統合を完了するには、次の 2 つの手動ステップを実行してください：
+
+###### A. Google Workspace のドメイン全体の委任の設定
+これにより、エージェントがユーザーの Google ドライブにスライドを直接アップロードできるようになります：
+1. [Google Workspace Admin Console](https://admin.google.com) にログインします。
+2. **セキュリティ ➔ アクセスとデータ管理 ➔ API コントロール ➔ ドメイン全体の委任** に移動します。
+3. **新規追加** をクリックし、以下を入力します：
+   - **クライアント ID**: Drive サービスアカウントの OAuth2 クライアント ID（この ID は `deploy.sh` スクリプトの最後に出力されるか、Terraform の出力から確認できます）。
+   - **OAuth スコープ**: `https://www.googleapis.com/auth/drive.file`
+4. **承認** をクリックします。
+
+###### B. Gemini Enterprise への接続
+1. **Gemini Enterprise 管理コンソール** にログインします。
+2. 左側のサイドバーで **エージェント** に移動します。
+3. **+ エージェントを追加** をクリックします。
+4. **Agent Engine 経由のカスタムエージェント（Custom agent via Agent Engine）** を選択し、スクリプトで出力された **Reasoning Engine リソース ID** を貼り付けます。
+5. 接続を保護するため、IAM 認証権限を設定します。
+
+---
+
+#### オプション 2: 手動インストール (Manual Installation)
+
+##### パート A — 一度きりのプロジェクトセットアップ
 GCP プロジェクトごとに一度だけ実施します。今後の再インストールや再デプロイの際にこれらの手順を繰り返す必要はありません。
 
 ##### 1. GCP API の有効化
@@ -219,7 +273,7 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
 
 ---
 
-#### パート B — インストールとデプロイ
+##### パート B — インストールとデプロイ
 新規インストールや再デプロイのたびに、以下の手順を繰り返します。
 
 ##### 1. 依存関係のインストール
