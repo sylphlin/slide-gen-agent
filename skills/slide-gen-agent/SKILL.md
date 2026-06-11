@@ -131,7 +131,7 @@ With all Markdown files saved in the session directory, trigger the image genera
 Upon entering this stage, compile and present the slide preview first:
 1. **Preview Generation**: Compile the generated slide images into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
 2. **Artifact Presentation**:
-   - Present the markdown link to the generated `preview.html` file (e.g., `[View Slides Preview](preview.html)` or the GCS URL).
+   - Present the markdown link to the generated `preview.html` file using the exact GCS URL returned by the `generate_preview_page` tool. **CRITICAL**: You must output the GCS URL exactly as-is, without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do not output local container paths.
    - Display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
    - Print a summary of the presentation outlines in the chat response. (Per-slide scripts do not need to be repeated here — they are already viewable alongside each slide in the preview page).
 

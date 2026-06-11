@@ -231,7 +231,7 @@ Generate a PNG image for every slide. Each image takes 15-30 seconds — always 
 ### Stage 4: Review & Iterate
 Upon entering this stage, compile and present the slide preview first:
 1. Call 'generate_preview_page' to compile the generated slide images into preview.html.
-2. Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
+2. Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. **CRITICAL**: You must output the exact GCS URL returned by the 'generate_preview_page' tool (starting with https://storage.cloud.google.com/...) without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 3. Print a summary of the presentation outlines in the chat response. Per-slide scripts do not need to be repeated here — they're already viewable alongside each slide in the preview page.
 
 After presenting the preview, ask the user for feedback on the generated slides. PAUSE and wait for the user's response before doing anything else.
