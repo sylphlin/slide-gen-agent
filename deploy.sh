@@ -74,7 +74,17 @@ terraform init
 DRIVE_SA_EMAIL="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 echo "Checking if Service Account $DRIVE_SA_EMAIL already exists..."
 
+SA_EXISTS=false
 if gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
+    SA_EXISTS=true
+fi
+
+SA_IN_STATE=false
+if terraform state list 2>/dev/null | grep -q "google_service_account.drive_exporter"; then
+    SA_IN_STATE=true
+fi
+
+if [ "$SA_EXISTS" = true ] && [ "$SA_IN_STATE" = false ]; then
     echo ""
     echo "⚠️  Notice: Service Account '$DRIVE_SA_EMAIL' already exists in your GCP project."
     echo "This usually happens if you previously configured a manual deployment."
@@ -112,7 +122,17 @@ fi
 RESOLVED_BUCKET_NAME="slide-gen-sessions-${GOOGLE_CLOUD_PROJECT}"
 echo "Checking if GCS Bucket gs://$RESOLVED_BUCKET_NAME already exists..."
 
+BUCKET_EXISTS=false
 if gcloud storage buckets describe "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
+    BUCKET_EXISTS=true
+fi
+
+BUCKET_IN_STATE=false
+if terraform state list 2>/dev/null | grep -q "google_storage_bucket.sessions"; then
+    BUCKET_IN_STATE=true
+fi
+
+if [ "$BUCKET_EXISTS" = true ] && [ "$BUCKET_IN_STATE" = false ]; then
     echo ""
     echo "⚠️  Notice: GCS Bucket 'gs://$RESOLVED_BUCKET_NAME' already exists in your GCP project."
     echo "This usually happens if you previously performed a manual installation."
