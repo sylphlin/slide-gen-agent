@@ -154,8 +154,8 @@ After applying any changes, regenerate the `preview.html` page, present the upda
 Once the user is completely satisfied with the slides and explicitly requests to compile, package, or download the final deck, **present all four export options and ask the user which format(s) they want**:
 
 > "Your slides are ready to package. Which export format would you like?
-> 1. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser editing and sharing
-> 2. **PPTX** — PowerPoint file with speaker notes embedded (great for editing or presenting in PowerPoint/Keynote)
+> 1. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser presentation and sharing (with editable speaker notes)
+> 2. **PPTX** — PowerPoint file with editable speaker notes (great for editing or presenting in PowerPoint/Keynote)
 > 3. **PDF: Slides** — Slide images compiled into a single PDF (ideal for sharing or presenting directly)
 > 4. **PDF: Speaker Notes** — Full speaker notes alongside slides, rendered by your browser (handles all languages including CJK perfectly)
 >
@@ -163,10 +163,10 @@ Once the user is completely satisfied with the slides and explicitly requests to
 
 Execute ONLY the format(s) the user selects — do NOT generate or mention formats they did not request:
 
-1. **Google Slides (Open & Edit in Browser)**:
+1. **Google Slides (Open & Present in Browser)**:
    - **Action**: Run the `export_to_google_slides` script (either by calling the `export_to_google_slides` tool, or by running the equivalent) to upload the PPTX to Google Drive as a Google Slides presentation in the `slide-gen-agent` folder. The file is automatically shared with the current user as editor.
    - *Note: This requires a PPTX to exist first. If it hasn't been generated yet, run the `pptx_exporter` first as a silent, internal prerequisite step. **Do NOT tell the user that you are generating a PPTX first or uploading to Google Drive.** Keep these internal technical steps hidden from the user interface. Simply inform the user that you are "Packaging your presentation..." and then present the final Google Slides link once completed.*
-   - **Link**: Provide the returned Google Slides URL so the user can open and edit the deck directly in their browser.
+   - **Link**: Provide the returned Google Slides URL so the user can open, present, and share the deck directly in their browser (with editable speaker notes; note that slide layouts are static images).
    - *Note: Requires Google Drive API enabled and Domain-Wide Delegation configured in Google Workspace Admin. See README Method 2 Steps 3–4 for setup instructions.*
 
 2. **PPTX (PowerPoint with Speaker Notes)**:

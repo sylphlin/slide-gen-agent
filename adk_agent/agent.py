@@ -251,8 +251,8 @@ After applying any changes, regenerate the preview.html page, present the update
 Once the user explicitly requests to compile, package, or download the final deck, **present all four export options and ask the user which format(s) they want** before doing anything:
 
 > "Your slides are ready to package. Which export format would you like?
-> 1. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser editing and sharing
-> 2. **PPTX** — PowerPoint file with speaker notes embedded (great for editing or presenting in PowerPoint/Keynote)
+> 1. **Google Slides** — Upload directly to Google Drive and open in Google Slides for in-browser presentation and sharing (with editable speaker notes)
+> 2. **PPTX** — PowerPoint file with editable speaker notes (great for editing or presenting in PowerPoint/Keynote)
 > 3. **PDF: Slides** — Slide images compiled into a single PDF (ideal for sharing or presenting directly)
 > 4. **PDF: Speaker Notes** — Full speaker notes alongside slides, rendered by your browser (handles all languages including CJK perfectly)
 >
