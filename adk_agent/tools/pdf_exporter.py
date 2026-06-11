@@ -52,9 +52,9 @@ async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
             pdf_bytes = f.read()
             
         artifact_part = Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
-        await save_artifact_helper(pdf_filename, artifact_part, tool_context)
+        version = await save_artifact_helper(pdf_filename, artifact_part, tool_context)
 
-        gcs_url = get_gcs_artifact_url(pdf_filename, tool_context)
+        gcs_url = get_gcs_artifact_url(pdf_filename, tool_context, version=version)
         if gcs_url:
             return f"Presentation PDF successfully compiled.\nDownload it here: {gcs_url}"
 

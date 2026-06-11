@@ -1,6 +1,7 @@
 import os
 import base64
 import asyncio
+import json
 from google import genai
 from google.genai import types
 from google.adk.tools.tool_context import ToolContext
@@ -160,6 +161,24 @@ async def generate_slide_image(
         artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
         version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
         tool_context.state[f"slide_{pad_num}_gcs_version"] = version
+
+        # Also persist to gcs_versions.json in the session directory to survive across agent turns
+        versions_path = os.path.join(session_path, 'gcs_versions.json')
+        versions = {}
+        if os.path.exists(versions_path):
+            try:
+                with open(versions_path, 'r', encoding='utf-8') as f:
+                    versions = json.load(f)
+            except Exception:
+                pass
+        versions[f"slide_{pad_num}_gcs_version"] = version
+        try:
+            with open(versions_path, 'w', encoding='utf-8') as f:
+                json.dump(versions, f, indent=2)
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"⚠️ [imagen] Warning: Failed to write gcs_versions.json: {e}\n")
+            sys.stderr.flush()
 
         return f"Image for slide {pad_num} successfully generated and written to {file_path}"
     except Exception as e:

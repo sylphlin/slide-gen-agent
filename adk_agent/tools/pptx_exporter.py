@@ -98,9 +98,9 @@ async def export_deck_pptx(session_path: str, tool_context: ToolContext) -> str:
             data=pptx_bytes,
             mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
         )
-        await save_artifact_helper(pptx_filename, artifact_part, tool_context)
+        version = await save_artifact_helper(pptx_filename, artifact_part, tool_context)
 
-        gcs_url = get_gcs_artifact_url(pptx_filename, tool_context)
+        gcs_url = get_gcs_artifact_url(pptx_filename, tool_context, version=version)
         if gcs_url:
             return f"Presentation PPTX successfully compiled with speaker notes.\nDownload it here: {gcs_url}"
 

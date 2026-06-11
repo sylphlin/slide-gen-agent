@@ -11,10 +11,25 @@ except ImportError:
     from config import save_artifact_helper, get_gcs_artifact_url
 
 
-def get_image_src(png_file: str, pad_num: str, tool_context) -> str:
+def get_image_src(png_file: str, pad_num: str, tool_context, session_path: str = None) -> str:
     """Returns a GCS URL in Agent Engine, or a relative file path for local preview."""
     if os.environ.get('GOOGLE_CLOUD_AGENT_ENGINE_ID'):
-        version = tool_context.state.get(f"slide_{pad_num}_gcs_version", 0)
+        version = 0
+        # 1. Try to read from tool_context.state (if populated during current turn)
+        if tool_context and hasattr(tool_context, 'state'):
+            version = tool_context.state.get(f"slide_{pad_num}_gcs_version", 0)
+            
+        # 2. Fallback to reading from persistent gcs_versions.json in the session directory
+        if session_path:
+            versions_path = os.path.join(session_path, 'gcs_versions.json')
+            if os.path.exists(versions_path):
+                try:
+                    with open(versions_path, 'r', encoding='utf-8') as f:
+                        versions = json.load(f)
+                        version = versions.get(f"slide_{pad_num}_gcs_version", version)
+                except Exception:
+                    pass
+                    
         return get_gcs_artifact_url(f"slide_{pad_num}.png", tool_context, version=version)
     # Local: preview.html sits at session root, images are in slides/
     return f"./slides/{os.path.basename(png_file)}"
@@ -63,7 +78,7 @@ async def generate_preview_page(session_path: str, tool_context: ToolContext) ->
         pad_num = slide_num_match.group(1)
         
         # Get image source (GCS URL in Agent Engine, relative path locally)
-        image_src = get_image_src(png_file, pad_num, tool_context)
+        image_src = get_image_src(png_file, pad_num, tool_context, session_path=session_path)
 
         # Extract script notes
         md_file = os.path.join(session_path, f"slide_{pad_num}.md")

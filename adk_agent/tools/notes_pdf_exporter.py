@@ -203,9 +203,9 @@ async def export_speaker_notes_pdf(session_path: str, tool_context: ToolContext)
             pdf_bytes = f.read()
             
         artifact_part = Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
-        await save_artifact_helper(notes_filename, artifact_part, tool_context)
+        version = await save_artifact_helper(notes_filename, artifact_part, tool_context)
 
-        gcs_url = get_gcs_artifact_url(notes_filename, tool_context)
+        gcs_url = get_gcs_artifact_url(notes_filename, tool_context, version=version)
         if gcs_url:
             return f"Speaker notes PDF successfully compiled.\nDownload it here: {gcs_url}"
 
