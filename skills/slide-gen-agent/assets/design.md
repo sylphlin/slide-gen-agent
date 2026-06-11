@@ -42,6 +42,7 @@
 > - **Business / Finance**: Prefer navy (`#1A237E`) + gold (`#F9A825`); high contrast, minimal decoration.
 > - **Education**: Bright primaries, high contrast; ensure WCAG AA accessibility.
 > - **Data-Driven**: Neutral background (`#FAFAFA`), use the full Google palette for chart differentiation.
+> - **Apple Keynote (Cinematic)**: Always use a dark cinematic palette: Background pure black `#000000` or deep space charcoal `#101010`, Surface dark charcoal `#1C1C1E`, Text Primary pure white `#FFFFFF`, Text Secondary muted gray `#8E8E93`. Set margins wide and keep breathing room above 50%.
 
 ---
 
@@ -94,7 +95,7 @@ These are structural properties of the canvas itself — they are decided **once
 To ensure that the icons and other graphic elements (illustrations, backgrounds, characters) feel like they were designed together by a single professional artist, the deck must adhere strictly to one of the four **Visual Themes** below. The choice is made once per deck in Stage 1 and must be enforced globally.
 
 ### 🎨 Theme A: Google Material Design — Best for General Business, SaaS, Corporate, Education
-* **Aesthetic**: Clean, friendly, highly structured card-based layouts. Features generous white space, thin `#E8EAED` divider lines, and card containers with a **large rounded corner (`border-radius: 24px`)** and a very subtle shadow.
+* **Aesthetic**: Clean, friendly, highly structured card-based layouts. Features generous white space, thin `#E8EAED` divider lines, and card containers with very smooth, large rounded corners and a very subtle soft drop shadow.
 * **Icons**: Official **Material Symbols (Outlined)** style — clean, geometric, friendly outline icons with rounded line caps and joins, exactly 2 px stroke, no fill.
 * **Illustrations & Imagery**: Friendly flat vector character art and organic conceptual illustrations (reminiscent of Google Doodles), primarily using the Google brand 4-color palette. 
 * **Semantic Metaphor Rule**: All illustrations must depict concrete, recognizable metaphors representing the slide's core message (e.g. a rocket for growth, people collaborating for teamwork). No generic decorations.
@@ -120,7 +121,7 @@ To ensure that the icons and other graphic elements (illustrations, backgrounds,
 * **Icons**: Hand-drawn sketchy outline icons with wobbly lines, subtle pencil/crayon textures, and soft color fills.
 * **Illustrations & Imagery**: Charming hand-drawn sketchy illustrations with wobbly outlines, soft pastel color palettes, and loose color fills (sometimes slightly overflowing the borders for an authentic handmade feel).
 * **Semantic Metaphor Rule**: Illustrations must represent the slide's topic with cozy, recognizable sketches (e.g., a hand-drawn plant growing for development, a cozy sketched coffee cup for workplace culture).
-* **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, transparent background`
+* **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, loose color washes slightly overflowing outlines, charming, friendly, transparent background`
 
 ---
 
