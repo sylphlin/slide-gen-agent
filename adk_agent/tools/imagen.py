@@ -32,7 +32,22 @@ async def _call_with_retry(fn, max_retries: int = 4, initial_delay: float = 5.0)
         except Exception as e:
             err_str = str(e).lower()
             if attempt < max_retries and any(p in err_str for p in _RETRYABLE_PHRASES):
-                print(f"[imagen] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...")
+                import sys
+                import json
+                is_exhausted = "exhausted" in err_str or "429" in err_str or "quota" in err_str
+                error_info = {
+                    "error": {
+                        "code": 429 if is_exhausted else 503,
+                        "message": str(e),
+                        "status": "RESOURCE_EXHAUSTED" if is_exhausted else "SERVICE_UNAVAILABLE",
+                        "attempt": attempt + 1,
+                        "max_retries": max_retries + 1,
+                        "retry_delay_seconds": delay
+                    }
+                }
+                sys.stderr.write(f"⚠️ [imagen] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...\n")
+                sys.stderr.write(f"{json.dumps(error_info)}\n")
+                sys.stderr.flush()
                 await asyncio.sleep(delay)
                 delay = min(delay * 2, 120)
             else:

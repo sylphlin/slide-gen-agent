@@ -99,7 +99,21 @@ try:
                 
                 if is_429 and attempt < max_retries - 1:
                     delay = base_delay * (2 ** attempt)
-                    print(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    import sys
+                    import json
+                    error_info = {
+                        "error": {
+                            "code": 429,
+                            "message": "Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.",
+                            "status": "RESOURCE_EXHAUSTED",
+                            "attempt": attempt + 1,
+                            "max_retries": max_retries,
+                            "retry_delay_seconds": delay
+                        }
+                    }
+                    sys.stderr.write(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...\n")
+                    sys.stderr.write(f"{json.dumps(error_info)}\n")
+                    sys.stderr.flush()
                     await asyncio.sleep(delay)
                 else:
                     raise e
@@ -120,7 +134,21 @@ try:
                 
                 if is_429 and attempt < max_retries - 1:
                     delay = base_delay * (2 ** attempt)
-                    print(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    import sys
+                    import json
+                    error_info = {
+                        "error": {
+                            "code": 429,
+                            "message": "Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.",
+                            "status": "RESOURCE_EXHAUSTED",
+                            "attempt": attempt + 1,
+                            "max_retries": max_retries,
+                            "retry_delay_seconds": delay
+                        }
+                    }
+                    sys.stderr.write(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...\n")
+                    sys.stderr.write(f"{json.dumps(error_info)}\n")
+                    sys.stderr.flush()
                     time.sleep(delay)
                 else:
                     raise e
