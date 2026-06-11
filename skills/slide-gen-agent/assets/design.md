@@ -121,7 +121,7 @@ To ensure that the icons and other graphic elements (illustrations, backgrounds,
 * **Icons**: Hand-drawn sketchy outline icons with wobbly lines, subtle pencil/crayon textures, and soft color fills.
 * **Illustrations & Imagery**: Charming hand-drawn sketchy illustrations with wobbly outlines, soft pastel color palettes, and loose color fills (sometimes slightly overflowing the borders for an authentic handmade feel).
 * **Semantic Metaphor Rule**: Illustrations must represent the slide's topic with cozy, recognizable sketches (e.g., a hand-drawn plant growing for development, a cozy sketched coffee cup for workplace culture).
-* **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, loose color washes slightly overflowing outlines, charming, friendly, transparent background`
+* **Imagen Keyphrase**: `Cozy warm hand-drawn illustration, soft pastel color palette, organic pencil sketch texture, minimalist flat hand-drawn style, wobbly sketchy outlines, transparent background`
 
 ---
 
