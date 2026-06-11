@@ -76,8 +76,11 @@ def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
             session_id = tool_context.session.id
             app_name = tool_context._invocation_context.app_name or 'adk_agent'
             user_id = tool_context._invocation_context.user_id or 'vais-query-reasoning-engine'
+            import time
+            cb = int(time.time())
             # GCS Artifact service saves as {app_name}/{user_id}/{session_id}/{filename}/{version}
-            return f"https://storage.cloud.google.com/{bucket}/{app_name}/{user_id}/{session_id}/{filename}/{version}"
+            # We append a cache-busting query parameter (?cb=timestamp) to force the browser to load the freshest version.
+            return f"https://storage.cloud.google.com/{bucket}/{app_name}/{user_id}/{session_id}/{filename}/{version}?cb={cb}"
     return ""
 
 async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
@@ -94,4 +97,50 @@ async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
                 artifact=artifact,
             )
     return await tool_context.save_artifact(filename, artifact)
+
+
+def read_gcs_versions(session_id: str) -> dict:
+    """Reads the persistent GCS versions map for a session from the GCS bucket."""
+    import os
+    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' not in os.environ:
+        return {}
+    import json
+    try:
+        from google.cloud import storage
+        client = storage.Client()
+        project_id = CONFIG['GOOGLE_CLOUD_PROJECT']
+        bucket_name = f"slide-gen-sessions-{project_id}"
+        bucket = client.bucket(bucket_name)
+        blob_path = f"gcs_versions/{session_id}.json"
+        blob = bucket.blob(blob_path)
+        if blob.exists():
+            data = blob.download_as_text()
+            return json.loads(data)
+    except Exception as e:
+        import sys
+        sys.stderr.write(f"⚠️ [read_gcs_versions] Warning: Failed to read versions from GCS: {e}\n")
+        sys.stderr.flush()
+    return {}
+
+
+def write_gcs_versions(session_id: str, versions: dict):
+    """Writes the persistent GCS versions map for a session to the GCS bucket."""
+    import os
+    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' not in os.environ:
+        return
+    import json
+    try:
+        from google.cloud import storage
+        client = storage.Client()
+        project_id = CONFIG['GOOGLE_CLOUD_PROJECT']
+        bucket_name = f"slide-gen-sessions-{project_id}"
+        bucket = client.bucket(bucket_name)
+        blob_path = f"gcs_versions/{session_id}.json"
+        blob = bucket.blob(blob_path)
+        blob.upload_from_string(json.dumps(versions, indent=2), content_type='application/json')
+    except Exception as e:
+        import sys
+        sys.stderr.write(f"⚠️ [write_gcs_versions] Warning: Failed to write versions to GCS: {e}\n")
+        sys.stderr.flush()
+
 

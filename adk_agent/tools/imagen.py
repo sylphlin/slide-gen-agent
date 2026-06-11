@@ -8,9 +8,9 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
 try:
-    from ..config import save_artifact_helper
+    from ..config import save_artifact_helper, read_gcs_versions, write_gcs_versions
 except ImportError:
-    from config import save_artifact_helper
+    from config import save_artifact_helper, read_gcs_versions, write_gcs_versions
 
 
 try:
@@ -162,23 +162,27 @@ async def generate_slide_image(
         version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
         tool_context.state[f"slide_{pad_num}_gcs_version"] = version
 
-        # Also persist to gcs_versions.json in the session directory to survive across agent turns
+        # 1. Local backup (useful for local development)
         versions_path = os.path.join(session_path, 'gcs_versions.json')
-        versions = {}
+        local_versions = {}
         if os.path.exists(versions_path):
             try:
                 with open(versions_path, 'r', encoding='utf-8') as f:
-                    versions = json.load(f)
+                    local_versions = json.load(f)
             except Exception:
                 pass
-        versions[f"slide_{pad_num}_gcs_version"] = version
+        local_versions[f"slide_{pad_num}_gcs_version"] = version
         try:
             with open(versions_path, 'w', encoding='utf-8') as f:
-                json.dump(versions, f, indent=2)
-        except Exception as e:
-            import sys
-            sys.stderr.write(f"⚠️ [imagen] Warning: Failed to write gcs_versions.json: {e}\n")
-            sys.stderr.flush()
+                json.dump(local_versions, f, indent=2)
+        except Exception:
+            pass
+
+        # 2. Global persistent GCS store (critical for cloud container restarts and distributed instances)
+        session_id = tool_context.session.id
+        gcs_versions = read_gcs_versions(session_id)
+        gcs_versions[f"slide_{pad_num}_gcs_version"] = version
+        write_gcs_versions(session_id, gcs_versions)
 
         return f"Image for slide {pad_num} successfully generated and written to {file_path}"
     except Exception as e:

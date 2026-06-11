@@ -15,18 +15,29 @@ def get_image_src(png_file: str, pad_num: str, tool_context, session_path: str =
     """Returns a GCS URL in Agent Engine, or a relative file path for local preview."""
     if os.environ.get('GOOGLE_CLOUD_AGENT_ENGINE_ID'):
         version = 0
-        # 1. Try to read from tool_context.state (if populated during current turn)
-        if tool_context and hasattr(tool_context, 'state'):
+        session_id = tool_context.session.id
+        
+        # 1. Primary: Read from the global GCS persistent versions store (cloud SSoT)
+        try:
+            from ..config import read_gcs_versions
+        except ImportError:
+            from config import read_gcs_versions
+        gcs_versions = read_gcs_versions(session_id)
+        if gcs_versions:
+            version = gcs_versions.get(f"slide_{pad_num}_gcs_version", version)
+            
+        # 2. Fallback 1: Read from tool_context.state (if populated during current turn)
+        if version == 0 and tool_context and hasattr(tool_context, 'state'):
             version = tool_context.state.get(f"slide_{pad_num}_gcs_version", 0)
             
-        # 2. Fallback to reading from persistent gcs_versions.json in the session directory
-        if session_path:
+        # 3. Fallback 2: Read from local gcs_versions.json (local dev fallback)
+        if version == 0 and session_path:
             versions_path = os.path.join(session_path, 'gcs_versions.json')
             if os.path.exists(versions_path):
                 try:
                     with open(versions_path, 'r', encoding='utf-8') as f:
-                        versions = json.load(f)
-                        version = versions.get(f"slide_{pad_num}_gcs_version", version)
+                        local_versions = json.load(f)
+                        version = local_versions.get(f"slide_{pad_num}_gcs_version", version)
                 except Exception:
                     pass
                     
