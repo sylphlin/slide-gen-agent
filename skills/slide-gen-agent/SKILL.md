@@ -105,8 +105,6 @@ Read `assets/slide_xx.md` first, then generate one file per slide following that
 If a single large topic or sequence (like a multi-step process, a timeline split across pages, or a multi-part deep dive) is distributed across multiple slides (e.g., Slide 3, 4, 5 explaining a 6-step process):
 1. **Sequence Identification in Stage 2**: In the YAML frontmatter of each slide in the sequence, declare the exact same `sequence_id` (e.g. `sequence_id: "implementation-steps"`) and their ordering using `sequence_part: N` and `sequence_total: M`.
 2. **Layout Consistency Lock**: Define the exact visual layout structure in the `## Layout` section of the *first* slide in the sequence (e.g. `slide_03.md`). For all subsequent slides in the sequence (e.g. `slide_04.md`, `slide_05.md`), you must copy the exact same `## Layout` description word-for-word, only changing the active/highlighted step indicator.
-3. **Sequence Seed Locking in Stage 3**: The image generation tool will automatically detect the `sequence_id`, generate a single random seed for the first slide of the sequence, and reuse that exact same seed for all subsequent slides in the sequence. This guarantees absolute layout and background consistency across the sequence.
-
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
@@ -123,12 +121,14 @@ If a single large topic or sequence (like a multi-step process, a timeline split
 
 ## Stage 3: Image Generation
 
-With all Markdown files saved in the session directory, trigger the image generation for every slide. Each image takes 15–30 seconds — always narrate progress so the user knows the system is working and has not stalled. Work through each slide one at a time:
+With all Markdown files saved in the session directory, trigger the image generation for every slide. Each image takes 15–30 seconds — always narrate progress so the user knows the system is working and has not stalled:
 
-- **Before** generating each slide, output a status line such as **"🎨 Generating image: slide X / N — [slide title]..."**
-- **Action**: Generate the slide image for **every slide index** (either by calling the `generate_slide_image` tool, or by invoking the platform's native image generator based on `design.md` and `slide_xx.md` to output `slide_xx.png`).
-- **After** each image is ready, output a brief confirmation such as **"✅ Slide X / N done."** before moving to the next.
-- **Behind the scenes**: The tool/generator automatically merges `design.md` and `slide_xx.md` into a structured visual prompt to produce a 16:9 widescreen presentation slide PNG (`slide_xx.png`), saving it in the session's workspace directory.
+- **For single, standalone slides**: Call `generate_slide_image` for that slide index.
+  - Output before: **"🎨 Generating image: slide X / N — [slide title]..."**
+  - Output after: **"✅ Slide X / N done."**
+- **For a multi-slide sequence**: Do NOT generate them one by one. Group all slide numbers that share the exact same `sequence_id` and call `generate_sequence_images` ONCE for the entire sequence (e.g., passing `slide_numbers=[3, 4, 5]`).
+  - Output before: **"🎨 Generating sequence images: slides [X, Y, Z] / N..."**
+  - Output after: **"✅ Sequence slides [X, Y, Z] done."**
 - Once all slide images are generated, output a simple confirmation like **"🎉 All N slide images have been generated successfully!"** and transition immediately to Stage 4.
 
 ---
