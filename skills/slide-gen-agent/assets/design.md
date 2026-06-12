@@ -57,7 +57,7 @@ These are structural properties of the canvas itself — they are decided **once
 
 - **Background Treatment**: Flat solid fill using the Background color — no gradients, no decorative shapes, no background imagery or texture. *(If a decorative treatment is desired instead — e.g. a subtle gradient, geometric accent shapes, a soft pattern — define its exact form, color(s), opacity, and placement here, and that single definition then governs every slide of the same type.)*
 - **Canvas / Border**: No decorative border or frame on any slide — full-bleed canvas filled per the Background Treatment above; content is bounded only by the Safe Margin defined in Layout Rules.
-- **Page Number**: Shown on every slide by default — small and unobtrusive, placed in the bottom-right corner inside the safe margin, in Text Secondary color, plain digit format (e.g. "1", "12"). *(If the user asks to hide page numbers, remove them from EVERY slide — never mix slides with and without.)*
+- **Page Number**: None by default — do not render any page numbers on any slides. *(If the user explicitly asks for page numbers, show them on every slide inside the safe margin in the bottom-right corner, in Text Secondary color, using plain digits; never mix slides with and without.)*
 - **Logo / Watermark**: None by default.
 
 > **Consistency Lock**: Whatever this section decides for Background Treatment / Border / Page Number / Logo is binding for the entire deck. The same element must appear in the same position, size, and style on every slide — or not appear at all. Mixing (e.g. some slides with a gradient background and others flat, some framed and some not, some numbered and some not) is the most common cause of a deck looking disjointed.

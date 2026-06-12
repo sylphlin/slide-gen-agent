@@ -48,11 +48,12 @@ Once you have a clear picture, present the following to the user and **wait for 
    - **Recommended Theme**: [Name of proposed theme] — [1-sentence explanation of why it suits the content's Visual DNA].
    - **Alternative Themes Available**:
      - **Google Material Design** (Theme A): Clean, friendly card-based layouts with official Material Symbols (Light Mode default — best for general business/education).
-     - **3D Claymorphism** (Theme B): Friendly, modern 3D renders with soft, puffy clay or matte plastic textures. Uses thick, rounded volumetric shapes and vibrant pastel gradients on clean, light-colored backgrounds (Light Mode default — best for startups, consumer tech, creative agencies).
-     - **Realistic Keynote** (Theme C): Cinematic, ultra-minimalist launch style using highly realistic 2D imagery, skeuomorphic textures, or studio macro photography on a flat plane (Dark Mode default — best for product launches/keynotes).
+     - **Professional Business Infographic** (Theme B): Structured, data-dense corporate style using clean grids, columns, monochrome outline icons, and stylized 2D/isometric vector diagrams/charts (Light Mode default — best for financial reports, operations, data-driven pitches, technical architecture).
+     - **3D Claymorphism** (Theme C): Friendly, modern 3D renders with soft, puffy clay or matte plastic textures. Uses thick, rounded volumetric shapes and vibrant pastel gradients on clean, light-colored backgrounds (Light Mode default — best for startups, consumer tech, creative agencies).
      - **Warm Hand-Drawn** (Theme D): Cozy, organic pencil/crayon sketches with warm paper textures (Light Mode default — best for wellness/lifestyle/creative).
      *Or request a **Custom Coordinated Theme** (e.g., Cyberpunk, Retro Pixel).*
 4. **Color palette** — suggest a primary color, secondary color, and background color. Provide hex codes. Explain briefly why these suit the content and visual theme.
+5. **Whether Page Numbers are Needed** — By default, page numbers are **disabled** to keep the design clean and modern. Explicitly tell the user that they can request to enable page numbers (placed in the bottom-right corner) if desired.
 
 Keep the proposal concise — a short paragraph or a 4-item list is enough. The user may accept as-is, tweak individual items, or ask for alternatives. If the user requests any modifications, you must update the proposal accordingly and present the revised version for their approval. Repeat this verification loop until the user explicitly gives full confirmation. Do not proceed to Stage 2 until the proposal is fully confirmed.
 

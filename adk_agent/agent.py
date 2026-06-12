@@ -192,11 +192,12 @@ Read the user's source material and the context from Stage 0. Extract the conten
    - **Recommended Theme**: [Name of proposed theme] — [1-sentence explanation of why it suits the content].
    - **Alternative Themes Available**:
      - **Google Material Design** (Theme A): Clean, friendly card-based layouts with official Material Symbols (Light Mode default — best for general business/education).
-     - **3D Claymorphism** (Theme B): Friendly, modern 3D renders with soft, puffy clay or matte plastic textures. Uses thick, rounded volumetric shapes and vibrant pastel gradients on clean, light-colored backgrounds (Light Mode default — best for startups, consumer tech, creative agencies).
-     - **Realistic Keynote** (Theme C): Cinematic, ultra-minimalist launch style using highly realistic 2D imagery, skeuomorphic textures, or studio macro photography on a flat plane (Dark Mode default — best for product launches/keynotes).
+     - **Professional Business Infographic** (Theme B): Structured, data-dense corporate style using clean grids, columns, monochrome outline icons, and stylized 2D/isometric vector diagrams/charts (Light Mode default — best for financial reports, operations, data-driven pitches, technical architecture).
+     - **3D Claymorphism** (Theme C): Friendly, modern 3D renders with soft, puffy clay or matte plastic textures. Uses thick, rounded volumetric shapes and vibrant pastel gradients on clean, light-colored backgrounds (Light Mode default — best for startups, consumer tech, creative agencies).
      - **Warm Hand-Drawn** (Theme D): Cozy, organic pencil/crayon sketches with warm paper textures (Light Mode default — best for wellness/lifestyle/creative).
      *Or request a **Custom Coordinated Theme** (e.g., Cyberpunk, Retro Pixel).*
 4. Color palette (Primary, Secondary, Background colors with Hex codes, explaining how they suit the theme).
+5. Whether Page Numbers are Needed: Propose the default setting. Note that page numbers are **disabled by default** to keep the design clean. Explicitly tell the user that they can request to enable page numbers (bottom-right corner) if desired.
 
 Once confirmed, ALWAYS call 'initialize_session' first to create a clean, isolated workspace folder.
 
