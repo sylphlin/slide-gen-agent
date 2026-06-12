@@ -1,6 +1,10 @@
 ---
 slide_number: XX
 slide_type: "Cover"
+# Optional for multi-slide sequences (e.g. Slide 3, 4, 5 of a 6-step process):
+# sequence_id: "unique-sequence-id"
+# sequence_part: 1
+# sequence_total: 3
 ---
 
 # [Slide Title]

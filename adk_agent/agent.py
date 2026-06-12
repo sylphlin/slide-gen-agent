@@ -213,7 +213,7 @@ Generate and write the following documents sequentially using the session path. 
 <OUTLINES_TEMPLATE>
 {_outlines_template}
 </OUTLINES_TEMPLATE>
-3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
+3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. If a slide is part of a multi-slide sequence (e.g. Slide 3, 4, 5 of a 6-step process), you MUST declare the exact same 'sequence_id: [id]', 'sequence_part: [index]', and 'sequence_total: [total]' in the frontmatter of each slide in the sequence, and copy the exact same '## Layout' description word-for-word across all slides in the sequence (only changing the active/highlighted step indicator) to ensure visual structure consistency. After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
 <SLIDE_TEMPLATE>
 {_slide_template}
 </SLIDE_TEMPLATE>

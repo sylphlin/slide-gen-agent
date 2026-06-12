@@ -88,6 +88,29 @@ async def generate_slide_image(
             slide_content = f.read()
     except Exception as e:
         return f"Failed to read session Markdown files: {str(e)}"
+
+    # 1. Parse YAML frontmatter to check if this slide is part of a sequence
+    sequence_id = None
+    if slide_content.startswith('---'):
+        parts = slide_content.split('---', 2)
+        if len(parts) >= 3:
+            frontmatter_content = parts[1]
+            match = re.search(r'sequence_id:\s*["\']?([\w-]+)["\']?', frontmatter_content)
+            if match:
+                sequence_id = match.group(1)
+
+    # 2. Resolve the seed if a sequence_id is present
+    seed = None
+    if sequence_id:
+        session_id = tool_context.session.id
+        gcs_versions = read_gcs_versions(session_id)
+        seed_key = f"seq_{sequence_id}_seed"
+        seed = gcs_versions.get(seed_key)
+        if seed is None:
+            import random
+            seed = random.randint(0, 2**31 - 1)
+            gcs_versions[seed_key] = seed
+            write_gcs_versions(session_id, gcs_versions)
         
     prompt = f"""Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the brand system and slide specification below.
 - **DO** render the "Title" from <slide_spec> clearly on the slide, applying the colors and typography defined in <brand_system>.
@@ -116,7 +139,8 @@ async def generate_slide_image(
                     model=CONFIG['IMAGEN_MODEL'],
                     contents=prompt,
                     config=types.GenerateContentConfig(
-                        response_modalities=["IMAGE"]
+                        response_modalities=["IMAGE"],
+                        seed=seed,
                     )
                 )
             )
@@ -148,6 +172,7 @@ async def generate_slide_image(
                         number_of_images=1,
                         output_mime_type='image/png',
                         aspect_ratio='16:9',
+                        seed=seed,
                     )
                 )
             )
