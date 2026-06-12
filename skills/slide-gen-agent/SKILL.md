@@ -104,9 +104,10 @@ Read `assets/slide_xx.md` first, then generate one file per slide following that
 **Multi-Slide Sequence Protocol**:
 If a single large topic or sequence (like a multi-step process, a timeline split across pages, or a multi-part deep dive) is distributed across multiple slides (e.g., Slide 3, 4, 5 explaining a 6-step process):
 1. **Sequence Identification in Stage 2**: In the YAML frontmatter of each slide in the sequence, declare the exact same `sequence_id` (e.g. `sequence_id: "implementation-steps"`) and their ordering using `sequence_part: N` and `sequence_total: M`.
-2. **Layout Consistency Lock**: Define the exact visual layout structure in the `## Layout` section of the *first* slide in the sequence (e.g. `slide_03.md`). 
-   - **Global UI Elements**: If the layout includes a progress bar, timeline, or shared navigation, you MUST explicitly list the EXACT text labels (in the same language) and icon concepts for ALL steps inside the `## Layout` section. 
-   - For all subsequent slides in the sequence (e.g. `slide_04.md`, `slide_05.md`), you must copy the entire `## Layout` description character-for-character, only changing the active/highlighted step indicator. If the text labels differ (e.g., mixing English and Chinese), the image model will render inconsistent text and icons.
+2. **Layout Consistency Lock & AI-Safe Design**: Define the exact visual layout structure in the `## Layout` section of the *first* slide in the sequence (e.g. `slide_03.md`). 
+   - **CRITICAL**: DO NOT use complex "step-by-step progression" UI elements like multi-step progress bars, horizontal timelines, or global navigation menus across sequence slides. Text-to-Image models cannot maintain geometric consistency for complex UI arrays across multiple images.
+   - **Use "Focus Mode"**: Instead, use a macro-grid split (e.g., a 30/70 vertical split). Place the overarching sequence title in the smaller column (e.g., left). In the larger column, present ONLY the current stage's specific content and a simple text indicator like "Part 3 of 6: [Current Step Name]".
+   - For all subsequent slides in the sequence (e.g. `slide_04.md`, `slide_05.md`), you must copy the entire `## Layout` description character-for-character, only updating the "[Current Step Name]" and the active content block description.
 
 **Content Sourcing Rule:**
 - **Primary Content Source**: The script's actual information, data, and core details must be extracted directly from the **original source material** (provided by the user in Stage 1).
