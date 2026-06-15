@@ -62,9 +62,10 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
     if not os.path.exists(slide_path):
         return metadata
     try:
-        with open(slide_path, 'r', encoding='utf-8') as f:
+        with open(slide_path, 'r', encoding='utf-8-sig') as f:
             content = f.read()
-        match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+        content = content.strip()
+        match = re.match(r'^---\s*\r?\n(.*?)\r?\n---\s*(?:\r?\n|$)', content, re.DOTALL)
         if match:
             frontmatter_text = match.group(1)
             for line in frontmatter_text.split('\n'):
@@ -151,48 +152,48 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
     try:
         slide_img = Image.open(output_image_path).convert("RGBA")
         slide_w, slide_h = slide_img.size
+        print(f"📊 [Overlay] Widescreen slide base resolution: {slide_w}x{slide_h}")
+        
+        # Proportional scale factor based on standard design width of 1920
+        scale_factor = slide_w / 1920.0
         
         try:
             target_size = int(metadata.get('image_size', 220))
         except ValueError:
             target_size = 220
             
+        # Scale QR code size proportionally to slide resolution
+        actual_target_size = int(target_size * scale_factor)
+        
         orig_w, orig_h = overlay_img.size
         aspect_ratio = orig_h / orig_w
-        new_w = target_size
+        new_w = actual_target_size
         new_h = int(new_w * aspect_ratio)
         overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
         
         position = metadata.get('image_position', 'bottom-right').lower()
         
         if is_qr_slide:
-            # Under Content (QR Code), we align the overlay precisely inside the AI-generated card column.
-            # Aspect Ratio is 1920x1080.
-            # Left/Right columns are separated at ~65/35 split.
-            # Vertical center is 540. We shift up by 25px to leave room for the AI-rendered label at the bottom.
             center_y = slide_h // 2
+            vertical_offset = int(25 * scale_factor)
             
             if 'left' in position:
-                # Left Column: x from 80 to 672 (center at 376)
-                center_x = 80 + (672 - 80) // 2
+                center_x = int(slide_w * 0.2)
                 paste_x = center_x - new_w // 2
-                paste_y = center_y - new_h // 2 - 25
+                paste_y = center_y - new_h // 2 - vertical_offset
             elif 'center' in position:
-                # Centered: x center at 960, y center shifted down to 700
                 center_x = slide_w // 2
                 paste_x = center_x - new_w // 2
-                paste_y = 700 - new_h // 2
+                paste_y = int(700 * scale_factor) - new_h // 2
             else:
-                # Right Column (Default): x from 1248 to 1840 (center at 1544)
-                center_x = 1248 + (1840 - 1248) // 2
+                center_x = int(slide_w * 0.8)
                 paste_x = center_x - new_w // 2
-                paste_y = center_y - new_h // 2 - 25
+                paste_y = center_y - new_h // 2 - vertical_offset
         else:
-            # Normal slide overlay with programmatic white card container
-            padding = 15 if draw_card else 0
+            padding = int(15 * scale_factor) if draw_card else 0
             card_w = new_w + 2 * padding
             card_h = new_h + 2 * padding
-            margin = 80
+            margin = int(80 * scale_factor)
             
             if position == 'bottom-left':
                 card_x = margin
@@ -213,13 +214,16 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             if draw_card:
                 draw = ImageDraw.Draw(slide_img)
                 card_coords = [card_x, card_y, card_x + card_w, card_y + card_h]
-                draw.rounded_rectangle(card_coords, radius=12, fill=(255, 255, 255, 255))
-                draw.rounded_rectangle(card_coords, radius=12, outline=(220, 220, 220, 255), width=1)
+                draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), fill=(255, 255, 255, 255))
+                draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), outline=(220, 220, 220, 255), width=1)
                 
             paste_x = card_x + padding
             paste_y = card_y + padding
             
-        slide_img.paste(overlay_img, (paste_x, paste_y), mask=overlay_img)
+        print(f"📍 [Overlay] Pasting QR Code at calculated coordinates: (x={paste_x}, y={paste_y}), size={new_w}x{new_h}")
+        # Paste directly without mask to avoid alpha-channel transparency bugs (guarantees solid white QR background)
+        slide_img.paste(overlay_img, (paste_x, paste_y))
+        
         slide_img.convert("RGB").save(output_image_path, "PNG")
         print(f"Successfully applied overlay to {output_image_path}")
     except Exception as e:
