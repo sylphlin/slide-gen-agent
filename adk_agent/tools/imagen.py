@@ -158,9 +158,9 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         scale_factor = slide_w / 1920.0
         
         try:
-            target_size = int(metadata.get('image_size', 220))
+            target_size = int(metadata.get('image_size', 260))
         except ValueError:
-            target_size = 220
+            target_size = 260
             
         # Scale QR code size proportionally to slide resolution
         actual_target_size = int(target_size * scale_factor)
@@ -175,10 +175,10 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         
         if is_qr_slide:
             center_y = slide_h // 2
-            vertical_offset = int(25 * scale_factor)
+            vertical_offset = 0 # Vertically centered inside the card container (no offset needed)
             
             if 'left' in position:
-                center_x = int(slide_w * 0.2)
+                center_x = int(slide_w * 0.175) # Left column center (17.5%)
                 paste_x = center_x - new_w // 2
                 paste_y = center_y - new_h // 2 - vertical_offset
             elif 'center' in position:
@@ -186,7 +186,7 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
                 paste_x = center_x - new_w // 2
                 paste_y = int(700 * scale_factor) - new_h // 2
             else:
-                center_x = int(slide_w * 0.8)
+                center_x = int(slide_w * 0.825) # Right column center (82.5%)
                 paste_x = center_x - new_w // 2
                 paste_y = center_y - new_h // 2 - vertical_offset
         else:
