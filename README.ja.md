@@ -110,7 +110,7 @@ slide-gen-agent/
     └── tools/               # エージェントツール
         ├── __init__.py
         ├── file_manager.py  # セッション初期化およびファイル書き込みツール
-        ├── imagen.py        # Gemini によるスライド画像生成ツール
+        ├── image_generation.py # Gemini によるスライド画像生成ツール
         ├── pdf_exporter.py  # Pillow ベースのワイドスクリーン PDF エクスポートツール
         ├── pptx_exporter.py # スピーカーノート付き PowerPoint ワイドスクリーン（PPTX）エクスポートツール
         ├── drive_exporter.py # Google ドライブへのアップロード → Google スライド変換・共有ツール

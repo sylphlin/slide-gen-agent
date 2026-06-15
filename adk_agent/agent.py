@@ -13,7 +13,7 @@ load_dotenv(override=True)
 try:
     from .config import CONFIG
     from .tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script, save_user_asset
-    from .tools.imagen import generate_slide_image, generate_sequence_images
+    from .tools.image_generation import generate_slide_image, generate_sequence_images
     from .tools.pdf_exporter import export_deck_pdf
     from .tools.preview_generator import generate_preview_page
     from .tools.pptx_exporter import export_deck_pptx
@@ -21,7 +21,7 @@ try:
 except ImportError:
     from config import CONFIG
     from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script, save_user_asset
-    from tools.imagen import generate_slide_image, generate_sequence_images
+    from tools.image_generation import generate_slide_image, generate_sequence_images
     from tools.pdf_exporter import export_deck_pdf
     from tools.preview_generator import generate_preview_page
     from tools.pptx_exporter import export_deck_pptx

@@ -118,7 +118,7 @@ slide-gen-agent/
     └── tools/               # Agent 工具
         ├── __init__.py
         ├── file_manager.py  # 工作区会话初始化与文件写入工具
-        ├── imagen.py        # Gemini 幻灯片图像生成工具
+        ├── image_generation.py # Gemini 幻灯片图像生成工具
         ├── pdf_exporter.py  # 基于 Pillow 的宽屏 PDF 导出工具
         ├── pptx_exporter.py # 宽屏 PowerPoint (PPTX) 导出工具（含演讲备注）
         ├── notes_pdf_exporter.py # 结合幻灯片图片与演讲备注 of PDF 生成器

@@ -118,7 +118,7 @@ slide-gen-agent/
     └── tools/               # Agent tools
         ├── __init__.py
         ├── file_manager.py  # Session initialization and file writer tools
-        ├── imagen.py        # Gemini slide image generator tool
+        ├── image_generation.py # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
         ├── notes_pdf_exporter.py # Renders a PDF combining slide images and speaker notes

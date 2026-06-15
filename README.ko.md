@@ -110,7 +110,7 @@ slide-gen-agent/
     └── tools/               # 에이전트 도구
         ├── __init__.py
         ├── file_manager.py  # 세션 초기화 및 파일 작성 도구
-        ├── imagen.py        # Gemini 슬라이드 이미지 생성 도구
+        ├── image_generation.py # Gemini 슬라이드 이미지 생성 도구
         ├── pdf_exporter.py  # Pillow 기반 와이드스크린 PDF 내보내기 도구
         ├── pptx_exporter.py # 발표 노트가 포함된 PowerPoint 와이드스크린 (PPTX) 내보내기 도구
         ├── drive_exporter.py # Google Drive 업로드 → Google 슬라이드 변환 및 공유 도구
