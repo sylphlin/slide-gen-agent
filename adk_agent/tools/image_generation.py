@@ -79,6 +79,69 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
         print(f"Error parsing frontmatter: {e}", flush=True)
     return metadata
 
+def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) -> tuple[int, int, int, int] | None:
+    """Uses Gemini Multimodal Vision to detect the exact bounding box of the QR code/placeholder on the slide.
+    Returns (left, top, w, h) in slide pixel dimensions, or None if detection fails."""
+    try:
+        import os
+        from google import genai
+        from google.genai import types
+        import re
+        
+        # Initialize Gen AI Client (will auto-use Vertex AI mode based on env vars)
+        client = genai.Client()
+        
+        # Load the image bytes
+        with open(image_path, 'rb') as f:
+            image_bytes = f.read()
+            
+        image_part = types.Part.from_bytes(
+            data=image_bytes,
+            mime_type="image/png"
+        )
+        
+        # Use the default text model (Gemini Flash)
+        model_name = os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash'
+        
+        prompt = """
+        Analyze the slide image. Identify the exact bounding box of the square placeholder area (which is a solid grey/white square or a fake QR code) in the right card container.
+        Return ONLY the normalized bounding box coordinates of this square area in the format: [ymin, xmin, ymax, xmax], where each value is an integer between 0 and 1000.
+        For example, if the square is centered in the right card, it might return [350, 720, 650, 920].
+        Do NOT include any markdown, backticks, JSON keys, or explanations. Output ONLY the list of 4 integers, like: [ymin, xmin, ymax, xmax].
+        """
+        
+        print(f"👁️ [Overlay] Querying Gemini Vision ({model_name}) to detect placeholder coordinates...", flush=True)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[image_part, prompt]
+        )
+        
+        text = response.text.strip()
+        print(f"👁️ [Overlay] Gemini Vision response: {text}", flush=True)
+        
+        # Extract the coordinates using regex
+        match = re.search(r'\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]', text)
+        if match:
+            ymin, xmin, ymax, xmax = map(int, match.groups())
+            
+            # Convert normalized 0-1000 coordinates to actual slide pixels (e.g. 1920x1080)
+            left = int(xmin * slide_w / 1000.0)
+            right = int(xmax * slide_w / 1000.0)
+            top = int(ymin * slide_h / 1000.0)
+            bottom = int(ymax * slide_h / 1000.0)
+            
+            w = right - left
+            h = bottom - top
+            
+            # Sanity check: must be a reasonable size and proportion
+            if w > 50 and h > 50:
+                return left, top, w, h
+                
+        print("⚠️ [Overlay] Gemini Vision returned invalid coordinates or format.", flush=True)
+    except Exception as e:
+        print(f"❌ [Overlay] Gemini Vision detection failed: {e}", flush=True)
+    return None
+
 
 def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
     from PIL import Image, ImageDraw
@@ -169,61 +232,28 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         position = metadata.get('image_position', 'bottom-right').lower()
         
         if is_qr_slide:
-            # Dynamic Grey Square Placeholder Detector (Lightweight PIL-based Computer Vision)
-            # Scans the target column to find the exact coordinates of the solid grey placeholder square drawn by Gemini.
-            pixels = slide_img.load()
-            
-            # Define scanning region based on position
-            if 'left' in position:
-                start_x = 20
-                end_x = int(slide_w * 0.45)
-            elif 'center' in position:
-                start_x = int(slide_w * 0.3)
-                end_x = int(slide_w * 0.7)
-            else:
-                # Default: Right Column (Scan from 55% to 95% of width)
-                start_x = int(slide_w * 0.55)
-                end_x = int(slide_w * 0.95)
-                
-            start_y = int(slide_h * 0.1)
-            end_y = int(slide_h * 0.9)
-            
-            grey_pixels = []
-            for x in range(start_x, end_x, 2): # Step by 2 for blazing-fast scanning (takes <3ms)
-                for y in range(start_y, end_y, 2):
-                    r, g, b, a = pixels[x, y]
-                    # Light grey placeholder pixels typically have closely balanced RGB channels in [160, 246]
-                    if 160 <= r <= 246 and abs(r - g) < 6 and abs(g - b) < 6 and abs(r - b) < 6:
-                      grey_pixels.append((x, y))
-                      
+            # Attempt AI-driven dynamic detection using Gemini Multimodal Vision!
+            detection = detect_placeholder_with_gemini(output_image_path, slide_w, slide_h)
             detector_success = False
-            if grey_pixels:
-                xs = [p[0] for p in grey_pixels]
-                ys = [p[1] for p in grey_pixels]
-                left, right = min(xs), max(xs)
-                top, bottom = min(ys), max(ys)
+            
+            if detection:
+                left, top, box_w, box_h = detection
+                center_x = left + box_w // 2
+                center_y = top + box_h // 2
+                print(f"🎯 [Overlay] Gemini Vision SUCCESS! Detected placeholder: left={left}, top={top}, w={box_w}, h={box_h}, center=({center_x}, {center_y})", flush=True)
                 
-                box_w = right - left
-                box_h = bottom - top
+                # Dynamically resize the QR code to perfectly cover the detected placeholder square!
+                # We scale it slightly larger (2%) to guarantee a clean cover with no edges peeking out.
+                new_w = int(box_w * 1.02)
+                new_h = int(box_h * 1.02)
+                overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
                 
-                # Proportions must be reasonably square-like (width/height ratio within 0.7-1.4)
-                if box_w > 100 and box_h > 100 and 0.7 < (box_w / box_h) < 1.4:
-                    center_x = (left + right) // 2
-                    center_y = (top + bottom) // 2
-                    print(f"🎯 [Overlay] Dynamic Detector SUCCESS! Found grey placeholder: left={left}, top={top}, w={box_w}, h={box_h}, center=({center_x}, {center_y})", flush=True)
-                    
-                    # Dynamically resize the QR code to perfectly cover the grey placeholder card!
-                    # We scale it 2% larger (1.02) to ensure a perfectly clean cover with no grey edges peeking out.
-                    new_w = int(box_w * 1.02)
-                    new_h = int(box_h * 1.02)
-                    overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                    
-                    paste_x = center_x - new_w // 2
-                    paste_y = center_y - new_h // 2
-                    detector_success = True
-                    
+                paste_x = center_x - new_w // 2
+                paste_y = center_y - new_h // 2
+                detector_success = True
+                
             if not detector_success:
-                print("⚠️ [Overlay] Dynamic Detector failed or no placeholder found. Falling back to mathematical alignment.", flush=True)
+                print("⚠️ [Overlay] Gemini Vision detection failed. Falling back to mathematical alignment.", flush=True)
                 center_y = slide_h // 2
                 vertical_offset = 0
                 if 'left' in position:
