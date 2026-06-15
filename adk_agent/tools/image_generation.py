@@ -57,6 +57,70 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
     return metadata
 
 
+def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) -> tuple[int, int, int, int] | None:
+    """Uses Gemini Multimodal Vision to detect the exact bounding box of the QR code/placeholder on the slide.
+    Returns (left, top, w, h) in slide pixel dimensions, or None if detection fails."""
+    try:
+        import os
+        from google import genai
+        from google.genai import types
+        import re
+        
+        # Initialize Gen AI Client
+        client = genai.Client()
+        
+        # Load the image bytes
+        with open(image_path, 'rb') as f:
+            image_bytes = f.read()
+            
+        image_part = types.Part.from_bytes(
+            data=image_bytes,
+            mime_type="image/png"
+        )
+        
+        # Use the text model bound to the system
+        model_name = os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash'
+        
+        prompt = """
+        Analyze the slide image. Identify the exact bounding box of the square placeholder area (which is a solid grey/white square or a fake QR code) in the right card container.
+        Return ONLY the normalized bounding box coordinates of this square area in the format: [ymin, xmin, ymax, xmax], where each value is an integer between 0 and 1000.
+        For example, if the square is centered in the right card, it might return [350, 720, 650, 920].
+        Do NOT include any markdown, backticks, JSON keys, or explanations. Output ONLY the list of 4 integers, like: [ymin, xmin, ymax, xmax].
+        """
+        
+        print(f"👁️ [Overlay] Querying Gemini Vision ({model_name}) to detect placeholder coordinates...", flush=True)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[image_part, prompt]
+        )
+        
+        text = response.text.strip()
+        print(f"👁️ [Overlay] Gemini Vision response: {text}", flush=True)
+        
+        # Extract the coordinates using regex
+        match = re.search(r'\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]', text)
+        if match:
+            ymin, xmin, ymax, xmax = map(int, match.groups())
+            
+            # Convert normalized 0-1000 coordinates to actual slide pixels (e.g. 1920x1080)
+            left = int(xmin * slide_w / 1000.0)
+            right = int(xmax * slide_w / 1000.0)
+            top = int(ymin * slide_h / 1000.0)
+            bottom = int(ymax * slide_h / 1000.0)
+            
+            w = right - left
+            h = bottom - top
+            
+            # Sanity check: must be a reasonable size and proportion
+            if w > 50 and h > 50:
+                return left, top, w, h
+                
+        print("⚠️ [Overlay] Gemini Vision returned invalid coordinates or format.", flush=True)
+    except Exception as e:
+        print(f"❌ [Overlay] Gemini Vision detection failed: {e}", flush=True)
+    return None
+
+
 def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
     """Mathematically aligns and overlays a locally-generated QR code onto the slide image.
     Only supports URL-based QR codes. Custom image overlays are strictly prohibited."""
@@ -121,15 +185,32 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         position = metadata.get('image_position', 'bottom-right').lower()
         
         if is_qr_slide:
-            # Mathematical Alignment (100% robust and stable!)
-            # 81.5% is the perfect center of the 35% right card container.
-            # 46.0% is the perfect vertical center (slightly shifted up to leave room for the bottom text).
-            center_x = int(slide_w * 0.815)
-            center_y = int(slide_h * 0.46)
+            # Attempt AI-driven dynamic detection using Gemini Multimodal Vision!
+            detection = detect_placeholder_with_gemini(output_image_path, slide_w, slide_h)
+            detector_success = False
             
-            paste_x = center_x - new_w // 2
-            paste_y = center_y - new_h // 2
-            print(f"🎯 [Overlay] Mathematical Alignment: center=({center_x}, {center_y}), paste=({paste_x}, {paste_y})", flush=True)
+            if detection:
+                left, top, box_w, box_h = detection
+                center_x = left + box_w // 2
+                center_y = top + box_h // 2
+                print(f"🎯 [Overlay] Gemini Vision SUCCESS! Detected placeholder: left={left}, top={top}, w={box_w}, h={box_h}, center=({center_x}, {center_y})", flush=True)
+                
+                # Dynamically resize the QR code to perfectly cover the detected placeholder square!
+                # We scale it slightly larger (2%) to guarantee a clean cover with no edges peeking out.
+                new_w = int(box_w * 1.02)
+                new_h = int(box_h * 1.02)
+                overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                
+                paste_x = center_x - new_w // 2
+                paste_y = center_y - new_h // 2
+                detector_success = True
+                
+            if not detector_success:
+                print("⚠️ [Overlay] Gemini Vision detection failed. Falling back to mathematical alignment.", flush=True)
+                center_x = int(slide_w * 0.815)
+                center_y = int(slide_h * 0.46)
+                paste_x = center_x - new_w // 2
+                paste_y = center_y - new_h // 2
         else:
             # Fallback bottom-right overlay (for normal slides, draw a white card)
             padding = int(15 * scale_factor)
@@ -161,9 +242,10 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             paste_x = card_x + padding
             paste_y = card_y + padding
             
-        # Erase-and-Paste: Draw a solid white square (with 2px safety padding) to completely obliterate any background fake QR code!
+        # Erase-and-Paste: Draw a solid white square to completely obliterate any background fake QR code!
         draw = ImageDraw.Draw(slide_img)
-        erase_margin = 2
+        # Use a generous margin for QR slides to cover any messy model-generated fake QR blocks
+        erase_margin = int(24 * scale_factor) if is_qr_slide else 2
         draw.rectangle([
             paste_x - erase_margin,
             paste_y - erase_margin,
