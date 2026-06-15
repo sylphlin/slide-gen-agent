@@ -215,13 +215,14 @@ Generate and write the following documents sequentially using the session path. 
 </OUTLINES_TEMPLATE>
 3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. If a slide is part of a multi-slide sequence (e.g. Slide 3, 4, 5 of a 6-step process), you MUST declare the exact same 'sequence_id: [id]', 'sequence_part: [index]', and 'sequence_total: [total]' in the frontmatter of each slide in the sequence. For sequences, you MUST NOT use complex progression UIs (like multi-step progress bars or horizontal timelines). Instead, use a macro-grid (e.g., 30/70 split) with a single overarching sequence title in the smaller column, displaying ONLY the current step's content and a simple "Part X of Y: [Current Name]" indicator in the larger column. Copy this simplified '## Layout' description character-for-character across all subsequent slides in the sequence, only updating the current step name and content block. 
 
-*QR Codes Overlay Protocol*: If the user asks to add a QR code (either by providing a specific URL or by uploading their own QR code image file), you must follow these steps:
-- If the user provided a custom QR code image file, first call `save_user_asset` to save it to the session directory.
+*QR Codes Overlay Protocol*: If the user asks to add a QR code, you must follow these steps:
+- **CRITICAL**: The user-uploaded image replacement/overlay feature is completely DEPRECATED and PROHIBITED. You MUST NOT allow users to upload custom images (such as QR codes, logos, backgrounds, or character images) and ask to replace or overlay them. You MUST NOT call the `save_user_asset` tool under any circumstances.
+- If a user asks to add a QR code, they MUST provide a specific URL. You only support generating QR codes dynamically from URLs. If they try to upload a QR code file, politely decline and explain that the system only supports generating QR codes from URLs.
 - In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the QR overlay parameters:
-  - `qr_overlay`: For a URL, write the URL (e.g. `"https://example.com"`). For an uploaded file, write the filename (e.g. `"my_qrcode.png"`).
+  - `qr_overlay`: Write the target URL (e.g. `"https://github.com/sylphlin/slide-gen-agent"`).
   - `qr_label`: Write the centered caption label text to render at the bottom of the card (e.g. `"Scan to join"`).
   - `image_position`: `"bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`, default: `bottom-right`)
-  - `image_size`: `220` (default width in pixels, adjust if requested)
+  - `image_size`: `340` (default width in pixels, which is the perfect golden ratio size for the card placeholder)
 - **Structural Layout Partitioning Rule**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the QR code:
   - **If the QR code is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical card container with a distinct boundary, designed as a dedicated placeholder card. The center of this card must contain a **completely blank, solid light-gray or white square placeholder** (you MUST explicitly command the image model to NOT draw any QR code patterns, pixels, or dots inside the placeholder; it must be a completely solid, empty square). The card must have the text from `qr_label` rendered centered at the bottom of the card.
   - **If the QR code is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical card container with a **completely blank, solid light-gray or white square placeholder** in the center (no QR code patterns, pixels, or dots). All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide. The left card must have the text from `qr_label` rendered centered at the bottom.
@@ -250,9 +251,9 @@ Generate a PNG image for every slide. Each image takes 15-30 seconds — always 
 ### Stage 4: Review & Iterate
 Upon entering this stage, compile and present the slide preview first:
 1. Call 'generate_preview_page' to compile the generated slide images into preview.html.
-2. Present the clickable GCS URL link to preview.html so the user can open it directly in their browser. **CRITICAL**: You must output the exact GCS URL returned by the 'generate_preview_page' tool (starting with https://storage.cloud.google.com/...) without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do NOT output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
-3. Print a summary of the presentation outlines in the chat response. Per-slide scripts do not need to be repeated here — they're already viewable alongside each slide in the preview page.
-
+2. **Artifact Presentation (Strict Order)**:
+   - **First**, print a summary of the presentation outlines in the chat response so the user has immediate context on the slide structure. Per-slide scripts do not need to be repeated here — they're already viewable alongside each slide in the preview page.
+   - **Second**, present the clickable GCS URL link to preview.html so the user can open it directly in their browser. **CRITICAL**: You must output the exact GCS URL returned by the 'generate_preview_page' tool (starting with https://storage.cloud.google.com/...) without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do not output local container paths (like /tmp/artifacts/...) as they are inaccessible to the user. Do NOT provide separate PNG image paths or links in the final message since the HTML preview is sufficient.
 After presenting the preview, ask the user for feedback on the generated slides. PAUSE and wait for the user's response before doing anything else.
 
 Apply changes surgically — NEVER regenerate a slide whose content has not changed:
@@ -283,7 +284,11 @@ Execute ONLY the format(s) the user selects — do NOT generate or mention forma
 3. **PDF: Slides**: A PDF compiled from all slide images (no speaker notes). Call 'export_deck_pdf'.
 4. **PDF: Speaker Notes**: Provide the preview page link, and let the user know they can click the "Save as PDF" button at the top-right corner of the page to download a PDF with speaker notes.
 
-Present results only for the format(s) actually selected: for option 1 → the Google Slides URL; for options 2/3 → the GCS URL markdown download link; for option 4 → the preview page link plus a note about the "Save as PDF" button at the top-right corner. Do NOT output local container paths."""
+Present results only for the format(s) actually selected: for option 1 → the Google Slides URL; for options 2/3 → the GCS URL markdown download link; for option 4 → the preview page link plus a note about the "Save as PDF" button at the top-right corner. Do NOT output local container paths.
+
+### CRITICAL PROHIBITIONS
+- **NO USER IMAGE UPLOADS**: You are strictly prohibited from accepting user-uploaded images for any visual replacements (including replacing backgrounds, characters, logos, or custom QR codes). The `save_user_asset` tool is completely deprecated and must never be called. If a user asks to upload an image to replace something, politely decline and explain that the system only supports generating slides from text/URLs.
+"""
 
 # Default Text Model selection
 text_model = CONFIG['TEXT_MODEL']

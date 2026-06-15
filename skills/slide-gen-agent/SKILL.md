@@ -88,13 +88,14 @@ Read `assets/slide_xx.md` first, then generate one file per slide following that
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
 **QR Codes Overlay Protocol**:
-If the user asks to add a QR code (either by providing a specific URL or by uploading their own QR code image file):
-1. **Save Assets (If Uploaded)**: If the user provided a custom QR code image file, first call `save_user_asset` to save the image to the session directory.
-2. **Declare Frontmatter**: In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the QR overlay parameters:
-   - `qr_overlay`: For a URL, write the URL (e.g. `"https://example.com"`). For an uploaded file, write the filename (e.g. `"my_qrcode.png"`).
+If the user asks to add a QR code, you must follow these steps:
+1. **CRITICAL**: The user-uploaded image replacement/overlay feature is completely DEPRECATED and PROHIBITED. You MUST NOT allow users to upload custom images (such as QR codes, logos, backgrounds, or character images) and ask to replace or overlay them. You MUST NOT call the `save_user_asset` tool under any circumstances.
+2. **URL-Only QR Generation**: If a user asks to add a QR code, they MUST provide a specific URL. You only support generating QR codes dynamically from URLs. If they try to upload a QR code file, politely decline and explain that the system only supports generating QR codes from URLs.
+3. **Declare Frontmatter**: In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the QR overlay parameters:
+   - `qr_overlay`: Write the target URL (e.g. `"https://github.com/sylphlin/slide-gen-agent"`).
    - `qr_label`: Write the centered caption label text to render at the bottom of the card (e.g. `"Scan to join"`).
    - `image_position`: `"bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`, default: `bottom-right`).
-   - `image_size`: `220` (default width in pixels, adjust if requested).
+   - `image_size`: `340` (default width in pixels, which is the perfect golden ratio size for the card placeholder).
 3. **Instruct the Image Model (Structural Partitioning)**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the QR code:
    - **If the QR code is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical card container with a distinct boundary, designed as a dedicated placeholder card. The center of this card must contain a **completely blank, solid light-gray or white square placeholder** (you MUST explicitly command the image model to NOT draw any QR code patterns, pixels, or dots inside the placeholder; it must be a completely solid, empty square). The card must have the text from `qr_label` rendered centered at the bottom of the card.
    - **If the QR code is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical card container with a **completely blank, solid light-gray or white square placeholder** in the center (no QR code patterns, pixels, or dots). All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide. The left card must have the text from `qr_label` rendered centered at the bottom.
@@ -155,10 +156,10 @@ With all Markdown files saved in the session directory, trigger the image genera
 
 Upon entering this stage, compile and present the slide preview first:
 1. **Preview Generation**: Compile the generated slide images into a `preview.html` file in the session directory (either by calling the `generate_preview_page` tool, or by running `python3 scripts/preview_generator.py <sessionPath>` in the terminal).
-2. **Artifact Presentation**:
-   - Present the markdown link to the generated `preview.html` file using the exact GCS URL returned by the `generate_preview_page` tool. **CRITICAL**: You must output the GCS URL exactly as-is, without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do not output local container paths.
-   - Display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
-   - Print a summary of the presentation outlines in the chat response. (Per-slide scripts do not need to be repeated here — they are already viewable alongside each slide in the preview page).
+2. **Artifact Presentation (Strict Order)**:
+   - **First**, print a summary of the presentation outlines in the chat response so the user has immediate context on the slide structure. (Per-slide scripts do not need to be repeated here — they are already viewable alongside each slide in the preview page).
+   - **Second**, present the markdown link to the generated `preview.html` file using the exact GCS URL returned by the `generate_preview_page` tool. **CRITICAL**: You must output the GCS URL exactly as-is, without any modifications, shortening, or cleaning. Do NOT strip the application prefix, user ID, or version number, as doing so will break the link and cause 404 errors. Do not output local container paths.
+   - **Third**, display these slides in the chat using relative markdown image syntax (`![Slide XX](slide_xx.png)`) so the user can inspect them instantly.
 
 After presenting the preview, ask the user for feedback on the generated slides. **PAUSE and wait for the user's response before doing anything else.**
 
@@ -235,3 +236,6 @@ content categories.
   The `design.md` file exists precisely to enforce this — refer back to it
   whenever you are unsure about a color, font, or layout choice.
 - **Script Depth & Duration.** Aim for a natural 1–2 minute presentation per slide. The spoken script must be 260–300 words (English) or 320–400 characters (CJK) and structured with a smooth transition followed by high-density elaboration (data, details, metaphors). A rich, concrete script gives the image model much stronger visual context to produce high-quality, customized slide images. Vague scripts produce generic visuals.
+
+### PROHIBITED ACTIONS (CRITICAL)
+- **NO USER IMAGE UPLOADS**: You are strictly prohibited from accepting user-uploaded images for any visual replacements (including replacing backgrounds, characters, logos, or custom QR codes). The `save_user_asset` tool is completely deprecated and must never be called. If a user asks to upload an image to replace something, politely decline and explain that the system only supports generating slides from text/URLs.

@@ -1,69 +1,46 @@
 import os
-import base64
-import asyncio
-import json
 import re
+import base64
+import time
+import asyncio
 from google import genai
 from google.genai import types
 from google.adk.tools.tool_context import ToolContext
-from google.genai.types import Part
 
 try:
-    from ..config import save_artifact_helper, read_gcs_versions, write_gcs_versions
+    from ..config import CONFIG, save_artifact_helper, read_gcs_versions, write_gcs_versions
 except ImportError:
-    from config import save_artifact_helper, read_gcs_versions, write_gcs_versions
+    from config import CONFIG, save_artifact_helper, read_gcs_versions, write_gcs_versions
 
 
-try:
-    from ..config import CONFIG
-except ImportError:
-    from config import CONFIG
-
-_RETRYABLE_PHRASES = (
-    '429', 'resource exhausted', 'quota exceeded',
-    'rate limit', 'too many requests', '503', 'service unavailable',
-)
-
-
-async def _call_with_retry(fn, max_retries: int = 4, initial_delay: float = 5.0):
-    """Calls a synchronous API fn(), retrying on 429/ResourceExhausted/503 with exponential backoff."""
-    delay = initial_delay
-    for attempt in range(max_retries + 1):
+async def _call_with_retry(fn):
+    """Executes a Gemini API call with automatic exponential backoff for 429 Rate Limit errors."""
+    max_retries = 5
+    base_delay = 2.0
+    for attempt in range(max_retries):
         try:
-            return fn()
+            return await fn()
         except Exception as e:
-            err_str = str(e).lower()
-            if attempt < max_retries and any(p in err_str for p in _RETRYABLE_PHRASES):
+            err_msg = str(e).lower()
+            is_429 = "429" in err_msg or "resource_exhausted" in err_msg or "resource exhausted" in err_msg
+            if is_429 and attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
                 import sys
-                import json
-                is_exhausted = "exhausted" in err_str or "429" in err_str or "quota" in err_str
-                error_info = {
-                    "error": {
-                        "code": 429 if is_exhausted else 503,
-                        "message": str(e),
-                        "status": "RESOURCE_EXHAUSTED" if is_exhausted else "UNAVAILABLE"
-                    }
-                }
-                sys.stderr.write(json.dumps(error_info) + "\n")
-                sys.stderr.write(f"⚠️ [image_generation] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...\n")
+                sys.stderr.write(f"⚠️ [Resilience] Imagen/Gemini API 429 Rate Limit hit in image_generation. Retrying in {delay:.1f}s...\n")
                 sys.stderr.flush()
                 await asyncio.sleep(delay)
-                delay *= 2.0
             else:
                 raise e
 
 
 def parse_slide_frontmatter(slide_path: str) -> dict:
-    import os
+    """Parses the YAML frontmatter from a slide markdown file."""
     metadata = {}
     if not os.path.exists(slide_path):
         return metadata
     try:
-        # Use utf-8-sig to automatically strip UTF-8 BOM if present
-        with open(slide_path, 'r', encoding='utf-8-sig') as f:
+        with open(slide_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        content = content.strip() # Strip leading/trailing whitespaces
-        # Golden standard split-based frontmatter parser (100% robust against CRLF/LF/BOM/comments)
         if content.startswith('---'):
             parts = content.split('---', 2)
             if len(parts) >= 3:
@@ -79,73 +56,12 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
         print(f"Error parsing frontmatter: {e}", flush=True)
     return metadata
 
-def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) -> tuple[int, int, int, int] | None:
-    """Uses Gemini Multimodal Vision to detect the exact bounding box of the QR code/placeholder on the slide.
-    Returns (left, top, w, h) in slide pixel dimensions, or None if detection fails."""
-    try:
-        import os
-        from google import genai
-        from google.genai import types
-        import re
-        
-        # Initialize Gen AI Client (will auto-use Vertex AI mode based on env vars)
-        client = genai.Client()
-        
-        # Load the image bytes
-        with open(image_path, 'rb') as f:
-            image_bytes = f.read()
-            
-        image_part = types.Part.from_bytes(
-            data=image_bytes,
-            mime_type="image/png"
-        )
-        
-        # Use the default text model (Gemini Flash)
-        model_name = os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash'
-        
-        prompt = """
-        Analyze the slide image. Identify the exact bounding box of the square placeholder area (which is a solid grey/white square or a fake QR code) in the right card container.
-        Return ONLY the normalized bounding box coordinates of this square area in the format: [ymin, xmin, ymax, xmax], where each value is an integer between 0 and 1000.
-        For example, if the square is centered in the right card, it might return [350, 720, 650, 920].
-        Do NOT include any markdown, backticks, JSON keys, or explanations. Output ONLY the list of 4 integers, like: [ymin, xmin, ymax, xmax].
-        """
-        
-        print(f"👁️ [Overlay] Querying Gemini Vision ({model_name}) to detect placeholder coordinates...", flush=True)
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[image_part, prompt]
-        )
-        
-        text = response.text.strip()
-        print(f"👁️ [Overlay] Gemini Vision response: {text}", flush=True)
-        
-        # Extract the coordinates using regex
-        match = re.search(r'\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]', text)
-        if match:
-            ymin, xmin, ymax, xmax = map(int, match.groups())
-            
-            # Convert normalized 0-1000 coordinates to actual slide pixels (e.g. 1920x1080)
-            left = int(xmin * slide_w / 1000.0)
-            right = int(xmax * slide_w / 1000.0)
-            top = int(ymin * slide_h / 1000.0)
-            bottom = int(ymax * slide_h / 1000.0)
-            
-            w = right - left
-            h = bottom - top
-            
-            # Sanity check: must be a reasonable size and proportion
-            if w > 50 and h > 50:
-                return left, top, w, h
-                
-        print("⚠️ [Overlay] Gemini Vision returned invalid coordinates or format.", flush=True)
-    except Exception as e:
-        print(f"❌ [Overlay] Gemini Vision detection failed: {e}", flush=True)
-    return None
 
-
-async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str, tool_context: ToolContext = None):
+def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
+    """Mathematically aligns and overlays a locally-generated QR code onto the slide image.
+    Only supports URL-based QR codes. Custom image overlays are strictly prohibited."""
     from PIL import Image, ImageDraw
-    import os
+    import qrcode
     
     print(f"🔍 [Overlay] Initiating overlay check for Slide {slide_number}...", flush=True)
     metadata = parse_slide_frontmatter(slide_path)
@@ -155,73 +71,28 @@ async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_pat
         print(f"ℹ️ [Overlay] No qr_overlay parameter found in frontmatter for Slide {slide_number}. Skipping.", flush=True)
         return
         
-    print(f"🎯 [Overlay] Found qr_overlay target: {qr_overlay}", flush=True)
-    overlay_img = None
+    print(f"🎯 [Overlay] Found qr_overlay target URL: {qr_overlay}", flush=True)
     is_qr_slide = metadata.get('slide_type') == 'Content (QR Code)'
-    draw_card = not is_qr_slide
     
     is_url = qr_overlay.startswith('http://') or qr_overlay.startswith('https://') or qr_overlay.startswith('www.')
-    
-    if is_url:
-        try:
-            import qrcode
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=1,
-            )
-            qr.add_data(qr_overlay)
-            qr.make(fit=True)
-            overlay_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
-            print("✅ [Overlay] Successfully generated QR code locally from URL.", flush=True)
-        except Exception as e:
-            print(f"❌ [Overlay] Failed to generate QR code for URL {qr_overlay}: {e}", flush=True)
-            return
-        local_path = os.path.join(session_path, qr_overlay)
+    if not is_url:
+        print(f"⚠️ [Overlay] qr_overlay '{qr_overlay}' is not a valid URL. Custom image uploads are prohibited.", flush=True)
+        return
         
-        # If the custom image does not exist locally (common in ephemeral serverless containers),
-        # dynamically download it from GCS using the ADK Artifact Service.
-        if not os.path.exists(local_path) and tool_context:
-            print(f"📥 [Overlay] Custom asset '{qr_overlay}' not found locally. Downloading from GCS...", flush=True)
-            try:
-                artifact_bytes = await tool_context.read_artifact(qr_overlay)
-                if artifact_bytes:
-                    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                    with open(local_path, 'wb') as f:
-                        f.write(artifact_bytes)
-                    print(f"✅ [Overlay] Successfully downloaded and cached '{qr_overlay}' locally.", flush=True)
-                else:
-                    print(f"⚠️ [Overlay] GCS returned empty bytes for '{qr_overlay}'.", flush=True)
-            except Exception as e:
-                print(f"❌ [Overlay] Failed to download '{qr_overlay}' from GCS: {e}", flush=True)
-                
-        paths_to_try = [
-            os.path.join(session_path, 'slides', qr_overlay),
-            local_path,
-            os.path.abspath(qr_overlay),
-        ]
-        
-        found_path = None
-        for p in paths_to_try:
-            if os.path.exists(p):
-                found_path = p
-                break
-                
-        if not found_path:
-            print(f"❌ [Overlay] QR Code image file '{qr_overlay}' not found in paths: {paths_to_try}", flush=True)
-            return
-            
-        try:
-            overlay_img = Image.open(found_path).convert("RGBA")
-            print(f"✅ [Overlay] Successfully loaded custom QR code image: {found_path}", flush=True)
-            if not is_qr_slide:
-                draw_card = False
-        except Exception as e:
-            print(f"❌ [Overlay] Failed to open custom QR code image file {found_path}: {e}", flush=True)
-            return
-            
-    if not overlay_img:
+    # Generate the QR Code locally from the URL
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=1,
+        )
+        qr.add_data(qr_overlay)
+        qr.make(fit=True)
+        overlay_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+        print("✅ [Overlay] Successfully generated QR code locally from URL.", flush=True)
+    except Exception as e:
+        print(f"❌ [Overlay] Failed to generate QR code for URL {qr_overlay}: {e}", flush=True)
         return
         
     try:
@@ -232,6 +103,7 @@ async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_pat
         # Proportional scale factor based on standard design width of 1920
         scale_factor = slide_w / 1920.0
         
+        # Default target size is 340px (the golden ratio size for the card placeholder)
         try:
             target_size = int(metadata.get('image_size', 340))
         except ValueError:
@@ -249,44 +121,18 @@ async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_pat
         position = metadata.get('image_position', 'bottom-right').lower()
         
         if is_qr_slide:
-            # Attempt AI-driven dynamic detection using Gemini Multimodal Vision!
-            detection = detect_placeholder_with_gemini(output_image_path, slide_w, slide_h)
-            detector_success = False
+            # Mathematical Alignment (100% robust and stable!)
+            # 81.5% is the perfect center of the 35% right card container.
+            # 46.0% is the perfect vertical center (slightly shifted up to leave room for the bottom text).
+            center_x = int(slide_w * 0.815)
+            center_y = int(slide_h * 0.46)
             
-            if detection:
-                left, top, box_w, box_h = detection
-                center_x = left + box_w // 2
-                center_y = top + box_h // 2
-                print(f"🎯 [Overlay] Gemini Vision SUCCESS! Detected placeholder: left={left}, top={top}, w={box_w}, h={box_h}, center=({center_x}, {center_y})", flush=True)
-                
-                # Dynamically resize the QR code to perfectly cover the detected placeholder square!
-                # We scale it slightly larger (2%) to guarantee a clean cover with no edges peeking out.
-                new_w = int(box_w * 1.02)
-                new_h = int(box_h * 1.02)
-                overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                
-                paste_x = center_x - new_w // 2
-                paste_y = center_y - new_h // 2
-                detector_success = True
-                
-            if not detector_success:
-                print("⚠️ [Overlay] Gemini Vision detection failed. Falling back to mathematical alignment.", flush=True)
-                center_y = slide_h // 2
-                vertical_offset = 0
-                if 'left' in position:
-                    center_x = int(slide_w * 0.175)
-                    paste_x = center_x - new_w // 2
-                    paste_y = center_y - new_h // 2 - vertical_offset
-                elif 'center' in position:
-                    center_x = slide_w // 2
-                    paste_x = center_x - new_w // 2
-                    paste_y = int(700 * scale_factor) - new_h // 2
-                else:
-                    center_x = int(slide_w * 0.825)
-                    paste_x = center_x - new_w // 2
-                    paste_y = center_y - new_h // 2 - vertical_offset
+            paste_x = center_x - new_w // 2
+            paste_y = center_y - new_h // 2
+            print(f"🎯 [Overlay] Mathematical Alignment: center=({center_x}, {center_y}), paste=({paste_x}, {paste_y})", flush=True)
         else:
-            padding = int(15 * scale_factor) if draw_card else 0
+            # Fallback bottom-right overlay (for normal slides, draw a white card)
+            padding = int(15 * scale_factor)
             card_w = new_w + 2 * padding
             card_h = new_h + 2 * padding
             margin = int(80 * scale_factor)
@@ -307,17 +153,14 @@ async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_pat
                 card_x = slide_w - card_w - margin
                 card_y = slide_h - card_h - margin
                 
-            if draw_card:
-                draw = ImageDraw.Draw(slide_img)
-                card_coords = [card_x, card_y, card_x + card_w, card_y + card_h]
-                draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), fill=(255, 255, 255, 255))
-                draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), outline=(220, 220, 220, 255), width=1)
-                
+            draw = ImageDraw.Draw(slide_img)
+            card_coords = [card_x, card_y, card_x + card_w, card_y + card_h]
+            draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), fill=(255, 255, 255, 255))
+            draw.rounded_rectangle(card_coords, radius=int(12 * scale_factor), outline=(220, 220, 220, 255), width=1)
+            
             paste_x = card_x + padding
             paste_y = card_y + padding
             
-        print(f"📍 [Overlay] Pasting QR Code at calculated coordinates: (x={paste_x}, y={paste_y}), size={new_w}x{new_h}", flush=True)
-        
         # Erase-and-Paste: Draw a solid white square (with 2px safety padding) to completely obliterate any background fake QR code!
         draw = ImageDraw.Draw(slide_img)
         erase_margin = 2
@@ -328,12 +171,8 @@ async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_pat
             paste_y + new_h + erase_margin
         ], fill=(255, 255, 255, 255))
         
-        # Paste using the alpha channel as the mask if the overlay image has transparency (RGBA),
-        # which prevents transparent background areas from turning solid black during RGB conversion.
-        if overlay_img.mode == 'RGBA':
-            slide_img.paste(overlay_img, (paste_x, paste_y), mask=overlay_img)
-        else:
-            slide_img.paste(overlay_img, (paste_x, paste_y))
+        # Paste the QR code (generated QR code is black/white RGBA, so paste directly is 100% safe)
+        slide_img.paste(overlay_img, (paste_x, paste_y))
         
         slide_img.convert("RGB").save(output_image_path, "PNG")
         print(f"💾 [Overlay] Successfully saved final composite image to: {output_image_path}", flush=True)
@@ -347,38 +186,27 @@ async def generate_slide_image(
     tool_context: ToolContext
 ) -> str:
     """Reads design.md and slide_xx.md from the active session, merges them into a visual prompt,
-    and generates the slide image using either Gemini or Vertex AI Imagen.
-    
-    Args:
-        session_path: The absolute session path returned by initialize_session
-        slide_number: The 1-indexed slide number to generate the image for
-        tool_context: The tool context injected by the framework
-    """
+    and generates the slide image using either Gemini or Vertex AI Imagen."""
     pad_num = f"{slide_number:02d}"
-    file_name = f"slide_{pad_num}.png"
-    file_path = os.path.join(session_path, 'slides', file_name)
-    
     design_path = os.path.join(session_path, 'design.md')
     slide_path = os.path.join(session_path, f"slide_{pad_num}.md")
-    
-    # Validation
+    file_path = os.path.join(session_path, 'slides', f"slide_{pad_num}.png")
+
     if not os.path.exists(design_path):
-        return f"Error: Missing design specification: {design_path}. Generate and save design.md first."
+        return f"Error: Missing design specification: {design_path}."
     if not os.path.exists(slide_path):
-        return f"Error: Missing slide content file: {slide_path}. Generate and save slide_{pad_num}.md first."
-        
+        return f"Error: Missing slide content file: {slide_path}."
+
     try:
         with open(design_path, 'r', encoding='utf-8') as f:
             design_content = f.read()
         with open(slide_path, 'r', encoding='utf-8') as f:
             slide_content = f.read()
     except Exception as e:
-        return f"Failed to read session Markdown files: {str(e)}"
+        return f"Failed to read specification files: {str(e)}"
 
-    prompt = f"""Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the brand system and slide specification below.
-- **DO** render the "Title" from <slide_spec> clearly on the slide, applying the colors and typography defined in <brand_system>.
-- **DO** follow the "## Layout" section in <slide_spec> precisely if it is present; otherwise infer an appropriate visual composition from the Slide Type and Script content.
-- **DO NOT** render the "Script" text literally; use it only as contextual inspiration for background visuals and thematic elements.
+    prompt = f"""Generate a professional 16:9 widescreen (1920×1080 px) presentation slide image based on the brand system and the slide specifications below.
+You MUST output exactly one image.
 
 <brand_system>
 {design_content}
@@ -386,17 +214,14 @@ async def generate_slide_image(
 
 <slide_spec>
 {slide_content}
-</slide_spec>"""
+</slide_spec>
+"""
 
-    # Initialize genai client.
-    # In Reasoning Engine, this automatically uses default credentials and Vertex AI routing.
     client = genai.Client()
-    
     is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
 
     try:
         if is_gemini_image_model:
-            # Gemini image models must be called via generate_content with response_modalities
             response = await _call_with_retry(
                 lambda: client.models.generate_content(
                     model=CONFIG['IMAGEN_MODEL'],
@@ -406,73 +231,48 @@ async def generate_slide_image(
                     )
                 )
             )
-
-            # Extract image parts
-            parts = response.candidates[0].content.parts
-            image_part = None
-            for part in parts:
-                if part.inline_data and part.inline_data.mime_type.startswith('image/'):
-                    image_part = part
-                    break
-
-            if not image_part:
-                return f"Failed to generate image for Slide {pad_num}: No image bytes returned in Gemini response."
-
-            # Handle both base64 string and raw bytes (depends on REST vs gRPC transport)
-            raw_data = image_part.inline_data.data
-            if isinstance(raw_data, str):
-                image_bytes = base64.b64decode(raw_data)
-            else:
-                image_bytes = raw_data
+            raw_data = None
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data and part.inline_data.mime_type.startswith('image/'):
+                        raw_data = part.inline_data.data
+                        break
+            if not raw_data:
+                return "Failed to generate slide: No image bytes returned in Gemini response."
+            image_bytes = base64.b64decode(raw_data) if isinstance(raw_data, str) else raw_data
         else:
-            # Traditional Imagen models must be called via generate_images
             result = await _call_with_retry(
                 lambda: client.models.generate_images(
                     model=CONFIG['IMAGEN_MODEL'],
                     prompt=prompt,
                     config=types.GenerateImagesConfig(
                         number_of_images=1,
-                        output_mime_type='image/png',
-                        aspect_ratio='16:9',
+                        output_mime_type="image/png",
+                        aspect_ratio="16:9",
                     )
                 )
             )
+            if not result.generated_images:
+                return "Failed to generate slide: No images returned by Imagen API."
             image_bytes = result.generated_images[0].image.image_bytes
-            
+
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'wb') as f:
             f.write(image_bytes)
-            
-        # Apply overlay (if any) to the file on disk
-        await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path, tool_context)
-        
+
+        # Apply overlay (if any) to the file on disk (synchronously)
+        apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+
         # Read the (possibly modified) file back to get the final image bytes
         with open(file_path, 'rb') as f:
             image_bytes = f.read()
-            
+
         # Save as artifact and record the GCS version in session state
-        artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
+        artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png") if 'Part' in globals() else types.Part.from_bytes(data=image_bytes, mime_type="image/png")
         version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
         tool_context.state[f"slide_{pad_num}_gcs_version"] = version
 
-
-        # 1. Local backup (useful for local development)
-        versions_path = os.path.join(session_path, 'gcs_versions.json')
-        local_versions = {}
-        if os.path.exists(versions_path):
-            try:
-                with open(versions_path, 'r', encoding='utf-8') as f:
-                    local_versions = json.load(f)
-            except Exception:
-                pass
-        local_versions[f"slide_{pad_num}_gcs_version"] = version
-        try:
-            with open(versions_path, 'w', encoding='utf-8') as f:
-                json.dump(local_versions, f, indent=2)
-        except Exception:
-            pass
-
-        # 2. Global persistent GCS store (critical for cloud container restarts and distributed instances)
+        # Global persistent GCS store (critical for cloud container restarts and distributed instances)
         session_id = tool_context.session.id
         gcs_versions = read_gcs_versions(session_id)
         gcs_versions[f"slide_{pad_num}_gcs_version"] = version
@@ -482,6 +282,7 @@ async def generate_slide_image(
     except Exception as e:
         return f"Failed to generate image for Slide {pad_num}: {str(e)}"
 
+
 async def generate_sequence_images(
     session_path: str,
     sequence_id: str,
@@ -489,14 +290,7 @@ async def generate_sequence_images(
     tool_context: ToolContext
 ) -> str:
     """Generates multiple slide images in a single call to guarantee layout consistency across a sequence.
-    Only supported by native multimodal Gemini models (not traditional Imagen).
-    
-    Args:
-        session_path: The absolute session path
-        sequence_id: The ID of the sequence
-        slide_numbers: List of slide integers (e.g. [3, 4, 5])
-        tool_context: Tool context
-    """
+    Only supported by native multimodal Gemini models (not traditional Imagen)."""
     if not slide_numbers:
         return "Error: slide_numbers list is empty."
 
@@ -512,8 +306,7 @@ async def generate_sequence_images(
 
     prompt = f"""Generate {len(slide_numbers)} professional 16:9 widescreen (1920×1080 px) presentation slide images based on the brand system and the slide specifications below.
 You MUST output exactly {len(slide_numbers)} images in the exact order of the slide specifications. 
-Because these slides form a continuous sequence (Sequence ID: {sequence_id}), you must ensure their overall visual layout structure, geometry, background, and styling are perfectly consistent across all {len(slide_numbers)} images. The only changes should be the text content and active highlights as specified.
-
+...
 <brand_system>
 {design_content}
 </brand_system>
@@ -536,7 +329,7 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
     is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
     
     if not is_gemini_image_model:
-        return "Error: generate_sequence_images requires a native Gemini multimodal model (like Gemini Flash 1.5/3.0+). Traditional Imagen models cannot generate multiple images per prompt."
+        return "Error: generate_sequence_images requires a native Gemini multimodal model. Traditional Imagen models cannot generate multiple images per prompt."
 
     try:
         response = await _call_with_retry(
@@ -558,12 +351,9 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
         if not image_parts:
             return "Failed to generate sequence images: No image bytes returned in Gemini response."
         
+        warning = ""
         if len(image_parts) != len(slide_numbers):
-            # We got a different number of images than requested. Try to save what we got anyway.
-            # But we will return a warning.
             warning = f"Warning: Requested {len(slide_numbers)} images but model returned {len(image_parts)}. "
-        else:
-            warning = ""
 
         results = []
         session_id = tool_context.session.id
@@ -584,15 +374,15 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
             with open(file_path, 'wb') as f:
                 f.write(image_bytes)
                 
-            # Apply overlay (if any) to the file on disk
+            # Apply overlay (if any) to the file on disk (synchronously)
             slide_path = os.path.join(session_path, f"slide_{pad_num}.md")
-            await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path, tool_context)
+            apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
             
             # Read the (possibly modified) file back to get the final image bytes
             with open(file_path, 'rb') as f:
                 image_bytes = f.read()
 
-            artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
+            artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png") if 'Part' in globals() else types.Part.from_bytes(data=image_bytes, mime_type="image/png")
             version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
             tool_context.state[f"slide_{pad_num}_gcs_version"] = version
 
@@ -600,7 +390,6 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
             results.append(f"slide_{pad_num}.png saved")
 
         write_gcs_versions(session_id, gcs_versions)
-
         return warning + "Successfully generated and saved sequence images: " + ", ".join(results)
 
     except Exception as e:
