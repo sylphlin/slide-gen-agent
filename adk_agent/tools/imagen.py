@@ -83,23 +83,27 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
 
 def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
     from PIL import Image, ImageDraw
+    import os
     
     metadata = parse_slide_frontmatter(slide_path)
-    qr_url = metadata.get('qr_overlay')
-    image_overlay_file = metadata.get('image_overlay')
+    qr_overlay = metadata.get('qr_overlay')
     
-    # If neither overlay is specified, do nothing
-    if not qr_url and not image_overlay_file:
+    # If no QR overlay is specified, do nothing
+    if not qr_overlay:
         return
         
     overlay_img = None
     
-    # If it's a Content (Overlay) slide, the AI already draws a gorgeous card container and label.
-    # We do not need to draw a second card in Python. We just paste the QR Code/Image directly.
-    is_overlay_slide = metadata.get('slide_type') == 'Content (Overlay)'
-    draw_card = not is_overlay_slide and (qr_url is not None)
+    # If it's a Content (QR Code) slide, the AI already draws a gorgeous card container and label.
+    # We do not need to draw a second card in Python. We just paste the QR Code directly.
+    is_qr_slide = metadata.get('slide_type') == 'Content (QR Code)'
+    draw_card = not is_qr_slide
     
-    if qr_url:
+    # Smart Dual-Track Detection: Check if qr_overlay is a URL or a local file name
+    is_url = qr_overlay.startswith('http://') or qr_overlay.startswith('https://') or qr_overlay.startswith('www.')
+    
+    if is_url:
+        # Track 1: Generate QR code from URL
         try:
             import qrcode
             qr = qrcode.QRCode(
@@ -108,18 +112,18 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
                 box_size=10,
                 border=1,
             )
-            qr.add_data(qr_url)
+            qr.add_data(qr_overlay)
             qr.make(fit=True)
             overlay_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
         except Exception as e:
-            print(f"Failed to generate QR code for {qr_url}: {e}")
+            print(f"Failed to generate QR code for URL {qr_overlay}: {e}")
             return
-            
-    elif image_overlay_file:
+    else:
+        # Track 2: Load user-provided QR code image file
         paths_to_try = [
-            os.path.join(session_path, 'slides', image_overlay_file),
-            os.path.join(session_path, image_overlay_file),
-            os.path.abspath(image_overlay_file),
+            os.path.join(session_path, 'slides', qr_overlay),
+            os.path.join(session_path, qr_overlay),
+            os.path.abspath(qr_overlay),
         ]
         
         found_path = None
@@ -129,14 +133,16 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
                 break
                 
         if not found_path:
-            print(f"Warning: Overlay image '{image_overlay_file}' not found in paths: {paths_to_try}")
+            print(f"Warning: QR Code overlay image file '{qr_overlay}' not found in paths: {paths_to_try}")
             return
             
         try:
             overlay_img = Image.open(found_path).convert("RGBA")
-            draw_card = False
+            # If it's a user-provided image on a normal slide, we don't draw a white card container by default
+            if not is_qr_slide:
+                draw_card = False
         except Exception as e:
-            print(f"Failed to open overlay image {found_path}: {e}")
+            print(f"Failed to open overlay image file {found_path}: {e}")
             return
             
     if not overlay_img:
@@ -159,8 +165,8 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         
         position = metadata.get('image_position', 'bottom-right').lower()
         
-        if is_overlay_slide:
-            # Under Content (Overlay), we align the overlay precisely inside the AI-generated card column.
+        if is_qr_slide:
+            # Under Content (QR Code), we align the overlay precisely inside the AI-generated card column.
             # Aspect Ratio is 1920x1080.
             # Left/Right columns are separated at ~65/35 split.
             # Vertical center is 540. We shift up by 25px to leave room for the AI-rendered label at the bottom.

@@ -20,5 +20,5 @@
 | 07 | [Quote or Insight]        | Quote          | [The bold quote/insight, its attribution, and the specific context that makes it so impactful.] |
 | 08 | [Section Header Title 2]  | Section Header | [Transition narrative guiding the audience to the next section, specifying the shift in focus.] |
 | 09 | [...]                     | [...]          | [...] |
-| XX | [Closing / Call to Action]| Content (Overlay) | [Closing slide with a bold call to action on the left (e.g. two content cards for next steps), and a dedicated card container on the right hosting a QR code to scan for more details.] |
+| XX | [Closing / Call to Action]| Content (QR Code) | [Closing slide with a bold call to action on the left (e.g. two content cards for next steps), and a dedicated card container on the right hosting a QR code to scan for more details.] |
 

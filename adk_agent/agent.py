@@ -215,18 +215,18 @@ Generate and write the following documents sequentially using the session path. 
 </OUTLINES_TEMPLATE>
 3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. If a slide is part of a multi-slide sequence (e.g. Slide 3, 4, 5 of a 6-step process), you MUST declare the exact same 'sequence_id: [id]', 'sequence_part: [index]', and 'sequence_total: [total]' in the frontmatter of each slide in the sequence. For sequences, you MUST NOT use complex progression UIs (like multi-step progress bars or horizontal timelines). Instead, use a macro-grid (e.g., 30/70 split) with a single overarching sequence title in the smaller column, displaying ONLY the current step's content and a simple "Part X of Y: [Current Name]" indicator in the larger column. Copy this simplified '## Layout' description character-for-character across all subsequent slides in the sequence, only updating the current step name and content block. 
 
-*User Images & QR Codes Overlay Protocol*: If the user provides a custom image (like a QR code, company logo, or screenshot) or asks to add a QR code for a specific URL, you must follow these steps:
-- If the user provided a custom image file, first call `save_user_asset` to save it to the session directory.
-- In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the overlay parameters:
-  - For a URL (automatic QR code generation): `qr_overlay: "[URL]"`
-  - For a custom image file: `image_overlay: "[filename]"` (e.g., `qrcode.png`)
-  - Positioning: `image_position: "bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`)
-  - Sizing: `image_size: 220` (default width in pixels, adjust if requested)
-- **Structural Layout Partitioning Rule**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the overlay:
-  - **If the overlay is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical gutter/column with a distinct boundary, designed as a dedicated placeholder column.
-  - **If the overlay is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical placeholder column. All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide.
-  - **If the overlay is in the Center (`center`)**: Command a **50/50 horizontal split layout**. Place all text in the upper 50%, and describe a dedicated, clean, solid-colored rectangular box (e.g., 400x400px) in the lower 50% as a placeholder.
-  - **Crucial**: Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
+*QR Codes Overlay Protocol*: If the user asks to add a QR code (either by providing a specific URL or by uploading their own QR code image file), you must follow these steps:
+- If the user provided a custom QR code image file, first call `save_user_asset` to save it to the session directory.
+- In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the QR overlay parameters:
+  - `qr_overlay`: For a URL, write the URL (e.g. `"https://example.com"`). For an uploaded file, write the filename (e.g. `"my_qrcode.png"`).
+  - `qr_label`: Write the centered caption label text to render at the bottom of the card (e.g. `"Scan to join"`).
+  - `image_position`: `"bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`, default: `bottom-right`)
+  - `image_size`: `220` (default width in pixels, adjust if requested)
+- **Structural Layout Partitioning Rule**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the QR code:
+  - **If the QR code is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical card container with a distinct boundary, designed as a dedicated placeholder card. The card must have the text from `qr_label` rendered centered at the bottom of the card.
+  - **If the QR code is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical card container. All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide. The left card must have the text from `qr_label` rendered centered at the bottom.
+  - **If the QR code is in the Center (`center`)**: Command a **50/50 horizontal split layout**. Place all text in the upper 50%, and describe a dedicated, clean, solid-colored rectangular card (e.g., 400x400px) in the lower 50% as a placeholder, with the text from `qr_label` rendered centered at the bottom.
+  - **Crucial**: Do NOT describe the QR code itself in the prompt to the image generator, as it will be overlaid by the Python backend.
 
 After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
 <SLIDE_TEMPLATE>
