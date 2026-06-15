@@ -41,44 +41,42 @@ async def _call_with_retry(fn, max_retries: int = 4, initial_delay: float = 5.0)
                     "error": {
                         "code": 429 if is_exhausted else 503,
                         "message": str(e),
-                        "status": "RESOURCE_EXHAUSTED" if is_exhausted else "SERVICE_UNAVAILABLE",
-                        "attempt": attempt + 1,
-                        "max_retries": max_retries + 1,
-                        "retry_delay_seconds": delay
+                        "status": "RESOURCE_EXHAUSTED" if is_exhausted else "UNAVAILABLE"
                     }
                 }
-                sys.stderr.write(f"⚠️ [imagen] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...\n")
-                sys.stderr.write(f"{json.dumps(error_info)}\n")
+                sys.stderr.write(json.dumps(error_info) + "\n")
+                sys.stderr.write(f"⚠️ [image_generation] Retryable error (attempt {attempt + 1}/{max_retries + 1}): {str(e)[:120]}. Retrying in {delay:.0f}s...\n")
                 sys.stderr.flush()
                 await asyncio.sleep(delay)
-                delay = min(delay * 2, 120)
+                delay *= 2.0
             else:
-                raise
+                raise e
 
 
 def parse_slide_frontmatter(slide_path: str) -> dict:
-    import re
+    import os
     metadata = {}
     if not os.path.exists(slide_path):
         return metadata
     try:
+        # Use utf-8-sig to automatically strip UTF-8 BOM if present
         with open(slide_path, 'r', encoding='utf-8-sig') as f:
             content = f.read()
-        content = content.strip()
-        match = re.match(r'^---\s*\r?\n(.*?)\r?\n---\s*(?:\r?\n|$)', content, re.DOTALL)
-        if match:
-            frontmatter_text = match.group(1)
-            for line in frontmatter_text.split('\n'):
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                if ':' in line:
-                    key, val = line.split(':', 1)
-                    key = key.strip()
-                    val = val.strip().strip('"').strip("'")
-                    metadata[key] = val
+        content = content.strip() # Strip leading/trailing whitespaces
+        # Golden standard split-based frontmatter parser (100% robust against CRLF/LF/BOM/comments)
+        if content.startswith('---'):
+            parts = content.split('---', 2)
+            if len(parts) >= 3:
+                frontmatter_text = parts[1]
+                for line in frontmatter_text.split('\n'):
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if ':' in line:
+                        key, val = line.split(':', 1)
+                        metadata[key.strip()] = val.strip().strip('"').strip("'")
     except Exception as e:
-        print(f"Error parsing frontmatter: {e}")
+        print(f"Error parsing frontmatter: {e}", flush=True)
     return metadata
 
 
@@ -86,25 +84,22 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
     from PIL import Image, ImageDraw
     import os
     
+    print(f"🔍 [Overlay] Initiating overlay check for Slide {slide_number}...", flush=True)
     metadata = parse_slide_frontmatter(slide_path)
-    qr_overlay = metadata.get('qr_overlay')
     
-    # If no QR overlay is specified, do nothing
+    qr_overlay = metadata.get('qr_overlay')
     if not qr_overlay:
+        print(f"ℹ️ [Overlay] No qr_overlay parameter found in frontmatter for Slide {slide_number}. Skipping.", flush=True)
         return
         
+    print(f"🎯 [Overlay] Found qr_overlay target: {qr_overlay}", flush=True)
     overlay_img = None
-    
-    # If it's a Content (QR Code) slide, the AI already draws a gorgeous card container and label.
-    # We do not need to draw a second card in Python. We just paste the QR Code directly.
     is_qr_slide = metadata.get('slide_type') == 'Content (QR Code)'
     draw_card = not is_qr_slide
     
-    # Smart Dual-Track Detection: Check if qr_overlay is a URL or a local file name
     is_url = qr_overlay.startswith('http://') or qr_overlay.startswith('https://') or qr_overlay.startswith('www.')
     
     if is_url:
-        # Track 1: Generate QR code from URL
         try:
             import qrcode
             qr = qrcode.QRCode(
@@ -116,11 +111,11 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             qr.add_data(qr_overlay)
             qr.make(fit=True)
             overlay_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+            print("✅ [Overlay] Successfully generated QR code locally from URL.", flush=True)
         except Exception as e:
-            print(f"Failed to generate QR code for URL {qr_overlay}: {e}")
+            print(f"❌ [Overlay] Failed to generate QR code for URL {qr_overlay}: {e}", flush=True)
             return
     else:
-        # Track 2: Load user-provided QR code image file
         paths_to_try = [
             os.path.join(session_path, 'slides', qr_overlay),
             os.path.join(session_path, qr_overlay),
@@ -134,16 +129,16 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
                 break
                 
         if not found_path:
-            print(f"Warning: QR Code overlay image file '{qr_overlay}' not found in paths: {paths_to_try}")
+            print(f"❌ [Overlay] QR Code image file '{qr_overlay}' not found in paths: {paths_to_try}", flush=True)
             return
             
         try:
             overlay_img = Image.open(found_path).convert("RGBA")
-            # If it's a user-provided image on a normal slide, we don't draw a white card container by default
+            print(f"✅ [Overlay] Successfully loaded custom QR code image: {found_path}", flush=True)
             if not is_qr_slide:
                 draw_card = False
         except Exception as e:
-            print(f"Failed to open overlay image file {found_path}: {e}")
+            print(f"❌ [Overlay] Failed to open custom QR code image file {found_path}: {e}", flush=True)
             return
             
     if not overlay_img:
@@ -152,7 +147,7 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
     try:
         slide_img = Image.open(output_image_path).convert("RGBA")
         slide_w, slide_h = slide_img.size
-        print(f"📊 [Overlay] Widescreen slide base resolution: {slide_w}x{slide_h}")
+        print(f"📊 [Overlay] Widescreen slide base resolution: {slide_w}x{slide_h}", flush=True)
         
         # Proportional scale factor based on standard design width of 1920
         scale_factor = slide_w / 1920.0
@@ -175,10 +170,10 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         
         if is_qr_slide:
             center_y = slide_h // 2
-            vertical_offset = 0 # Vertically centered inside the card container (no offset needed)
+            vertical_offset = 0
             
             if 'left' in position:
-                center_x = int(slide_w * 0.175) # Left column center (17.5%)
+                center_x = int(slide_w * 0.175)
                 paste_x = center_x - new_w // 2
                 paste_y = center_y - new_h // 2 - vertical_offset
             elif 'center' in position:
@@ -186,7 +181,7 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
                 paste_x = center_x - new_w // 2
                 paste_y = int(700 * scale_factor) - new_h // 2
             else:
-                center_x = int(slide_w * 0.825) # Right column center (82.5%)
+                center_x = int(slide_w * 0.825)
                 paste_x = center_x - new_w // 2
                 paste_y = center_y - new_h // 2 - vertical_offset
         else:
@@ -220,18 +215,17 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             paste_x = card_x + padding
             paste_y = card_y + padding
             
-        print(f"📍 [Overlay] Pasting QR Code at calculated coordinates: (x={paste_x}, y={paste_y}), size={new_w}x{new_h}")
+        print(f"📍 [Overlay] Pasting QR Code at calculated coordinates: (x={paste_x}, y={paste_y}), size={new_w}x{new_h}", flush=True)
         # Paste directly without mask to avoid alpha-channel transparency bugs (guarantees solid white QR background)
         slide_img.paste(overlay_img, (paste_x, paste_y))
         
         slide_img.convert("RGB").save(output_image_path, "PNG")
-        print(f"Successfully applied overlay to {output_image_path}")
+        print(f"💾 [Overlay] Successfully saved final composite image to: {output_image_path}", flush=True)
     except Exception as e:
-        print(f"Error applying overlay to slide {slide_number}: {e}")
+        print(f"❌ [Overlay] Error applying overlay to slide {slide_number}: {e}", flush=True)
 
 
 async def generate_slide_image(
-
     session_path: str,
     slide_number: int,
     tool_context: ToolContext

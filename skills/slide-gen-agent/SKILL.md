@@ -109,7 +109,7 @@ If the user asks to add a QR code (either by providing a specific URL or by uplo
 | Section Header   | Left-aligned title on Surface color, decorative accent bar      |
 | Content (Text)   | Title top-left, 2–3 bullet points, optional icon right side     |
 | Content (Image)  | 60% image left or right, 40% text opposite                      |
-| Content (Overlay)| Asymmetric split-screen (65/35); left = structured content cards, right = prominent rounded container card with soft drop shadows, containing a clean empty placeholder for the asset and a centered text label at the bottom. |
+| Content (QR Code)| Asymmetric split-screen (65/35); left = structured content cards, right = prominent rounded container card with soft drop shadows, containing a completely blank solid square placeholder and a centered text label at the bottom. |
 | Data & Stat      | Hero number centered (72 px Bold), 1-line label below           |
 | Two-Column       | Equal split; left = text/bullets, right = chart or image        |
 | Quote            | Large pull quote centered, attributed name bottom-right         |
