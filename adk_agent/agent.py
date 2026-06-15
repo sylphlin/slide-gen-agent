@@ -209,7 +209,7 @@ Generate and write the following documents sequentially using the session path. 
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
-2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA / Content (Overlay). Output a status line before starting, e.g. "🗂️ Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
+2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Content (Overlay) / Data & Stat / Two-Column / Quote / Closing / CTA. Output a status line before starting, e.g. "🗂️ Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
 <OUTLINES_TEMPLATE>
 {_outlines_template}
 </OUTLINES_TEMPLATE>

@@ -109,11 +109,11 @@ If the user provides a custom image (like a QR code, company logo, or screenshot
 | Section Header   | Left-aligned title on Surface color, decorative accent bar      |
 | Content (Text)   | Title top-left, 2–3 bullet points, optional icon right side     |
 | Content (Image)  | 60% image left or right, 40% text opposite                      |
+| Content (Overlay)| Asymmetric split-screen (65/35); left = structured content cards, right = prominent rounded container card with soft drop shadows, containing a clean empty placeholder for the asset and a centered text label at the bottom. |
 | Data & Stat      | Hero number centered (72 px Bold), 1-line label below           |
 | Two-Column       | Equal split; left = text/bullets, right = chart or image        |
 | Quote            | Large pull quote centered, attributed name bottom-right         |
 | Closing / CTA    | Mirror of Cover; bold call-to-action text centered              |
-| Content (Overlay)| Asymmetric split-screen (65/35); left = structured content cards, right = prominent rounded container card with soft drop shadows, containing a clean empty placeholder for the asset and a centered text label at the bottom. |
 
 **`## Layout` section** — leave empty on first generation. The image model infers a suitable layout from the Slide Type and Script content. Only fill this in during Stage 3 iteration when the user requests a specific visual change (e.g., "put the chart on the right", "make it two-column"). Describe the exact composition concretely: column ratios, element positions, what visual occupies each zone.
 **Multi-Slide Sequence Protocol**:
