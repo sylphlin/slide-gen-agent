@@ -143,7 +143,7 @@ def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) 
     return None
 
 
-def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
+async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str, tool_context: ToolContext = None):
     from PIL import Image, ImageDraw
     import os
     
@@ -178,10 +178,27 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         except Exception as e:
             print(f"❌ [Overlay] Failed to generate QR code for URL {qr_overlay}: {e}", flush=True)
             return
-    else:
+        local_path = os.path.join(session_path, qr_overlay)
+        
+        # If the custom image does not exist locally (common in ephemeral serverless containers),
+        # dynamically download it from GCS using the ADK Artifact Service.
+        if not os.path.exists(local_path) and tool_context:
+            print(f"📥 [Overlay] Custom asset '{qr_overlay}' not found locally. Downloading from GCS...", flush=True)
+            try:
+                artifact_bytes = await tool_context.read_artifact(qr_overlay)
+                if artifact_bytes:
+                    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                    with open(local_path, 'wb') as f:
+                        f.write(artifact_bytes)
+                    print(f"✅ [Overlay] Successfully downloaded and cached '{qr_overlay}' locally.", flush=True)
+                else:
+                    print(f"⚠️ [Overlay] GCS returned empty bytes for '{qr_overlay}'.", flush=True)
+            except Exception as e:
+                print(f"❌ [Overlay] Failed to download '{qr_overlay}' from GCS: {e}", flush=True)
+                
         paths_to_try = [
             os.path.join(session_path, 'slides', qr_overlay),
-            os.path.join(session_path, qr_overlay),
+            local_path,
             os.path.abspath(qr_overlay),
         ]
         
@@ -427,7 +444,7 @@ async def generate_slide_image(
             f.write(image_bytes)
             
         # Apply overlay (if any) to the file on disk
-        apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+        await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path, tool_context)
         
         # Read the (possibly modified) file back to get the final image bytes
         with open(file_path, 'rb') as f:
@@ -569,7 +586,7 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
                 
             # Apply overlay (if any) to the file on disk
             slide_path = os.path.join(session_path, f"slide_{pad_num}.md")
-            apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+            await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path, tool_context)
             
             # Read the (possibly modified) file back to get the final image bytes
             with open(file_path, 'rb') as f:
