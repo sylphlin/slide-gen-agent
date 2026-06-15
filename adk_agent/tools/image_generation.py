@@ -223,7 +223,7 @@ You MUST output exactly one image.
     try:
         if is_gemini_image_model:
             response = await _call_with_retry(
-                lambda: client.models.generate_content(
+                lambda: client.aio.models.generate_content(
                     model=CONFIG['IMAGEN_MODEL'],
                     contents=prompt,
                     config=types.GenerateContentConfig(
@@ -242,7 +242,7 @@ You MUST output exactly one image.
             image_bytes = base64.b64decode(raw_data) if isinstance(raw_data, str) else raw_data
         else:
             result = await _call_with_retry(
-                lambda: client.models.generate_images(
+                lambda: client.aio.models.generate_images(
                     model=CONFIG['IMAGEN_MODEL'],
                     prompt=prompt,
                     config=types.GenerateImagesConfig(
@@ -333,7 +333,7 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
 
     try:
         response = await _call_with_retry(
-            lambda: client.models.generate_content(
+            lambda: client.aio.models.generate_content(
                 model=CONFIG['IMAGEN_MODEL'],
                 contents=prompt,
                 config=types.GenerateContentConfig(
