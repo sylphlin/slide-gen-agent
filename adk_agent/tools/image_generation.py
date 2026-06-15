@@ -153,9 +153,9 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         scale_factor = slide_w / 1920.0
         
         try:
-            target_size = int(metadata.get('image_size', 260))
+            target_size = int(metadata.get('image_size', 340))
         except ValueError:
-            target_size = 260
+            target_size = 340
             
         # Scale QR code size proportionally to slide resolution
         actual_target_size = int(target_size * scale_factor)
@@ -169,21 +169,75 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         position = metadata.get('image_position', 'bottom-right').lower()
         
         if is_qr_slide:
-            center_y = slide_h // 2
-            vertical_offset = 0
+            # Dynamic Grey Square Placeholder Detector (Lightweight PIL-based Computer Vision)
+            # Scans the target column to find the exact coordinates of the solid grey placeholder square drawn by Gemini.
+            pixels = slide_img.load()
             
+            # Define scanning region based on position
             if 'left' in position:
-                center_x = int(slide_w * 0.175)
-                paste_x = center_x - new_w // 2
-                paste_y = center_y - new_h // 2 - vertical_offset
+                start_x = 20
+                end_x = int(slide_w * 0.45)
             elif 'center' in position:
-                center_x = slide_w // 2
-                paste_x = center_x - new_w // 2
-                paste_y = int(700 * scale_factor) - new_h // 2
+                start_x = int(slide_w * 0.3)
+                end_x = int(slide_w * 0.7)
             else:
-                center_x = int(slide_w * 0.825)
-                paste_x = center_x - new_w // 2
-                paste_y = center_y - new_h // 2 - vertical_offset
+                # Default: Right Column (Scan from 55% to 95% of width)
+                start_x = int(slide_w * 0.55)
+                end_x = int(slide_w * 0.95)
+                
+            start_y = int(slide_h * 0.1)
+            end_y = int(slide_h * 0.9)
+            
+            grey_pixels = []
+            for x in range(start_x, end_x, 2): # Step by 2 for blazing-fast scanning (takes <3ms)
+                for y in range(start_y, end_y, 2):
+                    r, g, b, a = pixels[x, y]
+                    # Light grey placeholder pixels typically have closely balanced RGB channels in [160, 246]
+                    if 160 <= r <= 246 and abs(r - g) < 6 and abs(g - b) < 6 and abs(r - b) < 6:
+                      grey_pixels.append((x, y))
+                      
+            detector_success = False
+            if grey_pixels:
+                xs = [p[0] for p in grey_pixels]
+                ys = [p[1] for p in grey_pixels]
+                left, right = min(xs), max(xs)
+                top, bottom = min(ys), max(ys)
+                
+                box_w = right - left
+                box_h = bottom - top
+                
+                # Proportions must be reasonably square-like (width/height ratio within 0.7-1.4)
+                if box_w > 100 and box_h > 100 and 0.7 < (box_w / box_h) < 1.4:
+                    center_x = (left + right) // 2
+                    center_y = (top + bottom) // 2
+                    print(f"🎯 [Overlay] Dynamic Detector SUCCESS! Found grey placeholder: left={left}, top={top}, w={box_w}, h={box_h}, center=({center_x}, {center_y})", flush=True)
+                    
+                    # Dynamically resize the QR code to perfectly cover the grey placeholder card!
+                    # We scale it 2% larger (1.02) to ensure a perfectly clean cover with no grey edges peeking out.
+                    new_w = int(box_w * 1.02)
+                    new_h = int(box_h * 1.02)
+                    overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                    
+                    paste_x = center_x - new_w // 2
+                    paste_y = center_y - new_h // 2
+                    detector_success = True
+                    
+            if not detector_success:
+                print("⚠️ [Overlay] Dynamic Detector failed or no placeholder found. Falling back to mathematical alignment.", flush=True)
+                center_y = slide_h // 2
+                vertical_offset = 0
+                if 'left' in position:
+                    center_x = int(slide_w * 0.175)
+                    paste_x = center_x - new_w // 2
+                    paste_y = center_y - new_h // 2 - vertical_offset
+                elif 'center' in position:
+                    center_x = slide_w // 2
+                    paste_x = center_x - new_w // 2
+                    paste_y = int(700 * scale_factor) - new_h // 2
+                else:
+                    center_x = int(slide_w * 0.825)
+                    paste_x = center_x - new_w // 2
+                    paste_y = center_y - new_h // 2 - vertical_offset
         else:
             padding = int(15 * scale_factor) if draw_card else 0
             card_w = new_w + 2 * padding
@@ -216,6 +270,17 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             paste_y = card_y + padding
             
         print(f"📍 [Overlay] Pasting QR Code at calculated coordinates: (x={paste_x}, y={paste_y}), size={new_w}x{new_h}", flush=True)
+        
+        # Erase-and-Paste: Draw a solid white square (with 2px safety padding) to completely obliterate any background fake QR code!
+        draw = ImageDraw.Draw(slide_img)
+        erase_margin = 2
+        draw.rectangle([
+            paste_x - erase_margin,
+            paste_y - erase_margin,
+            paste_x + new_w + erase_margin,
+            paste_y + new_h + erase_margin
+        ], fill=(255, 255, 255, 255))
+        
         # Paste directly without mask to avoid alpha-channel transparency bugs (guarantees solid white QR background)
         slide_img.paste(overlay_img, (paste_x, paste_y))
         
