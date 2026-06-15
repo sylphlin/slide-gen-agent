@@ -87,6 +87,16 @@ Read `assets/slide_xx.md` first, then generate one file per slide following that
 - **Progress**: Before writing each slide, output a header line such as **"✍️ Slide X / N — [slide title]"**; after saving, output a brief confirmation such as **"✅ Slide X / N script ready."** Full script contents do not need to be pasted into the chat.
 - **Action**: Save the slide details to `slide_xx.md` (by calling the `save_slide_script` tool for every slide index, or writing the `slide_xx.md` files directly in the session workspace folder).
 
+**User Images & QR Codes Overlay Protocol**:
+If the user provides a custom image (like a QR code, company logo, or screenshot) or asks to add a QR code for a specific URL, you must follow these steps:
+1. **Save Assets**: If the user provided a custom image file, first call `save_user_asset` to save the image to the session directory.
+2. **Declare Frontmatter**: In the YAML frontmatter of the target `slide_xx.md` file, declare the overlay parameters:
+   - For a URL (automatic QR code generation): `qr_overlay: "[URL]"`
+   - For a custom image file: `image_overlay: "[filename]"` (e.g., `qrcode.png`)
+   - Positioning: `image_position: "bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`)
+   - Sizing: `image_size: 220` (default width in pixels, adjust if requested)
+3. **Instruct the Image Model**: In the slide's `## Layout` section, you MUST explicitly write a layout description instructing the AI image model to leave that specific area completely empty and free of text/illustrations (e.g., *"This is a Closing slide. Keep the bottom-right 35% area completely empty, with a clean solid background, as a QR code will be overlaid there programmatically."*). Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
+
 **Layout Catalog** — use these types in the `Slide Type` field of `outlines.md` and `slide_xx.md`:
 
 | Slide Type       | Default Visual Composition                                      |

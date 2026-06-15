@@ -12,7 +12,7 @@ load_dotenv(override=True)
 
 try:
     from .config import CONFIG
-    from .tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
+    from .tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script, save_user_asset
     from .tools.imagen import generate_slide_image, generate_sequence_images
     from .tools.pdf_exporter import export_deck_pdf
     from .tools.preview_generator import generate_preview_page
@@ -20,7 +20,7 @@ try:
     from .tools.drive_exporter import export_to_google_slides
 except ImportError:
     from config import CONFIG
-    from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script
+    from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script, save_user_asset
     from tools.imagen import generate_slide_image, generate_sequence_images
     from tools.pdf_exporter import export_deck_pdf
     from tools.preview_generator import generate_preview_page
@@ -213,7 +213,18 @@ Generate and write the following documents sequentially using the session path. 
 <OUTLINES_TEMPLATE>
 {_outlines_template}
 </OUTLINES_TEMPLATE>
-3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. If a slide is part of a multi-slide sequence (e.g. Slide 3, 4, 5 of a 6-step process), you MUST declare the exact same 'sequence_id: [id]', 'sequence_part: [index]', and 'sequence_total: [total]' in the frontmatter of each slide in the sequence. For sequences, you MUST NOT use complex progression UIs (like multi-step progress bars or horizontal timelines). Instead, use a macro-grid (e.g., 30/70 split) with a single overarching sequence title in the smaller column, displaying ONLY the current step's content and a simple "Part X of Y: [Current Name]" indicator in the larger column. Copy this simplified '## Layout' description character-for-character across all subsequent slides in the sequence, only updating the current step name and content block. After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
+3. slide_xx.md: Generate one file per slide following the template below. Before writing each slide, output a header line like "✍️ Slide X / N — [slide title]". Leave the '## Layout' section empty on first generation. Spoken script MUST be 260-300 words (English) or 320-400 characters (CJK), written as a **single continuous paragraph**. If a slide is part of a multi-slide sequence (e.g. Slide 3, 4, 5 of a 6-step process), you MUST declare the exact same 'sequence_id: [id]', 'sequence_part: [index]', and 'sequence_total: [total]' in the frontmatter of each slide in the sequence. For sequences, you MUST NOT use complex progression UIs (like multi-step progress bars or horizontal timelines). Instead, use a macro-grid (e.g., 30/70 split) with a single overarching sequence title in the smaller column, displaying ONLY the current step's content and a simple "Part X of Y: [Current Name]" indicator in the larger column. Copy this simplified '## Layout' description character-for-character across all subsequent slides in the sequence, only updating the current step name and content block. 
+
+*User Images & QR Codes Overlay Protocol*: If the user provides a custom image (like a QR code, company logo, or screenshot) or asks to add a QR code for a specific URL, you must follow these steps:
+- If the user provided a custom image file, first call `save_user_asset` to save it to the session directory.
+- In the YAML frontmatter of the target `slide_xx.md` file, you MUST declare the overlay parameters:
+  - For a URL (automatic QR code generation): `qr_overlay: "[URL]"`
+  - For a custom image file: `image_overlay: "[filename]"` (e.g., `qrcode.png`)
+  - Positioning: `image_position: "bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`)
+  - Sizing: `image_size: 220` (default width in pixels, adjust if requested)
+- In the slide's `## Layout` section, you MUST explicitly write a layout description instructing the AI image model to leave that specific area completely empty and free of text/illustrations (e.g., *"This is a Closing slide. Keep the bottom-right 35% area completely empty, with a clean solid background, as a QR code will be overlaid there programmatically."*). Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
+
+After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
 <SLIDE_TEMPLATE>
 {_slide_template}
 </SLIDE_TEMPLATE>
@@ -296,6 +307,7 @@ root_agent = Agent(
         save_design_spec,
         save_outlines,
         save_slide_script,
+        save_user_asset,
         generate_slide_image,
         generate_sequence_images,
         generate_preview_page,

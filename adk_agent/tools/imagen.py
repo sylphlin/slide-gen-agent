@@ -56,7 +56,144 @@ async def _call_with_retry(fn, max_retries: int = 4, initial_delay: float = 5.0)
                 raise
 
 
+def parse_slide_frontmatter(slide_path: str) -> dict:
+    import re
+    metadata = {}
+    if not os.path.exists(slide_path):
+        return metadata
+    try:
+        with open(slide_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+        if match:
+            frontmatter_text = match.group(1)
+            for line in frontmatter_text.split('\n'):
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if ':' in line:
+                    key, val = line.split(':', 1)
+                    key = key.strip()
+                    val = val.strip().strip('"').strip("'")
+                    metadata[key] = val
+    except Exception as e:
+        print(f"Error parsing frontmatter: {e}")
+    return metadata
+
+
+def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
+    from PIL import Image, ImageDraw
+    
+    metadata = parse_slide_frontmatter(slide_path)
+    qr_url = metadata.get('qr_overlay')
+    image_overlay_file = metadata.get('image_overlay')
+    
+    # If neither overlay is specified, do nothing
+    if not qr_url and not image_overlay_file:
+        return
+        
+    overlay_img = None
+    draw_card = True
+    
+    if qr_url:
+        try:
+            import qrcode
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=1,
+            )
+            qr.add_data(qr_url)
+            qr.make(fit=True)
+            overlay_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+        except Exception as e:
+            print(f"Failed to generate QR code for {qr_url}: {e}")
+            return
+            
+    elif image_overlay_file:
+        paths_to_try = [
+            os.path.join(session_path, 'slides', image_overlay_file),
+            os.path.join(session_path, image_overlay_file),
+            os.path.abspath(image_overlay_file),
+        ]
+        
+        found_path = None
+        for p in paths_to_try:
+            if os.path.exists(p):
+                found_path = p
+                break
+                
+        if not found_path:
+            print(f"Warning: Overlay image '{image_overlay_file}' not found in paths: {paths_to_try}")
+            return
+            
+        try:
+            overlay_img = Image.open(found_path).convert("RGBA")
+            draw_card = False
+        except Exception as e:
+            print(f"Failed to open overlay image {found_path}: {e}")
+            return
+            
+    if not overlay_img:
+        return
+        
+    try:
+        slide_img = Image.open(output_image_path).convert("RGBA")
+        slide_w, slide_h = slide_img.size
+        
+        try:
+            target_size = int(metadata.get('image_size', 220))
+        except ValueError:
+            target_size = 220
+            
+        orig_w, orig_h = overlay_img.size
+        aspect_ratio = orig_h / orig_w
+        new_w = target_size
+        new_h = int(new_w * aspect_ratio)
+        overlay_img = overlay_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        
+        padding = 15 if draw_card else 0
+        card_w = new_w + 2 * padding
+        card_h = new_h + 2 * padding
+        
+        position = metadata.get('image_position', 'bottom-right').lower()
+        margin = 80
+        
+        if position == 'bottom-left':
+            card_x = margin
+            card_y = slide_h - card_h - margin
+        elif position == 'top-left':
+            card_x = margin
+            card_y = margin
+        elif position == 'top-right':
+            card_x = slide_w - card_w - margin
+            card_y = margin
+        elif position == 'center':
+            card_x = (slide_w - card_w) // 2
+            card_y = (slide_h - card_h) // 2
+        else:
+            card_x = slide_w - card_w - margin
+            card_y = slide_h - card_h - margin
+            
+        if draw_card:
+            draw = ImageDraw.Draw(slide_img)
+            card_coords = [card_x, card_y, card_x + card_w, card_y + card_h]
+            draw.rounded_rectangle(card_coords, radius=12, fill=(255, 255, 255, 255))
+            draw.rounded_rectangle(card_coords, radius=12, outline=(220, 220, 220, 255), width=1)
+            
+        paste_x = card_x + padding
+        paste_y = card_y + padding
+        
+        slide_img.paste(overlay_img, (paste_x, paste_y), mask=overlay_img)
+        slide_img.convert("RGB").save(output_image_path, "PNG")
+        print(f"Successfully applied overlay to {output_image_path}")
+    except Exception as e:
+        print(f"Error applying overlay to slide {slide_number}: {e}")
+
+
 async def generate_slide_image(
+
     session_path: str,
     slide_number: int,
     tool_context: ToolContext
@@ -158,10 +295,18 @@ async def generate_slide_image(
         with open(file_path, 'wb') as f:
             f.write(image_bytes)
             
+        # Apply overlay (if any) to the file on disk
+        apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+        
+        # Read the (possibly modified) file back to get the final image bytes
+        with open(file_path, 'rb') as f:
+            image_bytes = f.read()
+            
         # Save as artifact and record the GCS version in session state
         artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
         version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
         tool_context.state[f"slide_{pad_num}_gcs_version"] = version
+
 
         # 1. Local backup (useful for local development)
         versions_path = os.path.join(session_path, 'gcs_versions.json')
@@ -290,10 +435,19 @@ Because these slides form a continuous sequence (Sequence ID: {sequence_id}), yo
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, 'wb') as f:
                 f.write(image_bytes)
+                
+            # Apply overlay (if any) to the file on disk
+            slide_path = os.path.join(session_path, f"slide_{pad_num}.md")
+            apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+            
+            # Read the (possibly modified) file back to get the final image bytes
+            with open(file_path, 'rb') as f:
+                image_bytes = f.read()
 
             artifact_part = Part.from_bytes(data=image_bytes, mime_type="image/png")
             version = await save_artifact_helper(f"slide_{pad_num}.png", artifact_part, tool_context)
             tool_context.state[f"slide_{pad_num}_gcs_version"] = version
+
             gcs_versions[f"slide_{pad_num}_gcs_version"] = version
             results.append(f"slide_{pad_num}.png saved")
 

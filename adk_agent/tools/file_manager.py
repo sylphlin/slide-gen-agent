@@ -139,3 +139,36 @@ slide_type: "{slide_type}"
     await save_artifact_helper(file_name, artifact_part, tool_context)
     
     return f"Slide {pad_num} script successfully written to {file_path}"
+
+
+async def save_user_asset(
+    session_path: str,
+    filename: str,
+    file_content_b64: str,
+    tool_context: ToolContext
+) -> str:
+    """Saves a user-provided asset (such as a QR code, logo, or screenshot) to the session directory
+    so it can be overlaid onto slides.
+    
+    Args:
+        session_path: The absolute session path returned by initialize_session
+        filename: The name of the file to save (e.g. qrcode.png)
+        file_content_b64: The base64-encoded file content
+        tool_context: The tool context injected by the framework
+    """
+    import base64
+    file_path = os.path.join(session_path, filename)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    try:
+        file_bytes = base64.b64decode(file_content_b64)
+        with open(file_path, 'wb') as f:
+            f.write(file_bytes)
+        
+        # Save as artifact
+        artifact_part = Part.from_bytes(data=file_bytes, mime_type="image/png")
+        await save_artifact_helper(filename, artifact_part, tool_context)
+        
+        return f"Asset successfully saved to {file_path}"
+    except Exception as e:
+        return f"Failed to save asset: {str(e)}"
+

@@ -5,3 +5,4 @@ a2a-sdk>=0.3.4,<0.4
 python-pptx
 reportlab
 google-api-python-client>=2.0.0
+qrcode>=7.4.2
