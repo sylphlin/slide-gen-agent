@@ -1,10 +1,17 @@
 ---
 slide_number: XX
-slide_type: "Cover"
+slide_type: "Cover" # Valid types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA / Content (Overlay)
 # Optional for multi-slide sequences (e.g. Slide 3, 4, 5 of a 6-step process):
 # sequence_id: "unique-sequence-id"
 # sequence_part: 1
 # sequence_total: 3
+# Optional for Content (Overlay) slides:
+# qr_overlay: "https://example.com"      # URL for automatic QR Code generation
+# qr_label: "Scan to visit our website"  # Label text rendered at the bottom of the card
+# image_overlay: "filename.png"         # Filename of a custom uploaded image/logo
+# image_label: "Company Logo"            # Label text rendered at the bottom of the card
+# image_position: "bottom-right"        # Positioning: bottom-right / bottom-left / top-right / top-left / center
+# image_size: 220                       # Width in pixels (maintains aspect ratio)
 ---
 
 # [Slide Title]

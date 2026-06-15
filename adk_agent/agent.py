@@ -209,7 +209,7 @@ Generate and write the following documents sequentially using the session path. 
 <DESIGN_TEMPLATE>
 {_design_template}
 </DESIGN_TEMPLATE>
-2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA. Output a status line before starting, e.g. "🗂️ Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
+2. outlines.md: Follow the template below exactly. The **Topic** field drives all downstream file naming — do not omit or rename it. Valid Slide Types: Cover / Section Header / Content (Text) / Content (Image) / Data & Stat / Two-Column / Quote / Closing / CTA / Content (Overlay). Output a status line before starting, e.g. "🗂️ Drafting the slide-by-slide outline...", and a confirmation after saving that includes the slide count, e.g. "✅ Outline ready — N slides planned." Call 'save_outlines'.
 <OUTLINES_TEMPLATE>
 {_outlines_template}
 </OUTLINES_TEMPLATE>
@@ -222,7 +222,11 @@ Generate and write the following documents sequentially using the session path. 
   - For a custom image file: `image_overlay: "[filename]"` (e.g., `qrcode.png`)
   - Positioning: `image_position: "bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`)
   - Sizing: `image_size: 220` (default width in pixels, adjust if requested)
-- In the slide's `## Layout` section, you MUST explicitly write a layout description instructing the AI image model to leave that specific area completely empty and free of text/illustrations (e.g., *"This is a Closing slide. Keep the bottom-right 35% area completely empty, with a clean solid background, as a QR code will be overlaid there programmatically."*). Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
+- **Structural Layout Partitioning Rule**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the overlay:
+  - **If the overlay is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical gutter/column with a distinct boundary, designed as a dedicated placeholder column.
+  - **If the overlay is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical placeholder column. All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide.
+  - **If the overlay is in the Center (`center`)**: Command a **50/50 horizontal split layout**. Place all text in the upper 50%, and describe a dedicated, clean, solid-colored rectangular box (e.g., 400x400px) in the lower 50% as a placeholder.
+  - **Crucial**: Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
 
 After saving, output a brief confirmation, e.g. "✅ Slide X / N script ready." Call 'save_slide_script' for every slide.
 <SLIDE_TEMPLATE>

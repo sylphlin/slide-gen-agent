@@ -76,6 +76,8 @@ These are structural properties of the canvas itself — they are decided **once
 - **Text Alignment**: Left-align body text; center only for hero numbers or title slides
 - **Max Text per Slide**: 40 words for body copy; use visuals to replace paragraphs
 - **Hierarchy**: One clear focal point per slide — title, stat, or image
+- **Content (Overlay) Slides**: Must use a structured asymmetric 60/40 or 65/35 vertical split layout. One side contains the structured content cards (e.g. two stacked cards with icons and text), while the opposite side features a dedicated, prominent container card with soft rounded corners and wobbly/soft drop shadows. The center of this container card must be a completely clean, blank placeholder for the asset, and the bottom of the card contains a centered caption label (e.g., "掃描前往 GitHub 專案庫") rendered in matching typography.
+
 
 ---
 

@@ -95,7 +95,11 @@ If the user provides a custom image (like a QR code, company logo, or screenshot
    - For a custom image file: `image_overlay: "[filename]"` (e.g., `qrcode.png`)
    - Positioning: `image_position: "bottom-right"` (options: `bottom-right`, `bottom-left`, `top-right`, `top-left`, `center`)
    - Sizing: `image_size: 220` (default width in pixels, adjust if requested)
-3. **Instruct the Image Model**: In the slide's `## Layout` section, you MUST explicitly write a layout description instructing the AI image model to leave that specific area completely empty and free of text/illustrations (e.g., *"This is a Closing slide. Keep the bottom-right 35% area completely empty, with a clean solid background, as a QR code will be overlaid there programmatically."*). Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
+3. **Instruct the Image Model (Structural Partitioning)**: In the slide's `## Layout` section, you MUST NOT just ask the AI to "leave space." You MUST instruct the AI image model to use a strictly partitioned, column-based or row-based layout to physically isolate the overlay:
+   - **If the overlay is on the Right (`bottom-right` or `top-right`)**: Command a strict **70/30 or 65/35 vertical split layout**. All slide content (titles, text, and illustrations/flow diagrams) must be fully contained inside a structured, bounded card container on the left 70% of the slide. The right 30% of the slide must be described as a completely separate, solid-colored, blank vertical gutter/column with a distinct boundary, designed as a dedicated placeholder column.
+   - **If the overlay is on the Left (`bottom-left` or `top-left`)**: Command a strict **30/70 vertical split layout**. The left 30% is a completely solid-colored, blank vertical placeholder column. All slide content, titles, and diagrams must be fully contained inside a structured, bounded card container on the right 70% of the slide.
+   - **If the overlay is in the Center (`center`)**: Command a **50/50 horizontal split layout**. Place all text in the upper 50%, and describe a dedicated, clean, solid-colored rectangular box (e.g., 400x400px) in the lower 50% as a placeholder.
+   - **Crucial**: Do NOT describe the QR code or image in the prompt to the image generator, as it will be overlaid by the Python backend.
 
 **Layout Catalog** — use these types in the `Slide Type` field of `outlines.md` and `slide_xx.md`:
 
@@ -109,6 +113,7 @@ If the user provides a custom image (like a QR code, company logo, or screenshot
 | Two-Column       | Equal split; left = text/bullets, right = chart or image        |
 | Quote            | Large pull quote centered, attributed name bottom-right         |
 | Closing / CTA    | Mirror of Cover; bold call-to-action text centered              |
+| Content (Overlay)| Asymmetric split-screen (65/35); left = structured content cards, right = prominent rounded container card with soft drop shadows, containing a clean empty placeholder for the asset and a centered text label at the bottom. |
 
 **`## Layout` section** — leave empty on first generation. The image model infers a suitable layout from the Slide Type and Script content. Only fill this in during Stage 3 iteration when the user requests a specific visual change (e.g., "put the chart on the right", "make it two-column"). Describe the exact composition concretely: column ratios, element positions, what visual occupies each zone.
 **Multi-Slide Sequence Protocol**:
