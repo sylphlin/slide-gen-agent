@@ -311,8 +311,12 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
             paste_y + new_h + erase_margin
         ], fill=(255, 255, 255, 255))
         
-        # Paste directly without mask to avoid alpha-channel transparency bugs (guarantees solid white QR background)
-        slide_img.paste(overlay_img, (paste_x, paste_y))
+        # Paste using the alpha channel as the mask if the overlay image has transparency (RGBA),
+        # which prevents transparent background areas from turning solid black during RGB conversion.
+        if overlay_img.mode == 'RGBA':
+            slide_img.paste(overlay_img, (paste_x, paste_y), mask=overlay_img)
+        else:
+            slide_img.paste(overlay_img, (paste_x, paste_y))
         
         slide_img.convert("RGB").save(output_image_path, "PNG")
         print(f"💾 [Overlay] Successfully saved final composite image to: {output_image_path}", flush=True)
