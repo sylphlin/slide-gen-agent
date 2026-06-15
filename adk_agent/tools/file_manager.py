@@ -101,6 +101,10 @@ async def save_slide_script(
     script: str,
     tool_context: ToolContext,
     layout: str = '',
+    qr_overlay: str = '',
+    qr_label: str = '',
+    image_position: str = '',
+    image_size: int = 0,
 ) -> str:
     """Saves an individual slide script (slide_xx.md) with transition and spoken script content.
 
@@ -113,16 +117,34 @@ async def save_slide_script(
         tool_context: The tool context injected by the framework
         layout: Optional visual layout override. Leave empty on first generation.
                 Fill in only when the user requests a specific composition change.
+        qr_overlay: Optional URL or custom asset filename to overlay as a QR code on this slide.
+        qr_label: Optional caption text label to render under the QR code overlay.
+        image_position: Position of the overlay (e.g. bottom-right, bottom-left, top-right, top-left, center).
+        image_size: Target width of the QR code overlay in pixels.
     """
     pad_num = f"{slide_number:02d}"
     file_name = f"slide_{pad_num}.md"
     file_path = os.path.join(session_path, file_name)
 
+    frontmatter_lines = [
+        f"slide_number: {slide_number}",
+        f"slide_type: \"{slide_type}\""
+    ]
+    if qr_overlay:
+        frontmatter_lines.append(f"qr_overlay: \"{qr_overlay}\"")
+    if qr_label:
+        frontmatter_lines.append(f"qr_label: \"{qr_label}\"")
+    if image_position:
+        frontmatter_lines.append(f"image_position: \"{image_position}\"")
+    if image_size > 0:
+        frontmatter_lines.append(f"image_size: {image_size}")
+        
+    frontmatter_str = "\n".join(frontmatter_lines)
+
     layout_section = f"\n## Layout\n\n{layout.strip()}\n" if layout and layout.strip() else "\n## Layout\n\n"
 
     file_content = f"""---
-slide_number: {slide_number}
-slide_type: "{slide_type}"
+{frontmatter_str}
 ---
 
 # {title}
