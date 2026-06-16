@@ -67,7 +67,7 @@ def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) 
         import re
         
         # Initialize Gen AI Client
-        client = genai.Client()
+        client = genai.Client(vertexai=True)
         
         # Load the image bytes
         with open(image_path, 'rb') as f:
@@ -299,7 +299,7 @@ You MUST output exactly one image.
 </slide_spec>
 """
 
-    client = genai.Client()
+    client = genai.Client(vertexai=True)
     is_gemini_image_model = CONFIG['IMAGE_MODEL'].startswith('gemini-')
 
     try:
@@ -412,7 +412,7 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
         
         prompt += f"\n<slide_spec index=\"{slide_number}\" original_file=\"slide_{pad_num}.md\">\n{slide_content}\n</slide_spec>\n"
 
-    client = genai.Client()
+    client = genai.Client(vertexai=True)
     is_gemini_image_model = CONFIG['IMAGE_MODEL'].startswith('gemini-')
     
     if not is_gemini_image_model:
