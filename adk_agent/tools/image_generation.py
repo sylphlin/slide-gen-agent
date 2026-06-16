@@ -310,14 +310,11 @@ You MUST output exactly one image.
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         response_modalities=["IMAGE"],
-                        modality_settings={
-                            "IMAGE": types.ModalitySettings(
-                                image_settings=types.ImageSettings(
-                                    aspect_ratio="16:9",
-                                    image_size="2K"
-                                )
-                            )
-                        }
+                        image_config=types.ImageConfig(
+                            aspect_ratio="16:9",
+                            image_size="2K",
+                            output_mime_type="image/png"
+                        )
                     )
                 )
             )
@@ -428,14 +425,11 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE"],
-                    modality_settings={
-                        "IMAGE": types.ModalitySettings(
-                            image_settings=types.ImageSettings(
-                                aspect_ratio="16:9",
-                                image_size="2K"
-                            )
-                        )
-                    }
+                    image_config=types.ImageConfig(
+                        aspect_ratio="16:9",
+                        image_size="2K",
+                        output_mime_type="image/png"
+                    )
                 )
             )
         )
