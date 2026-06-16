@@ -310,6 +310,14 @@ You MUST output exactly one image.
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         response_modalities=["IMAGE"],
+                        modality_settings={
+                            "image": {
+                                "image_settings": {
+                                    "aspect_ratio": "16:9",
+                                    "image_size": "2K"
+                                }
+                            }
+                        }
                     )
                 )
             )
@@ -420,6 +428,14 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE"],
+                    modality_settings={
+                        "image": {
+                            "image_settings": {
+                                "aspect_ratio": "16:9",
+                                "image_size": "2K"
+                            }
+                        }
+                    }
                 )
             )
         )
