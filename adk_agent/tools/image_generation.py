@@ -300,13 +300,13 @@ You MUST output exactly one image.
 """
 
     client = genai.Client()
-    is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
+    is_gemini_image_model = CONFIG['IMAGE_MODEL'].startswith('gemini-')
 
     try:
         if is_gemini_image_model:
             response = await _call_with_retry(
                 lambda: client.aio.models.generate_content(
-                    model=CONFIG['IMAGEN_MODEL'],
+                    model=CONFIG['IMAGE_MODEL'],
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         response_modalities=["IMAGE"],
@@ -333,7 +333,7 @@ You MUST output exactly one image.
         else:
             result = await _call_with_retry(
                 lambda: client.aio.models.generate_images(
-                    model=CONFIG['IMAGEN_MODEL'],
+                    model=CONFIG['IMAGE_MODEL'],
                     prompt=prompt,
                     config=types.GenerateImagesConfig(
                         number_of_images=1,
@@ -416,7 +416,7 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
         prompt += f"\n<slide_spec index=\"{slide_number}\" original_file=\"slide_{pad_num}.md\">\n{slide_content}\n</slide_spec>\n"
 
     client = genai.Client()
-    is_gemini_image_model = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
+    is_gemini_image_model = CONFIG['IMAGE_MODEL'].startswith('gemini-')
     
     if not is_gemini_image_model:
         return "Error: generate_sequence_images requires a native Gemini multimodal model. Traditional Imagen models cannot generate multiple images per prompt."
@@ -424,7 +424,7 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
     try:
         response = await _call_with_retry(
             lambda: client.aio.models.generate_content(
-                model=CONFIG['IMAGEN_MODEL'],
+                model=CONFIG['IMAGE_MODEL'],
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE"],

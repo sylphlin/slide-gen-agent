@@ -24,11 +24,11 @@ CONFIG = {
     # GCP Credentials & Locations
     'GOOGLE_CLOUD_PROJECT': _resolve_project_id(),
     'GOOGLE_CLOUD_LOCATION': 'global',
-    'IMAGEN_LOCATION': os.environ.get('IMAGEN_LOCATION'),
+    'IMAGE_LOCATION': os.environ.get('IMAGE_LOCATION'),
 
     # Model selection
     'TEXT_MODEL': os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash',
-    'IMAGEN_MODEL': os.environ.get('IMAGEN_MODEL') or 'gemini-3.1-flash-image',
+    'IMAGE_MODEL': os.environ.get('IMAGE_MODEL') or 'gemini-3.1-flash-image',
 
     # Thinking settings
     'THINKING_LEVEL': os.environ.get('THINKING_LEVEL') or 'high',
@@ -43,9 +43,9 @@ CONFIG = {
 }
 
 # Normalize and auto-fill image generation endpoint location
-if not CONFIG['IMAGEN_LOCATION']:
-    is_global_imagen = CONFIG['IMAGEN_MODEL'].startswith('gemini-')
-    CONFIG['IMAGEN_LOCATION'] = 'us-central1' if (CONFIG['GOOGLE_CLOUD_LOCATION'] == 'global' and not is_global_imagen) else CONFIG['GOOGLE_CLOUD_LOCATION']
+if not CONFIG['IMAGE_LOCATION']:
+    is_global_imagen = CONFIG['IMAGE_MODEL'].startswith('gemini-')
+    CONFIG['IMAGE_LOCATION'] = 'us-central1' if (CONFIG['GOOGLE_CLOUD_LOCATION'] == 'global' and not is_global_imagen) else CONFIG['GOOGLE_CLOUD_LOCATION']
 
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
