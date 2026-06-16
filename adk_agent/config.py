@@ -24,7 +24,7 @@ CONFIG = {
     # GCP Credentials & Locations
     'GOOGLE_CLOUD_PROJECT': _resolve_project_id(),
     'GOOGLE_CLOUD_LOCATION': 'global',
-    'IMAGE_LOCATION': os.environ.get('IMAGE_LOCATION'),
+    'IMAGE_LOCATION': os.environ.get('IMAGE_LOCATION') or 'global',
 
     # Model selection
     'TEXT_MODEL': os.environ.get('TEXT_MODEL') or 'gemini-3.5-flash',
@@ -41,10 +41,6 @@ CONFIG = {
     # extra env var is needed as long as the SA was created with that name.
     'DRIVE_SA_EMAIL': os.environ.get('DRIVE_SA_EMAIL'),
 }
-
-# Normalize and auto-fill image generation endpoint location
-if not CONFIG['IMAGE_LOCATION']:
-    CONFIG['IMAGE_LOCATION'] = CONFIG['GOOGLE_CLOUD_LOCATION']
 
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
