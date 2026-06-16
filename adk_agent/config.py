@@ -44,8 +44,7 @@ CONFIG = {
 
 # Normalize and auto-fill image generation endpoint location
 if not CONFIG['IMAGE_LOCATION']:
-    is_global_imagen = CONFIG['IMAGE_MODEL'].startswith('gemini-')
-    CONFIG['IMAGE_LOCATION'] = 'us-central1' if (CONFIG['GOOGLE_CLOUD_LOCATION'] == 'global' and not is_global_imagen) else CONFIG['GOOGLE_CLOUD_LOCATION']
+    CONFIG['IMAGE_LOCATION'] = CONFIG['GOOGLE_CLOUD_LOCATION']
 
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
@@ -64,7 +63,7 @@ os.environ['GOOGLE_GENAI_USE_VERTEXAI'] = 'true'
 if CONFIG['GOOGLE_CLOUD_PROJECT']:
     os.environ['GOOGLE_CLOUD_PROJECT'] = CONFIG['GOOGLE_CLOUD_PROJECT']
 os.environ['GOOGLE_CLOUD_LOCATION'] = CONFIG['GOOGLE_CLOUD_LOCATION']
-os.environ['IMAGEN_LOCATION'] = CONFIG['IMAGEN_LOCATION']
+os.environ['IMAGE_LOCATION'] = CONFIG['IMAGE_LOCATION']
 
 def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
     """Helper to generate the authenticated Cloud Storage link for an artifact inside Agent Engine."""
