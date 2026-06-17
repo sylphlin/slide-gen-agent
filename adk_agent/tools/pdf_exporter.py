@@ -12,8 +12,13 @@ except ImportError:
 
 # Inject skills/slide-gen-agent/scripts into sys.path to resolve pdf_exporter
 tools_dir = os.path.dirname(os.path.abspath(__file__))
-repo_root = os.path.abspath(os.path.join(tools_dir, '..', '..'))
-skills_scripts_dir = os.path.join(repo_root, 'skills', 'slide-gen-agent', 'scripts')
+
+# Try packaging context first: [tools_dir]/../skills/slide-gen-agent/scripts
+skills_scripts_dir = os.path.abspath(os.path.join(tools_dir, '..', 'skills', 'slide-gen-agent', 'scripts'))
+if not os.path.exists(skills_scripts_dir):
+    # Fall back to repo root: [tools_dir]/../../skills/slide-gen-agent/scripts
+    skills_scripts_dir = os.path.abspath(os.path.join(tools_dir, '..', '..', 'skills', 'slide-gen-agent', 'scripts'))
+
 if skills_scripts_dir not in sys.path:
     sys.path.insert(0, skills_scripts_dir)
 

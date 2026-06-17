@@ -263,6 +263,17 @@ echo ""
 echo "================================================================="
 echo "Step 4: Deploying Slide Gen Agent to Vertex AI Agent Engine..."
 echo "================================================================="
+
+# Sync the skills directory into adk_agent so it is packaged and deployed with the agent
+echo "Syncing skills/ directory into adk_agent/ packaging context..."
+ABS_ADK_SKILLS_DIR="$(pwd)/adk_agent/skills"
+rm -rf "$ABS_ADK_SKILLS_DIR"
+mkdir -p "$ABS_ADK_SKILLS_DIR"
+cp -r skills/* "$ABS_ADK_SKILLS_DIR"/
+
+# Register a trap to clean up the copied skills folder absolutely
+trap "rm -rf '$ABS_ADK_SKILLS_DIR'" EXIT
+
 cd adk_agent
 # Stream the deployment logs in real-time while capturing them to a temp file
 adk deploy agent_engine \
@@ -274,6 +285,10 @@ adk deploy agent_engine \
 
 # Capture the exit code of the adk deploy command (not the tee command)
 ADK_EXIT_CODE=${PIPESTATUS[0]}
+
+# Clean up copied skills folder immediately and clear the trap
+rm -rf "$ABS_ADK_SKILLS_DIR"
+trap - EXIT
 
 # Double-Check: Verify if the deployment was TRULY successful by scanning the logs
 if [ $ADK_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy_output.log || grep -q "Failed to deploy" deploy_output.log || ! grep -q "reasoningEngines" deploy_output.log; then
