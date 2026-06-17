@@ -1,8 +1,5 @@
 import os
-import glob
-import re
-from pptx import Presentation
-from pptx.util import Inches
+import sys
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
@@ -13,17 +10,14 @@ except ImportError:
     from config import save_artifact_helper, get_gcs_artifact_url
     from tools.file_manager import get_topic_slug
 
+# Inject skills/slide-gen-agent/scripts into sys.path to resolve pptx_exporter
+tools_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(tools_dir, '..', '..'))
+skills_scripts_dir = os.path.join(repo_root, 'skills', 'slide-gen-agent', 'scripts')
+if skills_scripts_dir not in sys.path:
+    sys.path.insert(0, skills_scripts_dir)
 
-def extract_script(md_path: str) -> str:
-    """Extracts the speaker notes from the ## Script section of the slide's markdown file."""
-    if not os.path.exists(md_path):
-        return ""
-    with open(md_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    match = re.search(r'## Script\s*([\s\S]*)', content)
-    if match:
-        return match.group(1).strip()
-    return ""
+from pptx_exporter import export_session_to_pptx
 
 
 async def export_deck_pptx(session_path: str, tool_context: ToolContext) -> str:
@@ -34,61 +28,13 @@ async def export_deck_pptx(session_path: str, tool_context: ToolContext) -> str:
         session_path: The absolute session path returned by initialize_session
         tool_context: The tool context injected by the framework
     """
-    # Search in 'slides/' subfolder first
-    slides_dir = os.path.join(session_path, 'slides')
-    png_files = sorted(glob.glob(os.path.join(slides_dir, 'slide_*.png')))
-    
-    # Fallback to session root directory if subfolder is empty
-    if not png_files:
-        slides_dir = session_path
-        png_files = sorted(glob.glob(os.path.join(slides_dir, 'slide_*.png')))
-        
     slug = get_topic_slug(session_path)
     pptx_filename = f"{slug}.pptx"
-    pptx_path = os.path.join(session_path, pptx_filename)
     
-    if not png_files:
-        return "Error: No slide PNG images found in the session. Generate images first."
-        
     try:
-        prs = Presentation()
-        # Set slide dimensions to widescreen 16:9 (13.333" x 7.5")
-        prs.slide_width = Inches(13.333)
-        prs.slide_height = Inches(7.5)
-        
-        # Use a blank slide layout (usually index 6 in the default template)
-        blank_layout = prs.slide_layouts[6]
-        
-        for png_file in png_files:
-            filename = os.path.basename(png_file)
-            slide_num_match = re.search(r'slide_(\d+)\.png', filename)
-            if not slide_num_match:
-                continue
-            pad_num = slide_num_match.group(1)
-            
-            # Extract script notes
-            md_file = os.path.join(session_path, f"slide_{pad_num}.md")
-            script_notes = extract_script(md_file)
-            
-            # Add a new blank slide
-            slide = prs.slides.add_slide(blank_layout)
-            
-            # Add image covering the entire slide
-            slide.shapes.add_picture(
-                png_file, 
-                Inches(0), 
-                Inches(0), 
-                width=prs.slide_width, 
-                height=prs.slide_height
-            )
-            
-            # Add speaker notes if they exist
-            if script_notes:
-                notes_slide = slide.notes_slide
-                text_frame = notes_slide.notes_text_frame
-                text_frame.text = script_notes
-                
-        prs.save(pptx_path)
+        # Call the core, self-contained export function from the skill folder
+        result = export_session_to_pptx(session_path, pptx_filename)
+        pptx_path = result["pptxPath"]
         
         # Read the generated PPTX bytes to save as artifact
         with open(pptx_path, 'rb') as f:

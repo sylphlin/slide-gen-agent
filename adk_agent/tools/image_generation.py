@@ -57,7 +57,7 @@ def parse_slide_frontmatter(slide_path: str) -> dict:
     return metadata
 
 
-def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) -> tuple[int, int, int, int] | None:
+async def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) -> tuple[int, int, int, int] | None:
     """Uses Gemini Multimodal Vision to detect the exact bounding box of the QR code/placeholder on the slide.
     Returns (left, top, w, h) in slide pixel dimensions, or None if detection fails."""
     try:
@@ -93,9 +93,11 @@ def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) 
         """
         
         print(f"👁️ [Overlay] Querying Gemini Vision ({model_name}) to detect placeholder coordinates...", flush=True)
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[image_part, prompt]
+        response = await _call_with_retry(
+            lambda: client.aio.models.generate_content(
+                model=model_name,
+                contents=[image_part, prompt]
+            )
         )
         
         text = response.text.strip()
@@ -125,7 +127,7 @@ def detect_placeholder_with_gemini(image_path: str, slide_w: int, slide_h: int) 
     return None
 
 
-def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
+async def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str, output_image_path: str):
     """Mathematically aligns and overlays a locally-generated QR code onto the slide image.
     Only supports URL-based QR codes. Custom image overlays are strictly prohibited."""
     from PIL import Image, ImageDraw
@@ -190,7 +192,7 @@ def apply_overlay_to_slide(session_path: str, slide_number: int, slide_path: str
         
         if is_qr_slide:
             # Attempt AI-driven dynamic detection using Gemini Multimodal Vision!
-            detection = detect_placeholder_with_gemini(output_image_path, slide_w, slide_h)
+            detection = await detect_placeholder_with_gemini(output_image_path, slide_w, slide_h)
             detector_success = False
             
             if detection:
@@ -355,8 +357,8 @@ You MUST output exactly one image.
         with open(file_path, 'wb') as f:
             f.write(image_bytes)
 
-        # Apply overlay (if any) to the file on disk (synchronously)
-        apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+        # Apply overlay (if any) to the file on disk (asynchronously)
+        await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
 
         # Read the (possibly modified) file back to get the final image bytes
         with open(file_path, 'rb') as f:
@@ -478,9 +480,9 @@ You MUST output exactly {len(slide_numbers)} images in the exact order of the sl
             with open(file_path, 'wb') as f:
                 f.write(image_bytes)
                 
-            # Apply overlay (if any) to the file on disk (synchronously)
+            # Apply overlay (if any) to the file on disk (asynchronously)
             slide_path = os.path.join(session_path, f"slide_{pad_num}.md")
-            apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
+            await apply_overlay_to_slide(session_path, slide_number, slide_path, file_path)
             
             # Read the (possibly modified) file back to get the final image bytes
             with open(file_path, 'rb') as f:
