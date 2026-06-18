@@ -10,8 +10,6 @@
 - **Multilingual** — supports 100+ languages including Chinese (Traditional & Simplified), English, Japanese, Korean, Thai, Vietnamese, and other Asian scripts for both slide content and speaker notes. Export to PDF via browser print to preserve system fonts without server-side font dependencies.
 - **Production-ready exports** — download as PPTX (with editable speaker notes), PDF slides, browser-printed speaker-notes PDF, or push directly to **Google Slides** for instant in-browser presentation and sharing (with editable speaker notes).
 
-This repository is structured to support three progressive deployment and usage methods, ranging from lightweight prompt-based skills to production-grade enterprise agents.
-
 ---
 
 ## 📖 Core Design Philosophy & Logic
@@ -94,6 +92,7 @@ graph TD
 slide-gen-agent/
 ├── README.md                # Project overview and setup (this file)
 ├── deploy.sh                # Interactive orchestration script for automated deployment
+├── deploy_details.md        # Detailed deployment guide
 ├── deploy/
 │   └── terraform/           # Terraform configurations for provisioning GCP resources
 │       ├── main.tf
@@ -109,10 +108,9 @@ slide-gen-agent/
 │       └── scripts/         # Custom tools bundled with the skill
 │           ├── pdf_exporter.py # Widescreen presentation PDF compiler
 │           ├── pptx_exporter.py # Widescreen PPTX compiler with speaker notes
-│           ├── notes_pdf_exporter.py # Renders a PDF combining slide images and speaker notes
 │           └── preview_generator.py # HTML preview page compiler (includes Save as PDF)
 └── adk_agent/               # Programmatic Host Agent (Python ADK 2.0 implementation)
-    ├── requirements.txt     # Python dependency configuration (includes python-pptx & reportlab)
+    ├── requirements.txt     # Python dependency configuration (includes python-pptx)
     ├── agent.py             # Main agent entry point
     ├── config.py            # Environment and agent configuration manager
     └── tools/               # Agent tools
@@ -121,7 +119,6 @@ slide-gen-agent/
         ├── image_generation.py # Gemini slide image generator tool
         ├── pdf_exporter.py  # Pillow-based widescreen PDF exporter
         ├── pptx_exporter.py # PowerPoint widescreen (PPTX) with speaker notes exporter
-        ├── notes_pdf_exporter.py # Renders a PDF combining slide images and speaker notes
         ├── drive_exporter.py # Google Drive upload → Google Slides converter & sharer
         └── preview_generator.py # HTML slide preview and notes compiler (includes Save as PDF)
 ```

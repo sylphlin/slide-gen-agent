@@ -10,8 +10,6 @@
 - **多語言支援** — 支援 100 多種語言，包括繁體中文、簡體中文、英文、日文、韓文、泰文、越南文及其他亞洲文字系統，適用於投影片內容與演講備忘稿。可透過瀏覽器列印匯出 PDF，在不依賴伺服器端字型的情況下保留系統字型。
 - **可直接交付的匯出格式** — 可下載為 PPTX（含可編輯的演講備忘稿）、PDF 投影片、瀏覽器列印的演講備忘稿 PDF，或直接推送至 **Google 簡報**，立即在瀏覽器中進行簡報與分享（含可編輯的演講備忘稿）。
 
-本儲存庫的結構支援三種漸進式的部署與使用方式，從輕量的提示詞型技能到企業級正式環境代理皆涵蓋在內。
-
 ---
 
 ## 📖 核心設計理念與邏輯
@@ -94,6 +92,7 @@ graph TD
 slide-gen-agent/
 ├── README.md                # 專案概覽與設定（本檔案）
 ├── deploy.sh                # 互動式自動化部署協調腳本
+├── deploy_details.md        # 詳細部署指南
 ├── deploy/
 │   └── terraform/           # 用於佈署 GCP 資源的 Terraform 設定檔
 │       ├── main.tf
@@ -109,10 +108,9 @@ slide-gen-agent/
 │       └── scripts/         # 隨 Skill 打包的自訂工具
 │           ├── pdf_exporter.py # 寬螢幕簡報 PDF 編譯器
 │           ├── pptx_exporter.py # 寬螢幕 PPTX 編譯器（含演講備忘錄）
-│           ├── notes_pdf_exporter.py # 結合投影片圖片與講稿的 PDF 產生器
 │           └── preview_generator.py # HTML 預覽頁面編譯器（包含儲存為 PDF）
 └── adk_agent/               # 程式化 Host Agent（Python ADK 2.0 實作）
-    ├── requirements.txt     # Python 依賴設定（包含 python-pptx 與 reportlab）
+    ├── requirements.txt     # Python 依賴設定（包含 python-pptx）
     ├── agent.py             # 主 Agent 入口點
     ├── config.py            # 環境變數與代理人組態管理器
     └── tools/               # Agent 工具
@@ -121,7 +119,6 @@ slide-gen-agent/
         ├── image_generation.py # Gemini 投影片影像產生工具
         ├── pdf_exporter.py  # 基於 Pillow 的寬螢幕 PDF 匯出工具
         ├── pptx_exporter.py # 寬螢幕 PowerPoint (PPTX) 匯出工具（含演講備忘錄）
-        ├── notes_pdf_exporter.py # 結合投影片圖片與講稿的 PDF 產生器
         ├── drive_exporter.py # Google 雲端硬碟上傳 → 轉換為 Google 簡報並分享
         └── preview_generator.py # HTML 投影片預覽與備忘錄編譯器（包含儲存為 PDF）
 ```

@@ -10,8 +10,6 @@
 - **多语言支持** — 支持 100 多种语言，包括繁体中文、简体中文、英文、日语、韩语、泰语、越南语及其他亚洲文字体系，适用于幻灯片内容与演讲备注。可通过浏览器打印导出 PDF，在不依赖服务器端字体的情况下保留系统字体。
 - **可直接交付的导出格式** — 可下载为 PPTX（含可编辑的演讲备注）、幻灯片 PDF、浏览器打印生成的演讲备注 PDF，或直接推送到 **Google 幻灯片**，立即在浏览器中进行演示与分享（含可编辑的演讲备注）。
 
-本仓库的结构支持三种循序渐进的部署与使用方式，从轻量的提示词型技能到企业级生产环境代理皆涵盖在内。
-
 ---
 
 ## 📖 核心设计理念与逻辑
@@ -94,6 +92,7 @@ graph TD
 slide-gen-agent/
 ├── README.md                # 项目概览与设置（本文件）
 ├── deploy.sh                # 交互式自动化部署协调脚本
+├── deploy_details.md        # 详细部署指南
 ├── deploy/
 │   └── terraform/           # 用于部署 GCP 资源的 Terraform 配置文件
 │       ├── main.tf
@@ -109,10 +108,9 @@ slide-gen-agent/
 │       └── scripts/         # 随 Skill 打包的自定义工具
 │           ├── pdf_exporter.py # 宽屏演示文稿 PDF 编译器
 │           ├── pptx_exporter.py # 宽屏 PPTX 编译器（含演讲备注）
-│           ├── notes_pdf_exporter.py # 结合幻灯片图片与演讲备注的 PDF 生成器
 │           └── preview_generator.py # HTML 预览页面编译器（包含保存为 PDF）
 └── adk_agent/               # 程序化 Host Agent（Python ADK 2.0 实现）
-    ├── requirements.txt     # Python 依赖设置（包含 python-pptx 与 reportlab）
+    ├── requirements.txt     # Python 依赖设置（包含 python-pptx）
     ├── agent.py             # 主 Agent 入口点
     ├── config.py            # 环境变量与代理配置管理器
     └── tools/               # Agent 工具
@@ -121,7 +119,6 @@ slide-gen-agent/
         ├── image_generation.py # Gemini 幻灯片图像生成工具
         ├── pdf_exporter.py  # 基于 Pillow 的宽屏 PDF 导出工具
         ├── pptx_exporter.py # 宽屏 PowerPoint (PPTX) 导出工具（含演讲备注）
-        ├── notes_pdf_exporter.py # 结合幻灯片图片与演讲备注 of PDF 生成器
         ├── drive_exporter.py # Google 云端硬盘上传 → 转换为 Google 幻灯片并分享
         └── preview_generator.py # HTML 幻灯片预览与备注编译器（包含保存为 PDF）
 ```

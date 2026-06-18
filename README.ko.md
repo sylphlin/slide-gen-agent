@@ -10,8 +10,6 @@
 - **다국어 지원** — 번체 중국어, 간체 중국어, 영어, 일본어, 한국어, 태국어, 베트남어를 비롯한 100개 이상의 언어와 다양한 아시아 문자 체계를 슬라이드 본문과 발표 노트 모두에서 지원합니다. 브라우저 인쇄를 통한 PDF 내보내기도 지원하므로, 서버 측 폰트 의존성 없이 시스템 폰트를 그대로 유지할 수 있습니다.
 - **바로 활용 가능한 내보내기** — 발표 노트 편집이 가능한 PPTX, 슬라이드 PDF, 브라우저 인쇄로 생성한 발표 노트 PDF로 다운로드하거나, **Google 슬라이드**로 직접 전송하여 브라우저에서 즉시 발표하고 공유(참고: 슬라이드는 고해상도 이미지로 내보내지지만 발표 노트는 편집 가능)할 수 있습니다.
 
-이 저장소는 가벼운 프롬프트 기반 스킬부터 엔터프라이즈급 운영 환경 에이전트까지, 단계적으로 도입할 수 있는 세 가지 배포 및 사용 방식을 지원하도록 구성되어 있습니다.
-
 ---
 
 ## 📖 핵심 설계 철학과 로직
@@ -93,6 +91,13 @@ graph TD
 ```text
 slide-gen-agent/
 ├── README.md                # 프로젝트 개요 및 설치 가이드 (이 파일)
+├── deploy.sh                # 인터랙티브 자동화 배포 스크립트
+├── deploy_details.md        # 상세 배포 가이드
+├── deploy/
+│   └── terraform/           # GCP 리소스 프로비저닝을 위한 Terraform 설정
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
 ├── skills/
 │   └── slide-gen-agent/     # 🌟 표준 독립형 에이전트 스킬 (Antigravity/Codex용)
 │       ├── SKILL.md         # 플레이북/가이드라인 (YAML 프런트매터 + 작업 지침)
@@ -105,8 +110,9 @@ slide-gen-agent/
 │           ├── pptx_exporter.py # 발표 노트가 포함된 와이드스크린 PPTX 컴파일러
 │           └── preview_generator.py # HTML 미리보기 페이지 컴파일러 (Save as PDF 기능 포함)
 └── adk_agent/               # 프로그래밍 방식의 호스트 에이전트 (Python ADK 2.0 구현)
-    ├── requirements.txt     # Python 의존성 설정 (python-pptx, reportlab 포함)
+    ├── requirements.txt     # Python 의존성 설정 (python-pptx 포함)
     ├── agent.py             # 에이전트 메인 진입점
+    ├── config.py            # 환경 변수 및 에이전트 설정 관리자
     └── tools/               # 에이전트 도구
         ├── __init__.py
         ├── file_manager.py  # 세션 초기화 및 파일 작성 도구
