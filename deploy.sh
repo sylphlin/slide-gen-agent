@@ -108,16 +108,32 @@ echo "Agent Engine deployment complete!"
 # GE registration
 if [ -n "$GE_APP_ID" ] && [ -n "$REASONING_ENGINE_ID" ]; then
     echo "Registering agent to Gemini Enterprise..."
+    PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || echo "")
     
-    # If GE_APP_ID was passed as boolean/flag only (--ge without value), auto-detect the GE app ID
-    if [ "$GE_APP_ID" = "__NEXT__" ] || [ "$GE_APP_ID" = "true" ]; then
-        DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
-        if [ -n "$DETECTED_GE_APP" ]; then
-            GE_APP_ID="$DETECTED_GE_APP"
+    DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | TARGET_APP="$GE_APP_ID" python3 -c "
+import sys, json, os
+data = json.load(sys.stdin)
+apps = data.get('apps', [])
+target = os.getenv('TARGET_APP', '')
+if target in ['__NEXT__', 'true', '']:
+    print(apps[0].get('name', '') if apps else '')
+else:
+    matched = [a.get('name', '') for a in apps if target in a.get('name', '') or target == a.get('display_name', '')]
+    print(matched[0] if matched else '')
+" 2>/dev/null || true)
+
+    if [ -n "$DETECTED_GE_APP" ]; then
+        GE_APP_ID="$DETECTED_GE_APP"
+    elif [[ "$GE_APP_ID" != projects/* ]]; then
+        if [[ "$GE_APP_ID" == collections/* ]]; then
+            GE_APP_ID="projects/${PROJECT_NUM}/locations/global/${GE_APP_ID}"
+        elif [[ "$GE_APP_ID" == engines/* ]]; then
+            GE_APP_ID="projects/${PROJECT_NUM}/locations/global/collections/default_collection/${GE_APP_ID}"
+        else
+            GE_APP_ID="projects/${PROJECT_NUM}/locations/global/collections/default_collection/engines/${GE_APP_ID}"
         fi
     fi
 
-    PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || echo "")
     RUNTIME_RESOURCE_ID="projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}"
     
     $AGENTS_CLI publish gemini-enterprise --project "$PROJECT_ID" \
