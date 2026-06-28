@@ -38,6 +38,8 @@ try:
         Agent.context_cache_config = property(lambda self: None)
     if not hasattr(Agent, 'resumability_config'):
         Agent.resumability_config = property(lambda self: None)
+    if not hasattr(Agent, 'events_compaction_config'):
+        Agent.events_compaction_config = property(lambda self: None)
     if not hasattr(Agent, 'plugins'):
         Agent.plugins = property(lambda self: [])
     if not hasattr(Agent, 'root_agent'):
