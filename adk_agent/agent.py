@@ -78,7 +78,13 @@ try:
     import inspect
     import asyncio
     import time
-    from google.adk.models.google_llm import GoogleLlm
+    try:
+        from google.adk.models.google_llm import Gemini as GoogleLlm
+    except ImportError:
+        try:
+            from google.adk.models.google_llm import GoogleLlm
+        except ImportError:
+            from google.adk.models.google_llm import BaseLlm as GoogleLlm
     
     orig_async = GoogleLlm.generate_content_async
     
@@ -122,40 +128,41 @@ try:
                     
     GoogleLlm.generate_content_async = patched_async
     
-    orig_sync = GoogleLlm.generate_content
-    
-    def patched_sync(*args, **kwargs):
-        max_retries = 5
-        base_delay = 2.0
-        for attempt in range(max_retries):
-            try:
-                return orig_sync(*args, **kwargs)
-            except Exception as e:
-                err_msg = str(e).lower()
-                is_429 = "429" in err_msg or "resource_exhausted" in err_msg or "resource exhausted" in err_msg
-                
-                if is_429 and attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)
-                    import sys
-                    import json
-                    error_info = {
-                        "error": {
-                            "code": 429,
-                            "message": "Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.",
-                            "status": "RESOURCE_EXHAUSTED",
-                            "attempt": attempt + 1,
-                            "max_retries": max_retries,
-                            "retry_delay_seconds": delay
-                        }
-                    }
-                    sys.stderr.write(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...\n")
-                    sys.stderr.write(f"{json.dumps(error_info)}\n")
-                    sys.stderr.flush()
-                    time.sleep(delay)
-                else:
-                    raise e
+    if hasattr(GoogleLlm, 'generate_content'):
+        orig_sync = GoogleLlm.generate_content
+        
+        def patched_sync(*args, **kwargs):
+            max_retries = 5
+            base_delay = 2.0
+            for attempt in range(max_retries):
+                try:
+                    return orig_sync(*args, **kwargs)
+                except Exception as e:
+                    err_msg = str(e).lower()
+                    is_429 = "429" in err_msg or "resource_exhausted" in err_msg or "resource exhausted" in err_msg
                     
-    GoogleLlm.generate_content = patched_sync
+                    if is_429 and attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        import sys
+                        import json
+                        error_info = {
+                            "error": {
+                                "code": 429,
+                                "message": "Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.",
+                                "status": "RESOURCE_EXHAUSTED",
+                                "attempt": attempt + 1,
+                                "max_retries": max_retries,
+                                "retry_delay_seconds": delay
+                            }
+                        }
+                        sys.stderr.write(f"⚠️ [Resilience] Gemini API 429 Rate Limit hit. Retrying in {delay:.1f}s (Attempt {attempt+1}/{max_retries})...\n")
+                        sys.stderr.write(f"{json.dumps(error_info)}\n")
+                        sys.stderr.flush()
+                        time.sleep(delay)
+                    else:
+                        raise e
+                        
+        GoogleLlm.generate_content = patched_sync
     print("Successfully monkey-patched GoogleLlm with automatic 429 retry logic.")
 except Exception as e:
     print(f"Failed to monkey-patch GoogleLlm: {e}")

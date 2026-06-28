@@ -1,5 +1,7 @@
 import os
 import sys
+import glob
+from PIL import Image
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Part
 
@@ -10,19 +12,38 @@ except ImportError:
     from config import save_artifact_helper, get_gcs_artifact_url
     from tools.file_manager import get_topic_slug
 
-# Inject skills/slide-gen-agent/scripts into sys.path to resolve pdf_exporter
-tools_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Try packaging context first: [tools_dir]/../skills/slide-gen-agent/scripts
-skills_scripts_dir = os.path.abspath(os.path.join(tools_dir, '..', 'skills', 'slide-gen-agent', 'scripts'))
-if not os.path.exists(skills_scripts_dir):
-    # Fall back to repo root: [tools_dir]/../../skills/slide-gen-agent/scripts
-    skills_scripts_dir = os.path.abspath(os.path.join(tools_dir, '..', '..', 'skills', 'slide-gen-agent', 'scripts'))
-
-if skills_scripts_dir not in sys.path:
-    sys.path.insert(0, skills_scripts_dir)
-
-from pdf_exporter import export_session_to_pdf
+def export_session_to_pdf(session_path: str, pdf_file_name: str = None) -> dict:
+    """Gathers all slide PNGs and compiles them into a single PDF presentation."""
+    slides_dir = os.path.join(session_path, 'slides')
+    png_files = sorted(glob.glob(os.path.join(slides_dir, 'slide_*.png')))
+    
+    if not png_files:
+        slides_dir = session_path
+        png_files = sorted(glob.glob(os.path.join(slides_dir, 'slide_*.png')))
+        
+    if not png_files:
+        raise ValueError(f"No slide PNG images found in {session_path}. Make sure to generate slide images first.")
+        
+    images = [Image.open(f).convert('RGB') for f in png_files]
+    
+    output_name = pdf_file_name or 'presentation.pdf'
+    if not output_name.endswith('.pdf'):
+        output_name += '.pdf'
+        
+    output_path = os.path.join(session_path, output_name)
+    
+    images[0].save(
+        output_path,
+        save_all=True,
+        append_images=images[1:]
+    )
+    
+    return {
+        "message": f"Successfully compiled {len(png_files)} slides into a single PDF presentation.",
+        "pdfName": output_name,
+        "pdfPath": output_path
+    }
 
 
 async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
@@ -36,11 +57,9 @@ async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
     pdf_filename = f"{slug}.pdf"
     
     try:
-        # Call the core, self-contained export function from the skill folder
         result = export_session_to_pdf(session_path, pdf_filename)
         pdf_path = result["pdfPath"]
         
-        # Read the generated PDF bytes to save as artifact
         with open(pdf_path, 'rb') as f:
             pdf_bytes = f.read()
             
@@ -54,4 +73,3 @@ async def export_deck_pdf(session_path: str, tool_context: ToolContext) -> str:
         return f"Presentation PDF successfully compiled and saved to {pdf_path}"
     except Exception as e:
         return f"Failed to export PDF: {str(e)}"
-
