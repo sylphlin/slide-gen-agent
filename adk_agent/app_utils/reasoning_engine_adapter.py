@@ -76,7 +76,7 @@ def attach_reasoning_engine_routes(app: FastAPI) -> None:
 
         async def generator():
             async for event in method(**(body.get("input") or {})):
-                yield json.dumps(event) + "\n"
+                yield json.dumps(encoders.jsonable_encoder(event), default=str) + "\n"
 
         return responses.StreamingResponse(
             content=generator(), media_type="application/json"
