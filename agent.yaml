@@ -1,0 +1,7 @@
+name: slide-gen-agent
+displayName:
+  zh: AI 簡報生成與演講稿助手
+  en: AI Slide Deck & Speaker Script Generator
+description:
+  zh: 基於對話與解耦式 Markdown 流程的 AI 簡報生成 Agent。能將各式資料或大綱轉化為 16:9 高品質視覺簡報，並為每頁投影片自動編寫 1-2 分鐘講者腳本。支援精準局部修訂，並可匯出為 PPTX、PDF 及 Google Slides。
+  en: A conversational AI slide deck generator powered by a decoupled Markdown workflow. Transforms raw source materials into polished 16:9 visual presentations with embedded 1-2 minute speaker scripts. Supports surgical iterative editing and seamless exports to PPTX, PDF, and Google Slides.

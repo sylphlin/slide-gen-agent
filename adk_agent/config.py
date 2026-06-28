@@ -45,7 +45,7 @@ CONFIG = {
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
     # Detect if we are running inside the deployed Agent Engine container
-    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' in os.environ:
+    if 'AGENT_ENGINE_ID' in os.environ:
         os.environ['SESSION_OUTPUT_DIR'] = '/tmp/artifacts'
     else:
         cwd = os.getcwd()
@@ -64,7 +64,7 @@ os.environ['IMAGE_LOCATION'] = CONFIG['IMAGE_LOCATION']
 def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
     """Helper to generate the authenticated Cloud Storage link for an artifact inside Agent Engine."""
     import os
-    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' in os.environ:
+    if 'AGENT_ENGINE_ID' in os.environ:
         service = getattr(tool_context._invocation_context, 'artifact_service', None)
         if service and hasattr(service, 'bucket_name'):
             bucket = service.bucket_name
@@ -81,7 +81,7 @@ def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
 async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
     """Saves an artifact. If running inside Agent Engine container, saves silently without adding to event actions to avoid raw UI attachments."""
     import os
-    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' in os.environ:
+    if 'AGENT_ENGINE_ID' in os.environ:
         service = getattr(tool_context._invocation_context, 'artifact_service', None)
         if service:
             return await service.save_artifact(
@@ -97,7 +97,7 @@ async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
 def read_gcs_versions(session_id: str) -> dict:
     """Reads the persistent GCS versions map for a session from the GCS bucket."""
     import os
-    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' not in os.environ:
+    if 'AGENT_ENGINE_ID' not in os.environ:
         return {}
     import json
     try:
@@ -121,7 +121,7 @@ def read_gcs_versions(session_id: str) -> dict:
 def write_gcs_versions(session_id: str, versions: dict):
     """Writes the persistent GCS versions map for a session to the GCS bucket."""
     import os
-    if 'GOOGLE_CLOUD_AGENT_ENGINE_ID' not in os.environ:
+    if 'AGENT_ENGINE_ID' not in os.environ:
         return
     import json
     try:

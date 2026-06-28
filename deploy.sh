@@ -1,337 +1,170 @@
 #!/bin/bash
-
-# Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "================================================================="
-echo "🚀 Slide Gen Agent: One-Click Deploy to Gemini Enterprise"
-echo "================================================================="
+GE_APP_ID=""
+POSITIONAL=()
+for arg in "$@"; do
+  case $arg in
+    --ge=*) GE_APP_ID="${arg#*=}" ;;
+    --ge) GE_APP_ID="__NEXT__" ;;
+    *)
+      if [ "$GE_APP_ID" = "__NEXT__" ]; then
+        GE_APP_ID="$arg"
+      else
+        POSITIONAL+=("$arg")
+      fi
+      ;;
+  esac
+done
 
-# Prerequisite Checks
-if ! command -v terraform &> /dev/null; then
-    echo "❌ Error: terraform is not installed or not in PATH."
-    echo "Please install Terraform (https://developer.hashicorp.com/terraform/downloads) and try again."
-    exit 1
+if [ -n "$GE_APP_ID" ]; then
+  GE_APP_ID="${GE_APP_ID%/}"
 fi
 
-if ! command -v gcloud &> /dev/null; then
-    echo "❌ Error: gcloud CLI is not installed or not in PATH."
-    echo "Please install the Google Cloud SDK (https://cloud.google.com/sdk/docs/install) and try again."
-    exit 1
+PROJECT_ID="${POSITIONAL[0]:?Usage: bash deploy.sh <PROJECT_ID> [REGION] [--ge APP_ID]}"
+REGION="${POSITIONAL[1]:-us-central1}"
+
+SA_NAME="slide-gen-agent-runtime"
+SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+DEPLOYER=$(gcloud config get-value account 2>/dev/null)
+
+echo "Deploying AI Slide Deck & Speaker Script Generator to project: $PROJECT_ID (region: $REGION)"
+[ -n "$GE_APP_ID" ] && echo "  + Gemini Enterprise registration (APP_ID: $GE_APP_ID)"
+
+gcloud config set project "$PROJECT_ID" --quiet
+
+gcloud services enable iam.googleapis.com --project="$PROJECT_ID" --quiet
+
+if ! gcloud iam service-accounts describe "$SA_EMAIL" --project="$PROJECT_ID" &>/dev/null; then
+    gcloud iam service-accounts create "$SA_NAME" \
+        --display-name="AI Slide Deck & Speaker Script Generator runtime" --project="$PROJECT_ID"
 fi
 
-# Verify gcloud authentication
-ACTIVE_ACCOUNT=$(gcloud config get-value account 2>/dev/null || echo "")
-if [ -z "$ACTIVE_ACCOUNT" ]; then
-    echo "❌ Error: No active Google Cloud account found."
-    echo "Please run 'gcloud auth login' and 'gcloud auth application-default login' first."
-    exit 1
+for role in roles/aiplatform.user roles/serviceusage.serviceUsageConsumer roles/logging.logWriter; do
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+        --member="serviceAccount:${SA_EMAIL}" --role="$role" --condition=None --quiet 2>/dev/null || true
+done
+
+gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+    --member="serviceAccount:${SA_EMAIL}" --role=roles/iam.serviceAccountTokenCreator \
+    --project="$PROJECT_ID" 2>/dev/null || true
+
+if [ -n "$DEPLOYER" ]; then
+    gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+        --member="user:${DEPLOYER}" --role=roles/iam.serviceAccountUser \
+        --project="$PROJECT_ID" 2>/dev/null || true
 fi
 
-# Detect Default Project
-DEFAULT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "")
-
-# Prompt for Project ID
-if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
-    if [ -n "$DEFAULT_PROJECT" ]; then
-        read -p "Enter GCP Project ID [default: $DEFAULT_PROJECT]: " GOOGLE_CLOUD_PROJECT
-        GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-$DEFAULT_PROJECT}
-    else
-        read -p "Enter GCP Project ID: " GOOGLE_CLOUD_PROJECT
-    fi
+# Setup GCP resources
+if [ -f setup.sh ]; then
+    bash setup.sh "$PROJECT_ID" "$REGION"
 fi
 
-if [ -z "$GOOGLE_CLOUD_PROJECT" ]; then
-    echo "❌ Error: GCP Project ID is required."
-    exit 1
+BUCKET_NAME="slide-gen-sessions-${PROJECT_ID}"
+gcloud storage buckets add-iam-policy-binding "gs://${BUCKET_NAME}" \
+    --member="serviceAccount:${SA_EMAIL}" --role=roles/storage.objectAdmin 2>/dev/null || true
+
+# Prepare env vars
+IMAGE_LOCATION="${IMAGE_LOCATION:-global}"
+TEXT_MODEL="${TEXT_MODEL:-gemini-3.5-flash}"
+IMAGE_MODEL="${IMAGE_MODEL:-gemini-3.1-flash-image}"
+THINKING_LEVEL="${THINKING_LEVEL:-high}"
+THINKING_BUDGET="${THINKING_BUDGET:-2048}"
+DRIVE_FOLDER_NAME="${DRIVE_FOLDER_NAME:-slide-gen-agent}"
+
+UPDATE_ENV_VARS="IMAGE_LOCATION=${IMAGE_LOCATION},TEXT_MODEL=${TEXT_MODEL},IMAGE_MODEL=${IMAGE_MODEL},THINKING_LEVEL=${THINKING_LEVEL},THINKING_BUDGET=${THINKING_BUDGET},DRIVE_FOLDER_NAME=${DRIVE_FOLDER_NAME}"
+if [ -n "$DRIVE_SA_EMAIL" ]; then
+    UPDATE_ENV_VARS="${UPDATE_ENV_VARS},DRIVE_SA_EMAIL=${DRIVE_SA_EMAIL}"
 fi
 
-# Prompt for Region
-read -p "Enter GCP Region [default: us-central1]: " REGION
-REGION=${REGION:-us-central1}
-
-echo ""
-echo "Configuration Summary:"
-echo "----------------------"
-echo "Project ID: $GOOGLE_CLOUD_PROJECT"
-echo "Region:     $REGION"
-echo ""
-read -p "Do you want to proceed with this configuration? (y/N): " CONFIRM
-if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-    echo "Deployment cancelled."
-    exit 0
-fi
-
-# Step 1: Provision Infrastructure with Terraform
-echo ""
-echo "================================================================="
-echo "Step 1: Provisioning GCP Infrastructure with Terraform..."
-echo "================================================================="
-cd deploy/terraform
-terraform init
-
-# Smart Check: Detect if the service account already exists in GCP
-DRIVE_SA_EMAIL="slide-gen-drive@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
-echo "Checking if Service Account $DRIVE_SA_EMAIL already exists..."
-
-SA_EXISTS=false
-if gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
-    SA_EXISTS=true
-fi
-
-SA_IN_STATE=false
-if terraform state list 2>/dev/null | grep -q "google_service_account.drive_exporter"; then
-    SA_IN_STATE=true
-fi
-
-if [ "$SA_EXISTS" = true ] && [ "$SA_IN_STATE" = false ]; then
-    echo ""
-    echo "⚠️  Notice: Service Account '$DRIVE_SA_EMAIL' already exists in your GCP project."
-    echo "This usually happens if you previously configured a manual deployment."
-    echo ""
-    echo "How would you like to resolve this conflict?"
-    echo "1) [Recommended] Automatically import (adopt) the existing Service Account into Terraform"
-    echo "2) Automatically delete the existing Service Account from GCP and let Terraform recreate it"
-    echo "3) Cancel deployment"
-    echo ""
-    read -p "Enter your choice (1/2/3): " SA_CHOICE
-    
-    case "$SA_CHOICE" in
-        1)
-            echo "Importing existing Service Account into Terraform state..."
-            # Run terraform import. We use || true to prevent script crash if it's already imported
-            terraform import \
-              -var="project_id=$GOOGLE_CLOUD_PROJECT" \
-              -var="region=$REGION" \
-              google_service_account.drive_exporter \
-              "projects/${GOOGLE_CLOUD_PROJECT}/serviceAccounts/${DRIVE_SA_EMAIL}" || echo "Note: Proceeding with existing state."
-            ;;
-        2)
-            echo "Deleting existing Service Account from GCP..."
-            gcloud iam service-accounts delete "$DRIVE_SA_EMAIL" --project="$GOOGLE_CLOUD_PROJECT" --quiet
-            echo "✅ Service Account deleted successfully."
-            ;;
-        *)
-            echo "Deployment cancelled."
-            exit 0
-            ;;
-    esac
-fi
-
-# Smart Check 2: Detect if the GCS Bucket already exists in GCP
-RESOLVED_BUCKET_NAME="slide-gen-sessions-${GOOGLE_CLOUD_PROJECT}"
-echo "Checking if GCS Bucket gs://$RESOLVED_BUCKET_NAME already exists..."
-
-BUCKET_EXISTS=false
-if gcloud storage buckets describe "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null; then
-    BUCKET_EXISTS=true
-fi
-
-BUCKET_IN_STATE=false
-if terraform state list 2>/dev/null | grep -q "google_storage_bucket.sessions"; then
-    BUCKET_IN_STATE=true
-fi
-
-if [ "$BUCKET_EXISTS" = true ] && [ "$BUCKET_IN_STATE" = false ]; then
-    echo ""
-    echo "⚠️  Notice: GCS Bucket 'gs://$RESOLVED_BUCKET_NAME' already exists in your GCP project."
-    echo "This usually happens if you previously performed a manual installation."
-    echo ""
-    echo "How would you like to resolve this conflict?"
-    echo "1) [Recommended] Automatically import (adopt) the existing Bucket into Terraform"
-    echo "   (This preserves all your existing slide sessions and generated files!)"
-    echo "2) Automatically delete the existing Bucket from GCP and let Terraform recreate it"
-    echo "   ⚠️  WARNING: Option 2 will permanently delete all files and history inside the bucket!"
-    echo "3) Cancel deployment"
-    echo ""
-    read -p "Enter your choice (1/2/3): " BUCKET_CHOICE
-    
-    case "$BUCKET_CHOICE" in
-        1)
-            echo "Importing existing GCS Bucket into Terraform state..."
-            terraform import \
-              -var="project_id=$GOOGLE_CLOUD_PROJECT" \
-              -var="region=$REGION" \
-              google_storage_bucket.sessions \
-              "$RESOLVED_BUCKET_NAME" || echo "Note: Proceeding with existing bucket state."
-            ;;
-        2)
-            echo "Deleting existing GCS Bucket from GCP..."
-            # Delete objects first to ensure non-empty bucket deletion succeeds
-            gcloud storage rm -r "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" || true
-            # Delete the bucket
-            gcloud storage buckets delete "gs://$RESOLVED_BUCKET_NAME" --project="$GOOGLE_CLOUD_PROJECT" --quiet
-            echo "✅ GCS Bucket deleted successfully."
-            ;;
-        *)
-            echo "Deployment cancelled."
-            exit 0
-            ;;
-    esac
-fi
-
-echo "Applying Terraform configuration..."
-
-terraform apply \
-  -var="project_id=$GOOGLE_CLOUD_PROJECT" \
-  -var="region=$REGION" \
-  -auto-approve
-
-
-# Extract Terraform Outputs
-BUCKET_NAME=$(terraform output -raw gcs_bucket_name)
-DRIVE_SA_EMAIL=$(terraform output -raw drive_sa_email)
-DRIVE_SA_CLIENT_ID=$(terraform output -raw drive_sa_client_id)
-cd ../..
-
-# Step 2: Generate .env Configuration File
-echo ""
-echo "================================================================="
-echo "Step 2: Generating adk_agent/.env configuration..."
-echo "================================================================="
-cat > adk_agent/.env <<EOF
-# Generated automatically by deploy.sh on $(date)
-GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT"
-DRIVE_SA_EMAIL="$DRIVE_SA_EMAIL"
-EOF
-echo "✅ adk_agent/.env generated successfully!"
-
-# Step 3: Set up Python Virtual Environment & Install Dependencies
-echo ""
-echo "================================================================="
-echo "Step 3: Setting up Python virtual environment & dependencies..."
-echo "================================================================="
-
-# Detect compatible Python version (3.10 or 3.11)
-PYTHON_BIN=""
-if command -v python3.11 &>/dev/null; then
-    PYTHON_BIN="python3.11"
-elif command -v python3.10 &>/dev/null; then
-    PYTHON_BIN="python3.10"
-elif command -v python3 &>/dev/null; then
-    # Check if the default python3 is 3.10 or 3.11
-    PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    if [ "$PY_VERSION" = "3.10" ] || [ "$PY_VERSION" = "3.11" ]; then
-        PYTHON_BIN="python3"
-    fi
-fi
-
-if [ -z "$PYTHON_BIN" ]; then
-    # Fallback to default python3 with a gentle non-blocking note
-    PYTHON_BIN="python3"
-    PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    echo "⚠️  Note: Vertex AI Reasoning Engine officially supports Python 3.10 or 3.11."
-    echo "Your system is running Python $PY_VERSION. We will proceed using it, but if you encounter"
-    echo "deployment failures (Error Code 13), we recommend installing Python 3.11 and re-running."
-    echo ""
+# Install & deploy
+if [ -d .venv ]; then
+    .venv/bin/pip install google-agents-cli
+    AGENTS_CLI=".venv/bin/agents-cli"
 else
-    echo "✅ Found compatible Python runtime: $PYTHON_BIN"
+    uv pip install google-agents-cli 2>/dev/null || pip install google-agents-cli
+    AGENTS_CLI="agents-cli"
 fi
 
+DEPLOY_OUTPUT=$(GOOGLE_CLOUD_PROJECT="$PROJECT_ID" GOOGLE_CLOUD_LOCATION="$REGION" \
+  IMAGE_LOCATION="$IMAGE_LOCATION" TEXT_MODEL="$TEXT_MODEL" IMAGE_MODEL="$IMAGE_MODEL" THINKING_LEVEL="$THINKING_LEVEL" THINKING_BUDGET="$THINKING_BUDGET" DRIVE_FOLDER_NAME="$DRIVE_FOLDER_NAME" \
+  $AGENTS_CLI deploy --project "$PROJECT_ID" --region "$REGION" \
+  --service-account "$SA_EMAIL" \
+  --update-env-vars "$UPDATE_ENV_VARS" \
+  2>&1 | tee /dev/stderr) || true
 
-# Clean up old incompatible venv if it exists
-if [ -d "venv" ] && [ -z "$FORCE_PY" ]; then
-    # Verify if the existing venv matches our target python version
-    VENV_PY_VER=$(venv/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "")
-    TARGET_PY_VER=$($PYTHON_BIN -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    if [ "$VENV_PY_VER" != "$TARGET_PY_VER" ]; then
-        echo "Recreating virtual environment because Python version changed ($VENV_PY_VER -> $TARGET_PY_VER)..."
-        rm -rf venv
+REASONING_ENGINE_ID=$(echo "$DEPLOY_OUTPUT" | grep -oP 'reasoningEngines/\K\d+' | tail -1)
+echo "Agent Engine deployment complete!"
+[ -n "$REASONING_ENGINE_ID" ] && echo "  Reasoning Engine ID: $REASONING_ENGINE_ID"
+
+# GE registration
+if [ -n "$GE_APP_ID" ] && [ -n "$REASONING_ENGINE_ID" ]; then
+    PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+    ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+    AGENT_NAME="$(basename $(pwd))"
+    if command -v python3 &>/dev/null && [ -f agent.yaml ]; then
+        DISPLAY_NAME=$(python3 -c "
+import yaml
+d = yaml.safe_load(open('agent.yaml'))
+dn = d.get('displayName', {})
+print(dn.get('en', dn) if isinstance(dn, dict) else dn)
+" 2>/dev/null || echo "$AGENT_NAME")
+        AGENT_DESC=$(python3 -c "
+import yaml
+d = yaml.safe_load(open('agent.yaml'))
+desc = d.get('description', {})
+print(desc.get('en', desc) if isinstance(desc, dict) else desc)
+" 2>/dev/null || echo "$AGENT_NAME")
+    else
+        DISPLAY_NAME="$AGENT_NAME"
+        AGENT_DESC="$AGENT_NAME"
     fi
+
+    if [[ "$GE_APP_ID" == */reasoningEngines/* ]]; then
+        DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
+        if [ -n "$DETECTED_GE_APP" ]; then
+            GE_APP_ID="$DETECTED_GE_APP"
+        fi
+    fi
+
+    if [[ "$GE_APP_ID" == projects/* ]]; then
+        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/${GE_APP_ID}/assistants/default_assistant/agents"
+    elif [[ "$GE_APP_ID" == collections/* ]]; then
+        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/${GE_APP_ID}/assistants/default_assistant/agents"
+    elif [[ "$GE_APP_ID" == engines/* ]]; then
+        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/collections/default_collection/${GE_APP_ID}/assistants/default_assistant/agents"
+    else
+        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/collections/default_collection/engines/${GE_APP_ID}/assistants/default_assistant/agents"
+    fi
+
+    REGISTER_RESPONSE=$(curl -s -X POST \
+      "$GE_API_URL" \
+      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -H "X-Goog-User-Project: ${PROJECT_NUM}" \
+      -d "{
+        \"displayName\": \"${DISPLAY_NAME}\",
+        \"description\": \"${AGENT_DESC}\",
+        \"icon\": {
+          \"uri\": \"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/smart_toy/default/24px.svg\"
+        },
+        \"adk_agent_definition\": {
+          \"tool_settings\": { \"tool_description\": \"${AGENT_DESC}\" },
+          \"provisioned_reasoning_engine\": {
+            \"reasoning_engine\": \"projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}\"
+          }
+        }
+      }")
+
+    if echo "$REGISTER_RESPONSE" | grep -q '"name"'; then
+        echo "Gemini Enterprise registration successful!"
+    else
+        echo "Gemini Enterprise registration failed:"
+        echo "$REGISTER_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$REGISTER_RESPONSE"
+    fi
+elif [ -n "$GE_APP_ID" ] && [ -z "$REASONING_ENGINE_ID" ]; then
+    echo "Skipping GE registration (Agent Engine deploy failed — no Reasoning Engine ID)"
 fi
 
-if [ ! -d "venv" ]; then
-    echo "Creating virtual environment 'venv' using $PYTHON_BIN..."
-    $PYTHON_BIN -m venv venv
-fi
-
-
-echo "Activating virtual environment..."
-source venv/bin/activate
-
-echo "Upgrading pip..."
-pip install --upgrade pip -q
-
-echo "Installing ADK and agent requirements..."
-# Combine into a single command to ensure pip resolves dependencies consistently for both
-pip install "google-adk[gcp]" -r adk_agent/requirements.txt -q
-echo "✅ Dependencies installed successfully!"
-
-
-# Step 4: Deploy the Agent using ADK
-echo ""
-echo "================================================================="
-echo "Step 4: Deploying Slide Gen Agent to Vertex AI Agent Engine..."
-echo "================================================================="
-
-# Sync the skills directory into adk_agent so it is packaged and deployed with the agent
-echo "Syncing skills/ directory into adk_agent/ packaging context..."
-ABS_ADK_SKILLS_DIR="$(pwd)/adk_agent/skills"
-rm -rf "$ABS_ADK_SKILLS_DIR"
-mkdir -p "$ABS_ADK_SKILLS_DIR"
-cp -r skills/* "$ABS_ADK_SKILLS_DIR"/
-
-# Register a trap to clean up the copied skills folder absolutely
-trap "rm -rf '$ABS_ADK_SKILLS_DIR'" EXIT
-
-cd adk_agent
-# Stream the deployment logs in real-time while capturing them to a temp file
-adk deploy agent_engine \
-  --project="$GOOGLE_CLOUD_PROJECT" \
-  --region="$REGION" \
-  --display_name="slide-gen-agent" \
-  --artifact_service_uri="gs://$BUCKET_NAME" \
-  . 2>&1 | tee deploy_output.log
-
-# Capture the exit code of the adk deploy command (not the tee command)
-ADK_EXIT_CODE=${PIPESTATUS[0]}
-
-# Clean up copied skills folder immediately and clear the trap
-rm -rf "$ABS_ADK_SKILLS_DIR"
-trap - EXIT
-
-# Double-Check: Verify if the deployment was TRULY successful by scanning the logs
-if [ $ADK_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy_output.log || grep -q "Failed to deploy" deploy_output.log || ! grep -q "reasoningEngines" deploy_output.log; then
-    echo ""
-    echo "❌ Error: Slide Gen Agent deployment failed!"
-    echo "Please review the deployment logs printed above or check Cloud Build for more details."
-    rm -f deploy_output.log
-    exit 1
-fi
-
-# Extract the Reasoning Engine Resource ID from the logs
-REASONING_ENGINE_ID=$(grep -oE "projects/[^/]+/locations/[^/]+/reasoningEngines/[0-9]+" deploy_output.log | head -n 1)
-
-# Clean up temporary log file on success
-rm -f deploy_output.log
-
-# Print Post-Deployment Walkthrough
-echo ""
-echo "================================================================="
-echo "🎉 Slide Gen Agent Deployed Successfully!"
-echo "================================================================="
-echo ""
-echo "Please complete the following two manual steps to activate:"
-echo ""
-echo "1. Enable Google Workspace Domain-Wide Delegation:"
-echo "   -----------------------------------------------"
-echo "   This allows the agent to upload slides directly to your users' Google Drives."
-echo "   "
-echo "   - Log in to Google Workspace Admin Console (https://admin.google.com)"
-echo "   - Go to Security -> API controls -> Domain-wide delegation."
-echo "   - Click 'Add new' and enter:"
-echo "     * Client ID: $DRIVE_SA_CLIENT_ID"
-echo "     * OAuth scopes: https://www.googleapis.com/auth/drive.file"
-echo "   - Click 'Authorise'."
-echo ""
-echo "2. Connect to Gemini Enterprise Admin Console:"
-echo "   -------------------------------------------"
-echo "   - Log in to your Gemini Enterprise Admin Console."
-echo "   - Navigate to 'Agents' in the left sidebar."
-echo "   - Click '+ Add Agent' and select 'Custom agent via Agent Engine'."
-echo "   - Enter the following Reasoning Engine Resource ID (Copy & Paste):"
-echo "     👉 ${REASONING_ENGINE_ID:-projects/$GOOGLE_CLOUD_PROJECT/locations/$REGION/reasoningEngines/...}"
-echo ""
-echo "   - Complete the IAM permission configuration to secure the connection."
-echo "================================================================="
-
+echo "Deployment complete!"

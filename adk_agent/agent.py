@@ -18,6 +18,7 @@ try:
     from .tools.preview_generator import generate_preview_page
     from .tools.pptx_exporter import export_deck_pptx
     from .tools.drive_exporter import export_to_google_slides
+    from .llm import GeminiWithLocation
 except ImportError:
     from config import CONFIG
     from tools.file_manager import initialize_session, save_design_spec, save_outlines, save_slide_script, save_user_asset
@@ -26,6 +27,7 @@ except ImportError:
     from tools.preview_generator import generate_preview_page
     from tools.pptx_exporter import export_deck_pptx
     from tools.drive_exporter import export_to_google_slides
+    from llm import GeminiWithLocation
 
 from google.adk import Agent
 from google.genai import types
@@ -307,7 +309,7 @@ if is_thinking_model:
 # Instantiate the Python ADK 2.0 Agent
 root_agent = Agent(
     name="adk_agent",
-    model=text_model,
+    model=GeminiWithLocation(model=text_model, location=CONFIG['GOOGLE_CLOUD_LOCATION']),
     description="Expert slide deck creation and visual generator agent",
     instruction=system_instruction,
     generate_content_config=generate_content_config,
@@ -327,4 +329,5 @@ root_agent = Agent(
 )
 
 # Export for ADK runner loader
+agent_runtime = root_agent
 app = root_agent
