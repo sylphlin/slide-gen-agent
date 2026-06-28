@@ -45,6 +45,9 @@ try:
     if not hasattr(Agent, 'root_agent'):
         Agent.root_agent = property(lambda self: self)
     print("Successfully monkey-patched Agent for Runner compatibility.")
+except Exception as e:
+    print(f"Failed to monkey-patch Agent for Runner: {e}")
+
 # Monkey-patch OpenTelemetry context detach to silently handle async contextvar token mismatch
 try:
     import opentelemetry.context as otel_ctx
