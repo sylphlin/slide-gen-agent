@@ -45,8 +45,31 @@ try:
     if not hasattr(Agent, 'root_agent'):
         Agent.root_agent = property(lambda self: self)
     print("Successfully monkey-patched Agent for Runner compatibility.")
+# Monkey-patch OpenTelemetry context detach to silently handle async contextvar token mismatch
+try:
+    import opentelemetry.context as otel_ctx
+    orig_otel_detach = otel_ctx.detach
+    def safe_otel_detach(token):
+        try:
+            orig_otel_detach(token)
+        except Exception:
+            pass
+    otel_ctx.detach = safe_otel_detach
+
+    try:
+        from opentelemetry.context.contextvars_context import ContextVarsRuntimeContext
+        orig_cv_detach = ContextVarsRuntimeContext.detach
+        def safe_cv_detach(self, token):
+            try:
+                orig_cv_detach(self, token)
+            except Exception:
+                pass
+        ContextVarsRuntimeContext.detach = safe_cv_detach
+    except Exception:
+        pass
+    print("Successfully monkey-patched OpenTelemetry context detach.")
 except Exception as e:
-    print(f"Failed to monkey-patch Agent for Runner: {e}")
+    print(f"Failed to monkey-patch OpenTelemetry context detach: {e}")
 
 # Monkey-patch VertexAiSessionService to handle session IDs with slashes (e.g. from Gemini Enterprise/Agent Space)
 try:
