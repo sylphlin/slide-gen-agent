@@ -109,7 +109,7 @@ def read_gcs_versions(session_id: str) -> dict:
         from google.cloud import storage
         client = storage.Client()
         project_id = CONFIG['GOOGLE_CLOUD_PROJECT']
-        bucket_name = f"slide-gen-sessions-{project_id}"
+        bucket_name = os.environ.get("LOGS_BUCKET_NAME") or f"slide-gen-sessions-{project_id}"
         bucket = client.bucket(bucket_name)
         blob_path = f"gcs_versions/{session_id}.json"
         blob = bucket.blob(blob_path)
@@ -133,7 +133,7 @@ def write_gcs_versions(session_id: str, versions: dict):
         from google.cloud import storage
         client = storage.Client()
         project_id = CONFIG['GOOGLE_CLOUD_PROJECT']
-        bucket_name = f"slide-gen-sessions-{project_id}"
+        bucket_name = os.environ.get("LOGS_BUCKET_NAME") or f"slide-gen-sessions-{project_id}"
         bucket = client.bucket(bucket_name)
         blob_path = f"gcs_versions/{session_id}.json"
         blob = bucket.blob(blob_path)
