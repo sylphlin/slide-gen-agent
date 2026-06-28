@@ -106,27 +106,25 @@ echo "Agent Engine deployment complete!"
 [ -n "$REASONING_ENGINE_ID" ] && echo "  Reasoning Engine ID: $REASONING_ENGINE_ID"
 
 # GE registration
-if [ -n "$GE_APP_ID" ]; then
+if [ -n "$GE_APP_ID" ] && [ -n "$REASONING_ENGINE_ID" ]; then
     echo "Registering agent to Gemini Enterprise..."
-    DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
     
-    PUBLISH_APP_ID="$GE_APP_ID"
-    if [ -n "$DETECTED_GE_APP" ]; then
-        PUBLISH_APP_ID="$DETECTED_GE_APP"
-    fi
-    
-    PUBLISH_CMD=("$AGENTS_CLI" "publish" "gemini-enterprise" "--project" "$PROJECT_ID")
-    if [ -n "$PUBLISH_APP_ID" ] && [ "$PUBLISH_APP_ID" != "true" ]; then
-        PUBLISH_CMD+=("--gemini-enterprise-app-id" "$PUBLISH_APP_ID")
-    fi
-    if [ -n "$REASONING_ENGINE_ID" ]; then
-        PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || echo "")
-        if [ -n "$PROJECT_NUM" ]; then
-            PUBLISH_CMD+=("--agent-runtime-id" "projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}")
+    # If GE_APP_ID was passed as boolean/flag only (--ge without value), auto-detect the GE app ID
+    if [ "$GE_APP_ID" = "__NEXT__" ] || [ "$GE_APP_ID" = "true" ]; then
+        DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
+        if [ -n "$DETECTED_GE_APP" ]; then
+            GE_APP_ID="$DETECTED_GE_APP"
         fi
     fi
+
+    PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || echo "")
+    RUNTIME_RESOURCE_ID="projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}"
     
-    "${PUBLISH_CMD[@]}" || true
+    $AGENTS_CLI publish gemini-enterprise --project "$PROJECT_ID" \
+        --gemini-enterprise-app-id "$GE_APP_ID" \
+        --agent-runtime-id "$RUNTIME_RESOURCE_ID" || true
+elif [ -n "$GE_APP_ID" ] && [ -z "$REASONING_ENGINE_ID" ]; then
+    echo "Skipping GE registration (Agent Engine deploy failed — no Reasoning Engine ID)"
 fi
 
 echo "Deployment complete!"
