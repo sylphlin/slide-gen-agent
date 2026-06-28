@@ -20,6 +20,11 @@ def _resolve_project_id() -> str | None:
     return project_id
 
 
+def _is_remote_runtime() -> bool:
+    """Check if running inside deployed remote Agent Engine container."""
+    return any(k in os.environ for k in ('AGENT_ENGINE_ID', 'REASONING_ENGINE_ID', 'K_SERVICE'))
+
+
 CONFIG = {
     # GCP Credentials & Locations
     'GOOGLE_CLOUD_PROJECT': _resolve_project_id(),
@@ -45,7 +50,7 @@ CONFIG = {
 # Set output session directory in the environment for tools to use if not set.
 if not os.environ.get('SESSION_OUTPUT_DIR'):
     # Detect if we are running inside the deployed Agent Engine container
-    if 'AGENT_ENGINE_ID' in os.environ:
+    if _is_remote_runtime():
         os.environ['SESSION_OUTPUT_DIR'] = '/tmp/artifacts'
     else:
         cwd = os.getcwd()
@@ -64,7 +69,7 @@ os.environ['IMAGE_LOCATION'] = CONFIG['IMAGE_LOCATION']
 def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
     """Helper to generate the authenticated Cloud Storage link for an artifact inside Agent Engine."""
     import os
-    if 'AGENT_ENGINE_ID' in os.environ:
+    if _is_remote_runtime():
         service = getattr(tool_context._invocation_context, 'artifact_service', None)
         if service and hasattr(service, 'bucket_name'):
             bucket = service.bucket_name
@@ -81,7 +86,7 @@ def get_gcs_artifact_url(filename: str, tool_context, version: int = 0) -> str:
 async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
     """Saves an artifact. If running inside Agent Engine container, saves silently without adding to event actions to avoid raw UI attachments."""
     import os
-    if 'AGENT_ENGINE_ID' in os.environ:
+    if _is_remote_runtime():
         service = getattr(tool_context._invocation_context, 'artifact_service', None)
         if service:
             return await service.save_artifact(
@@ -97,7 +102,7 @@ async def save_artifact_helper(filename: str, artifact, tool_context) -> int:
 def read_gcs_versions(session_id: str) -> dict:
     """Reads the persistent GCS versions map for a session from the GCS bucket."""
     import os
-    if 'AGENT_ENGINE_ID' not in os.environ:
+    if not _is_remote_runtime():
         return {}
     import json
     try:
@@ -121,7 +126,7 @@ def read_gcs_versions(session_id: str) -> dict:
 def write_gcs_versions(session_id: str, versions: dict):
     """Writes the persistent GCS versions map for a session to the GCS bucket."""
     import os
-    if 'AGENT_ENGINE_ID' not in os.environ:
+    if not _is_remote_runtime():
         return
     import json
     try:
@@ -137,5 +142,3 @@ def write_gcs_versions(session_id: str, versions: dict):
         import sys
         sys.stderr.write(f"⚠️ [write_gcs_versions] Warning: Failed to write versions to GCS: {e}\n")
         sys.stderr.flush()
-
-
