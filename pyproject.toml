@@ -21,3 +21,11 @@ dependencies = [
     "qrcode>=7.4.2",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["adk_agent"]
+
+[tool.agents-cli]
+agent_directory = "adk_agent"
+
+[tool.agents-cli.create_params]
+deployment_target = "agent_runtime"
