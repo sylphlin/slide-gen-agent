@@ -106,73 +106,27 @@ echo "Agent Engine deployment complete!"
 [ -n "$REASONING_ENGINE_ID" ] && echo "  Reasoning Engine ID: $REASONING_ENGINE_ID"
 
 # GE registration
-if [ -n "$GE_APP_ID" ] && [ -n "$REASONING_ENGINE_ID" ]; then
-    PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
-    ACCESS_TOKEN=$(gcloud auth print-access-token)
-
-    AGENT_NAME="$(basename $(pwd))"
-    if command -v python3 &>/dev/null && [ -f agent.yaml ]; then
-        DISPLAY_NAME=$(python3 -c "
-import yaml
-d = yaml.safe_load(open('agent.yaml'))
-dn = d.get('displayName', {})
-print(dn.get('en', dn) if isinstance(dn, dict) else dn)
-" 2>/dev/null || echo "$AGENT_NAME")
-        AGENT_DESC=$(python3 -c "
-import yaml
-d = yaml.safe_load(open('agent.yaml'))
-desc = d.get('description', {})
-print(desc.get('en', desc) if isinstance(desc, dict) else desc)
-" 2>/dev/null || echo "$AGENT_NAME")
-    else
-        DISPLAY_NAME="$AGENT_NAME"
-        AGENT_DESC="$AGENT_NAME"
+if [ -n "$GE_APP_ID" ]; then
+    echo "Registering agent to Gemini Enterprise..."
+    DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
+    
+    PUBLISH_APP_ID="$GE_APP_ID"
+    if [ -n "$DETECTED_GE_APP" ]; then
+        PUBLISH_APP_ID="$DETECTED_GE_APP"
     fi
-
-    if [[ "$GE_APP_ID" == */reasoningEngines/* ]]; then
-        DETECTED_GE_APP=$($AGENTS_CLI publish gemini-enterprise --list --project "$PROJECT_ID" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('apps', [{}])[0].get('name', ''))" 2>/dev/null || true)
-        if [ -n "$DETECTED_GE_APP" ]; then
-            GE_APP_ID="$DETECTED_GE_APP"
+    
+    PUBLISH_CMD=("$AGENTS_CLI" "publish" "gemini-enterprise" "--project" "$PROJECT_ID")
+    if [ -n "$PUBLISH_APP_ID" ] && [ "$PUBLISH_APP_ID" != "true" ]; then
+        PUBLISH_CMD+=("--gemini-enterprise-app-id" "$PUBLISH_APP_ID")
+    fi
+    if [ -n "$REASONING_ENGINE_ID" ]; then
+        PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || echo "")
+        if [ -n "$PROJECT_NUM" ]; then
+            PUBLISH_CMD+=("--agent-runtime-id" "projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}")
         fi
     fi
-
-    if [[ "$GE_APP_ID" == projects/* ]]; then
-        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/${GE_APP_ID}/assistants/default_assistant/agents"
-    elif [[ "$GE_APP_ID" == collections/* ]]; then
-        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/${GE_APP_ID}/assistants/default_assistant/agents"
-    elif [[ "$GE_APP_ID" == engines/* ]]; then
-        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/collections/default_collection/${GE_APP_ID}/assistants/default_assistant/agents"
-    else
-        GE_API_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUM}/locations/global/collections/default_collection/engines/${GE_APP_ID}/assistants/default_assistant/agents"
-    fi
-
-    REGISTER_RESPONSE=$(curl -s -X POST \
-      "$GE_API_URL" \
-      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-      -H "Content-Type: application/json" \
-      -H "X-Goog-User-Project: ${PROJECT_NUM}" \
-      -d "{
-        \"displayName\": \"${DISPLAY_NAME}\",
-        \"description\": \"${AGENT_DESC}\",
-        \"icon\": {
-          \"uri\": \"https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/smart_toy/default/24px.svg\"
-        },
-        \"adk_agent_definition\": {
-          \"tool_settings\": { \"tool_description\": \"${AGENT_DESC}\" },
-          \"provisioned_reasoning_engine\": {
-            \"reasoning_engine\": \"projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}\"
-          }
-        }
-      }")
-
-    if echo "$REGISTER_RESPONSE" | grep -q '"name"'; then
-        echo "Gemini Enterprise registration successful!"
-    else
-        echo "Gemini Enterprise registration failed:"
-        echo "$REGISTER_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$REGISTER_RESPONSE"
-    fi
-elif [ -n "$GE_APP_ID" ] && [ -z "$REASONING_ENGINE_ID" ]; then
-    echo "Skipping GE registration (Agent Engine deploy failed — no Reasoning Engine ID)"
+    
+    "${PUBLISH_CMD[@]}" || true
 fi
 
 echo "Deployment complete!"
