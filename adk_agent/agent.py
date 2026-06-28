@@ -32,6 +32,20 @@ except ImportError:
 from google.adk import Agent
 from google.genai import types
 
+# Monkey-patch Agent for Runner compatibility
+try:
+    if not hasattr(Agent, 'context_cache_config'):
+        Agent.context_cache_config = property(lambda self: None)
+    if not hasattr(Agent, 'resumability_config'):
+        Agent.resumability_config = property(lambda self: None)
+    if not hasattr(Agent, 'plugins'):
+        Agent.plugins = property(lambda self: [])
+    if not hasattr(Agent, 'root_agent'):
+        Agent.root_agent = property(lambda self: self)
+    print("Successfully monkey-patched Agent for Runner compatibility.")
+except Exception as e:
+    print(f"Failed to monkey-patch Agent for Runner: {e}")
+
 # Monkey-patch VertexAiSessionService to handle session IDs with slashes (e.g. from Gemini Enterprise/Agent Space)
 try:
     from google.adk.sessions.vertex_ai_session_service import VertexAiSessionService
