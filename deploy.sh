@@ -49,6 +49,18 @@ gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
     --member="serviceAccount:${SA_EMAIL}" --role=roles/iam.serviceAccountTokenCreator \
     --project="$PROJECT_ID" 2>/dev/null || true
 
+DRIVE_SA_NAME="slide-gen-drive"
+DRIVE_SA_EMAIL="${DRIVE_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+if ! gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$PROJECT_ID" &>/dev/null; then
+    gcloud iam service-accounts create "$DRIVE_SA_NAME" \
+        --display-name="AI Slide Deck Drive DWD service account" --project="$PROJECT_ID" 2>/dev/null || true
+fi
+if gcloud iam service-accounts describe "$DRIVE_SA_EMAIL" --project="$PROJECT_ID" &>/dev/null; then
+    gcloud iam service-accounts add-iam-policy-binding "$DRIVE_SA_EMAIL" \
+        --member="serviceAccount:${SA_EMAIL}" --role=roles/iam.serviceAccountTokenCreator \
+        --project="$PROJECT_ID" 2>/dev/null || true
+fi
+
 if [ -n "$DEPLOYER" ]; then
     gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
         --member="user:${DEPLOYER}" --role=roles/iam.serviceAccountUser \
