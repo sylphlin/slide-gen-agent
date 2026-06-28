@@ -77,13 +77,21 @@ if [ -n "$DRIVE_SA_EMAIL" ]; then
     UPDATE_ENV_VARS="${UPDATE_ENV_VARS},DRIVE_SA_EMAIL=${DRIVE_SA_EMAIL}"
 fi
 
+export PATH="$HOME/.local/bin:$PATH"
+
 # Install & deploy
 if [ -d .venv ]; then
     .venv/bin/pip install google-agents-cli
     AGENTS_CLI=".venv/bin/agents-cli"
 else
-    uv pip install google-agents-cli 2>/dev/null || pip install google-agents-cli
-    AGENTS_CLI="agents-cli"
+    uv pip install google-agents-cli 2>/dev/null || pip install --user google-agents-cli 2>/dev/null || pip install google-agents-cli
+    if [ -f "$HOME/.local/bin/agents-cli" ]; then
+        AGENTS_CLI="$HOME/.local/bin/agents-cli"
+    elif command -v agents-cli &>/dev/null; then
+        AGENTS_CLI="$(command -v agents-cli)"
+    else
+        AGENTS_CLI="agents-cli"
+    fi
 fi
 
 DEPLOY_OUTPUT=$(GOOGLE_CLOUD_PROJECT="$PROJECT_ID" GOOGLE_CLOUD_LOCATION="$REGION" \
