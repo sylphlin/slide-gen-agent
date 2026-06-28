@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "slide-gen-agent"
 version = "0.1.0"
 description = "AI Slide Deck & Speaker Script Generator"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "google-adk>=2.3.0",
     "google-genai>=2.4.0",
