@@ -1,4 +1,5 @@
 name: slide-gen-agent
+display_name: "Slide Generation Agent"
 acli_version: "0.6.0"
 agent_directory: adk_agent
 create_params:

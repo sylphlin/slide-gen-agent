@@ -109,6 +109,7 @@ fi
 DEPLOY_OUTPUT=$(GOOGLE_CLOUD_PROJECT="$PROJECT_ID" GOOGLE_CLOUD_LOCATION="$REGION" \
   IMAGE_LOCATION="$IMAGE_LOCATION" TEXT_MODEL="$TEXT_MODEL" IMAGE_MODEL="$IMAGE_MODEL" THINKING_LEVEL="$THINKING_LEVEL" THINKING_BUDGET="$THINKING_BUDGET" DRIVE_FOLDER_NAME="$DRIVE_FOLDER_NAME" \
   $AGENTS_CLI deploy --project "$PROJECT_ID" --region "$REGION" \
+  --display-name "Slide Generation Agent" \
   --service-account "$SA_EMAIL" \
   --update-env-vars "$UPDATE_ENV_VARS" \
   2>&1 | tee /dev/stderr) || true
@@ -149,6 +150,7 @@ else:
     RUNTIME_RESOURCE_ID="projects/${PROJECT_NUM}/locations/${REGION}/reasoningEngines/${REASONING_ENGINE_ID}"
     
     $AGENTS_CLI publish gemini-enterprise --project "$PROJECT_ID" \
+        --display-name "Slide Generation Agent" \
         --gemini-enterprise-app-id "$GE_APP_ID" \
         --agent-runtime-id "$RUNTIME_RESOURCE_ID" || true
 elif [ -n "$GE_APP_ID" ] && [ -z "$REASONING_ENGINE_ID" ]; then
