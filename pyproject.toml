@@ -22,6 +22,7 @@ dependencies = [
     "python-pptx",
     "google-api-python-client>=2.0.0",
     "qrcode>=7.4.2",
+    "google-agents-cli>=0.5",
 ]
 
 [tool.hatch.build.targets.wheel]
